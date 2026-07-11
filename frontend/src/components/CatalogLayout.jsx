@@ -17,23 +17,23 @@ export default function CatalogLayout({ children }) {
           zIndex: Z_INDEX_STICKY,
         }}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: 'var(--accent)' }}>
               <Store size={16} className="text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>DDD Job</h1>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>کاتالوگ محصولات</p>
+              <h1 className="font-bold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>DDD Job</h1>
+              <p className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>کاتالوگ محصولات</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link to="/login"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
             >
               <Shield size={13} />
-              پنل مدیریت
+              <span className="hidden sm:inline">پنل مدیریت</span>
             </Link>
             <button onClick={toggleTheme}
               className="p-2 rounded-lg transition-all duration-200 hover:scale-110"

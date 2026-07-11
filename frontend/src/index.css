@@ -114,6 +114,15 @@ body {
   scrollbar-color: var(--text-muted) transparent;
 }
 
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ===== COMPONENT CLASSES ===== */
 @layer components {
   .card {
