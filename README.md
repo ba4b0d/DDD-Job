@@ -21,14 +21,15 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 **Key Features:**
 - 🔐 Role-based authentication (Admin / Employee)
 - 📊 Real-time cost calculation engine
-- 🖼️ Product image management
+- 🖼️ Multi-image support (up to 5 per product) with carousel
 - 📦 Material and machine inventory
 - 🏷️ Category management
-- 🌐 Public product catalog (no auth required)
+- 🌐 Public product catalog as main page (no auth required)
 - ✏️ Inline product editing
 - 📥 Excel/CSV import & export
 - 🌙 Dark & Hybrid themes
 - 🇮🇷 Persian/Farsi RTL interface
+- 📱 Fully mobile-responsive design
 
 ---
 
@@ -71,7 +72,7 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI app, CORS, startup
-│   │   ├── models.py            # SQLAlchemy models
+│   │   ├── models.py            # SQLAlchemy models (includes ProductImage)
 │   │   ├── schemas.py           # Pydantic schemas
 │   │   ├── calculator.py        # Cost calculation engine
 │   │   ├── cache.py             # In-memory settings cache
@@ -81,7 +82,8 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 │   │   │   └── products.py      # Product repository pattern
 │   │   └── routers/
 │   │       ├── auth.py          # Authentication + user management
-│   │       ├── products.py      # Product CRUD + images
+│   │       ├── products.py      # Product CRUD + multi-image
+│   │       ├── catalog.py       # Public catalog (no auth)
 │   │       ├── materials.py     # Material CRUD
 │   │       ├── machines.py      # Machine CRUD
 │   │       ├── categories.py    # Category CRUD
@@ -148,15 +150,16 @@ npm run dev
 
 ### Access the App
 
-| Page | URL |
-|------|-----|
-| Admin Panel | http://localhost:5173 |
-| Public Catalog | http://localhost:5173/catalog |
-| API Docs | http://localhost:8000/docs |
+| Page | URL | Auth |
+|------|-----|------|
+| Public Catalog (Main Page) | http://localhost:5173/ | ❌ |
+| Admin Login | http://localhost:5173/login | ❌ |
+| Dashboard | http://localhost:5173/dashboard | ✅ |
+| API Docs | http://localhost:8000/docs | ❌ |
 
 **Default Credentials:**
 - Username: `admin`
-- Password: `admin`
+- Password: `3djat2024`
 
 > ⚠️ **Forced password change on first login!** You must set a new password immediately after logging in.
 
@@ -204,7 +207,10 @@ docker-compose down
 | `/api/v1/products` | POST | Create product | ✅ |
 | `/api/v1/products/{id}` | PUT | Update product | ✅ |
 | `/api/v1/products/{id}` | DELETE | Delete product | ✅ |
-| `/api/v1/products/{id}/image` | POST | Upload image | ✅ |
+| `/api/v1/products/{id}/images` | POST | Upload images (max 5) | ✅ |
+| `/api/v1/products/{id}/images/{img_id}` | DELETE | Delete specific image | ✅ |
+| `/api/v1/products/{id}/images/{img_id}/primary` | PUT | Set primary image | ✅ |
+| `/api/v1/products/{id}/images/reorder` | PUT | Reorder images | ✅ |
 | `/api/v1/products/calculate` | POST | Calculate costs | ✅ |
 | `/api/v1/products/export` | GET | Export all products as .xlsx | ✅ |
 | `/api/v1/products/import` | POST | Import products from .xlsx/.csv | ✅ |
@@ -304,8 +310,11 @@ Calculate product costs with live updates:
 
 ### 📱 Responsive Design
 
-- Mobile-friendly catalog view
-- Collapsible admin sidebar
+- **Mobile-first** approach with Tailwind breakpoints
+- Catalog: touch swipe carousel, scrollable categories
+- Dashboard: cards on mobile, table on desktop
+- Materials: cards on mobile, table on desktop
+- Admin: hamburger menu sidebar on mobile
 - RTL (Right-to-Left) layout for Persian
 
 ---
