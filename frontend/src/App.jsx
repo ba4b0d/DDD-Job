@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './lib/auth';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import CatalogLayout from './components/CatalogLayout';
+import ForcePasswordChange from './components/ForcePasswordChange';
 
 // Code splitting — lazy load all pages
 const Login = lazy(() => import('./pages/Login'));
@@ -69,6 +70,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <ForcePasswordChange />
         <AppRoutes />
       </AuthProvider>
     </ErrorBoundary>

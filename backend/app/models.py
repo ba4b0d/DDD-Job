@@ -75,6 +75,7 @@ class User(Base):
     display_name = Column(String, default="")
     role = Column(String, nullable=False, default="employee")  # admin | employee
     is_active = Column(Boolean, default=True)
+    must_change_password = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

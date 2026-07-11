@@ -124,12 +124,22 @@ def _ensure_default_admin(db: Session):
     if db.query(User).count() == 0:
         admin = User(
             username="admin",
-            password_hash=_hash("3djat2024"),
+            password_hash=_hash("admin"),
             display_name="مدیر سیستم",
             role="admin",
+            must_change_password=True,
         )
         db.add(admin)
         db.commit()
+        
+        print("\n" + "=" * 60)
+        print("🔐 DEFAULT ADMIN ACCOUNT CREATED")
+        print("=" * 60)
+        print("   Username: admin")
+        print("   Password: admin")
+        print("=" * 60)
+        print("⚠️  You MUST change password on first login!")
+        print("=" * 60 + "\n")
 
 
 # ── Auth endpoints ─────────────────────────────────────────────────
@@ -143,12 +153,14 @@ def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="نام کاربری یا رمز عبور اشتباه است")
 
     token = create_token(user.id, user.username, user.role)
-    return {
+    response = {
         "token": token,
         "username": user.username,
         "display_name": user.display_name,
         "role": user.role,
+        "must_change_password": user.must_change_password,
     }
+    return response
 
 
 @router.get("/verify")
@@ -156,7 +168,21 @@ def verify(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
     payload = verify_token(credentials.credentials)
-    return {"username": payload.get("username"), "role": payload.get("role"), "valid": True}
+    
+    # Check if user must change password
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == int(payload["sub"])).first()
+        must_change = user.must_change_password if user else False
+    finally:
+        db.close()
+    
+    return {
+        "username": payload.get("username"),
+        "role": payload.get("role"),
+        "valid": True,
+        "must_change_password": must_change,
+    }
 @router.post("/refresh")
 def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Issue a new token if the current one is valid and within REFRESH_WINDOW_HOURS of expiry."""
@@ -257,5 +283,19 @@ def change_password(user_id: int, body: ChangePasswordRequest, user=Depends(requ
         raise HTTPException(status_code=404, detail="کاربر یافت نشد")
 
     target.password_hash = _hash(body.password)
+    target.must_change_password = False
+    db.commit()
+    return {"message": "رمز عبور تغییر کرد"}
+
+
+@router.post("/change-my-password")
+def change_my_password(body: ChangePasswordRequest, user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Allow any user to change their own password (for forced password change)."""
+    target = db.query(User).filter(User.id == int(user["sub"])).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="کاربر یافت نشد")
+    
+    target.password_hash = _hash(body.password)
+    target.must_change_password = False
     db.commit()
     return {"message": "رمز عبور تغییر کرد"}
