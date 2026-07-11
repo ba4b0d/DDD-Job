@@ -164,51 +164,87 @@ export default function Materials() {
       </div>
 
       <div className="rounded-xl overflow-hidden" style={{background:'var(--bg-card)', border:'1px solid var(--border)'}}>
-        <table className="w-full text-right">
-          <thead>
-            <tr style={{background:'var(--bg-secondary)'}}>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>نام</th>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>رنگ</th>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>قیمت/کیلو</th>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>ضریب ضایعات</th>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>وضعیت</th>
-              <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>عملیات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {materials.map(m => (
-              <tr key={m.id} className="border-t" style={{borderColor:'var(--border)'}}>
-                <td className="px-4 py-3 font-medium" style={{color:'var(--text-primary)'}}>{m.name}</td>
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full border inline-block" style={{
-                      background: colorMap[m.color?.toLowerCase()] || m.color || '#ccc',
-                      borderColor: 'var(--border)'
-                    }} />
-                    <span style={{color:'var(--text-primary)'}}>{m.color}</span>
-                  </span>
-                </td>
-                <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>{formatPrice(m.price_per_kg)}</td>
-                <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>%{(m.waste_pct * 100).toFixed(0)}</td>
-                <td className="px-4 py-3">
-                  <button onClick={() => toggleActive(m)} className={`px-2 py-1 rounded text-xs font-medium ${m.is_active ? 'text-green-400' : 'text-red-400'}`} style={{background: m.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}}>
-                    {m.is_active ? 'فعال' : 'غیرفعال'}
-                  </button>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-white/10" style={{color:'var(--accent)'}}>
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg hover:bg-red-500/20" style={{color:'var(--danger)'}}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        {/* Desktop table */}
+        <div className="hidden sm:block">
+          <table className="w-full text-right">
+            <thead>
+              <tr style={{background:'var(--bg-secondary)'}}>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>نام</th>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>رنگ</th>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>قیمت/کیلو</th>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>ضریب ضایعات</th>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>وضعیت</th>
+                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>عملیات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {materials.map(m => (
+                <tr key={m.id} className="border-t" style={{borderColor:'var(--border)'}}>
+                  <td className="px-4 py-3 font-medium" style={{color:'var(--text-primary)'}}>{m.name}</td>
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full border inline-block" style={{
+                        background: colorMap[m.color?.toLowerCase()] || m.color || '#ccc',
+                        borderColor: 'var(--border)'
+                      }} />
+                      <span style={{color:'var(--text-primary)'}}>{m.color}</span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>{formatPrice(m.price_per_kg)}</td>
+                  <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>%{(m.waste_pct * 100).toFixed(0)}</td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => toggleActive(m)} className={`px-2 py-1 rounded text-xs font-medium ${m.is_active ? 'text-green-400' : 'text-red-400'}`} style={{background: m.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}}>
+                      {m.is_active ? 'فعال' : 'غیرفعال'}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-white/10" style={{color:'var(--accent)'}}>
+                        <Pencil size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg hover:bg-red-500/20" style={{color:'var(--danger)'}}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y" style={{borderColor:'var(--border)'}}>
+          {materials.map(m => (
+            <div key={m.id} className="p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 rounded-full border shrink-0" style={{
+                    background: colorMap[m.color?.toLowerCase()] || m.color || '#ccc',
+                    borderColor: 'var(--border)'
+                  }} />
+                  <span className="font-medium text-sm" style={{color:'var(--text-primary)'}}>{m.name}</span>
+                </div>
+                <button onClick={() => toggleActive(m)} className={`px-2 py-0.5 rounded text-[10px] font-medium ${m.is_active ? 'text-green-400' : 'text-red-400'}`} style={{background: m.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}}>
+                  {m.is_active ? 'فعال' : 'غیرفعال'}
+                </button>
+              </div>
+              <div className="flex items-center gap-3 text-xs mb-2" style={{color:'var(--text-secondary)'}}>
+                <span>{m.color}</span>
+                <span>{formatPrice(m.price_per_kg)}/کیلو</span>
+                <span>%{(m.waste_pct * 100).toFixed(0)} ضایعات</span>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => openEdit(m)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" style={{background:'var(--bg-secondary)', color:'var(--accent)'}}>
+                  <Pencil size={12} /> ویرایش
+                </button>
+                <button onClick={() => handleDelete(m)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" style={{background:'rgba(239,68,68,0.15)', color:'var(--danger)'}}>
+                  <Trash2 size={12} /> حذف
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editItem ? 'ویرایش ماده' : 'افزودن ماده جدید'}>

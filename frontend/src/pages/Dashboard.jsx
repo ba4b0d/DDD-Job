@@ -145,61 +145,52 @@ export default function Dashboard() {
             هنوز محصولی ثبت نشده است
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm" dir="rtl">
-              <thead>
-                <tr
-                  className="border-b"
-                  style={{ borderColor: 'var(--border-color)' }}
-                >
-                  <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>
-                    نام
-                  </th>
-                  <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>
-                    دسته‌بندی
-                  </th>
-                  <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>
-                    وزن
-                  </th>
-                  <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>
-                    زمان چاپ
-                  </th>
-                  <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>
-                    قیمت پیشنهادی
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentProducts.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="table-row cursor-pointer"
-                    onClick={() => navigate(`/products/${p.id}`)}
-                  >
-                    <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {p.name}
-                    </td>
-                    <td className="px-5 py-3">
-                      {p.category && (
-                        <span className="badge badge-accent">{p.category}</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
-                      {p.weight_g ? `${p.weight_g}g` : '—'}
-                    </td>
-                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>
-                      {p.print_time_hours
-                        ? formatMinutes(p.print_time_hours * 60)
-                        : '—'}
-                    </td>
-                    <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent)' }}>
-                      {p.suggested_price ? formatPrice(p.suggested_price) : '—'}
-                    </td>
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm" dir="rtl">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>نام</th>
+                    <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>دستهبندی</th>
+                    <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>وزن</th>
+                    <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>زمان چاپ</th>
+                    <th className="px-5 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>قیمت پیشنهادی</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentProducts.map((p) => (
+                    <tr key={p.id} className="table-row cursor-pointer" onClick={() => navigate(`/products/${p.id}`)}>
+                      <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{p.name}</td>
+                      <td className="px-5 py-3">{p.category && <span className="badge badge-accent">{p.category}</span>}</td>
+                      <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{p.weight_g ? `${p.weight_g}g` : '—'}</td>
+                      <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{p.print_time_hours ? formatMinutes(p.print_time_hours * 60) : '—'}</td>
+                      <td className="px-5 py-3 font-semibold" style={{ color: 'var(--accent)' }}>{p.suggested_price ? formatPrice(p.suggested_price) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y" style={{ borderColor: 'var(--border-color)' }}>
+              {recentProducts.map((p) => (
+                <div key={p.id} className="p-4 cursor-pointer active:bg-white/5" onClick={() => navigate(`/products/${p.id}`)}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{p.name}</h4>
+                    {p.category && <span className="badge badge-accent text-[10px]">{p.category}</span>}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span>{p.weight_g ? `${p.weight_g}g` : ''}</span>
+                    <span>{p.print_time_hours ? formatMinutes(p.print_time_hours * 60) : ''}</span>
+                    <span className="font-bold mr-auto" style={{ color: 'var(--accent)' }}>
+                      {p.suggested_price ? formatPrice(p.suggested_price) : '—'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
