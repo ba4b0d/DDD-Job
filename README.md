@@ -26,6 +26,7 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 - 🏷️ Category management
 - 🌐 Public product catalog (no auth required)
 - ✏️ Inline product editing
+- 📥 Excel/CSV import & export
 - 🌙 Dark & Hybrid themes
 - 🇮🇷 Persian/Farsi RTL interface
 
@@ -204,6 +205,10 @@ docker-compose down
 | `/api/v1/products/{id}` | DELETE | Delete product | ✅ |
 | `/api/v1/products/{id}/image` | POST | Upload image | ✅ |
 | `/api/v1/products/calculate` | POST | Calculate costs | ✅ |
+| `/api/v1/products/export` | GET | Export all products as .xlsx | ✅ |
+| `/api/v1/products/import` | POST | Import products from .xlsx/.csv | ✅ |
+
+> 📋 A sample Excel template is available at `sample-products.xlsx` in the repo root.
 
 ### Materials
 
