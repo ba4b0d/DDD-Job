@@ -36,7 +36,7 @@ export default function Login() {
             style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
             <Store size={32} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>3DJAT</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>DDD Job</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>پنل مدیریت</p>
         </div>
 

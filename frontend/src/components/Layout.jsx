@@ -54,7 +54,7 @@ export default function Layout({ children }) {
               {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
             <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--accent)' }}>
-              3DJAT
+              DDD Job
             </h1>
           </div>
 
