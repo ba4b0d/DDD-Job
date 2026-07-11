@@ -68,6 +68,16 @@ export const uploadProductImage = (productId, file) => {
 };
 export const deleteProductImage = (productId) => api.delete(`/products/${productId}/image`);
 
+// ===== Product Import / Export =====
+export const exportProducts = () => api.get('/products/export', { responseType: 'blob' });
+export const importProducts = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/products/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+
 // ===== Categories =====
 export const getCategories = (config) => api.get('/products/categories', config);
 

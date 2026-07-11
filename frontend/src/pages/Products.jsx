@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Weight, ArrowUpLeft } from 'lucide-react';
-import { getProducts, getMaterialsAll, getMachinesAll, getCategories, createProduct } from '../lib/api';
+import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload } from 'lucide-react';
+import { getProducts, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -23,6 +23,7 @@ export default function Products() {
   const [filterMachine, setFilterMachine] = useState(null);
   const [sortBy, setSortBy] = useState('created_at');
   const [showAddModal, setShowAddModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   const loadProducts = async () => {
     try {
@@ -125,6 +126,57 @@ export default function Products() {
     return res.data;
   };
 
+  const handleExport = async () => {
+    try {
+      const res = await exportProducts();
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'products_export.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('خطا در خروجی گرفتن');
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const res = await importProducts(file);
+      const { created, updated, errors } = res.data;
+      let msg = `ایجاد شده: ${created}\nبه‌روزرسانی شده: ${updated}`;
+      if (errors.length > 0) {
+        msg += `\n\nخطاها (${errors.length}):\n`;
+        errors.forEach((e) => {
+          msg += `  ردیف ${e.row}: ${e.error}\n`;
+        });
+      }
+      alert(msg);
+      if (created > 0 || updated > 0) {
+        await loadProducts();
+      }
+    } catch (err) {
+      console.error('Import error:', err);
+      const detail = err.response?.data?.detail || 'خطا در وارد کردن فایل';
+      alert(detail);
+    } finally {
+      // Reset file input so same file can be selected again
+      e.target.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -145,10 +197,27 @@ export default function Products() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>محصولات</h2>
-        <button onClick={() => setShowAddModal(true)} className="btn-primary">
-          <Plus size={16} />
-          محصول جدید
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExport} className="btn-secondary" title="خروجی اکسل">
+            <Download size={16} />
+            خروجی اکسل
+          </button>
+          <button onClick={handleImportClick} className="btn-secondary" title="ورودی اکسل/ csv">
+            <Upload size={16} />
+            ورودی فایل
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.csv"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+          <button onClick={() => setShowAddModal(true)} className="btn-primary">
+            <Plus size={16} />
+            محصول جدید
+          </button>
+        </div>
       </div>
 
       {/* Search and filters */}
