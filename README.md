@@ -24,7 +24,8 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 - 🖼️ Product image management
 - 📦 Material and machine inventory
 - 🏷️ Category management
-- 🌐 Public product catalog
+- 🌐 Public product catalog (no auth required)
+- ✏️ Inline product editing
 - 🌙 Dark & Hybrid themes
 - 🇮🇷 Persian/Farsi RTL interface
 
@@ -183,6 +184,13 @@ docker-compose down
 | `/api/v1/auth/login` | POST | Login and get JWT token |
 | `/api/v1/auth/verify` | GET | Verify current token |
 | `/api/v1/auth/refresh` | POST | Refresh token (within 1h of expiry) |
+
+### Public Catalog (No Auth)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/catalog` | GET | List all active products for public catalog |
+| `/api/v1/catalog/categories` | GET | List active categories for public catalog |
 
 ### Products
 

@@ -37,3 +37,4 @@ frontend/.vite/
 
 # Logs
 *.log
+backend/tests/test.db

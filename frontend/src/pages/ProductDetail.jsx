@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowRight,
   Edit,
@@ -14,15 +14,18 @@ import {
   Camera,
   Upload,
 } from 'lucide-react';
-import { getProduct, deleteProduct, calculate, uploadProductImage, deleteProductImage } from '../lib/api';
+import { getProduct, deleteProduct, calculate, uploadProductImage, deleteProductImage, updateProduct } from '../lib/api';
 import CostBreakdown from '../components/CostBreakdown';
 import PriceDisplay from '../components/PriceDisplay';
 import { formatPrice, formatMinutes } from '../lib/utils';
 import Modal from '../components/Modal';
+import ProductForm from '../components/ProductForm';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEdit = location.pathname.endsWith('/edit');
   const [product, setProduct] = useState(null);
   const [calcResult, setCalcResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +118,28 @@ export default function ProductDetail() {
   }
 
   if (!product) return null;
+
+  // Edit mode
+  if (isEdit) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-6">
+          <button onClick={() => navigate(`/products/${id}`)} className="btn-secondary">
+            <ArrowRight size={16} />
+          </button>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>ویرایش محصول</h1>
+        </div>
+        <div className="card p-6">
+          <ProductForm
+            initialData={product}
+            onSubmit={(data) => updateProduct(id, data)}
+            onCancel={() => navigate(`/products/${id}`)}
+            submitLabel="ذخیره تغییرات"
+          />
+        </div>
+      </div>
+    );
+  }
 
   const infoItems = [
     { icon: Tag, label: 'دسته‌بندی', value: product.category || '—' },

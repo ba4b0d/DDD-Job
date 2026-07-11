@@ -74,6 +74,10 @@ export const getCategories = (config) => api.get('/products/categories', config)
 // ===== Calculator =====
 export const calculate = (data) => api.post('/calculate', data);
 
+// ===== Public Catalog (no auth) =====
+export const getCatalog = () => axios.get('/api/v1/catalog');
+export const getCatalogCategories = () => axios.get('/api/v1/catalog/categories');
+
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);
 
