@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Save, X, Loader2 } from 'lucide-react';
-import { getMaterialsAll, getMachinesAll, getCategoriesList } from '../lib/api';
+import { getMaterialsAll, getMachinesAll, getCategoriesList, uploadProductImages, deleteProductImage, setPrimaryImage } from '../lib/api';
 import CostBreakdown from './CostBreakdown';
 import FormField from './FormField';
-import ImageUploadZone from './ImageUploadZone';
-import useProductImageUpload from '../hooks/useProductImageUpload';
+import MultiImageUpload from './MultiImageUpload';
 import useProductCalculation from '../hooks/useProductCalculation';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,12 +45,10 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [machines, setMachines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const {
-    imagePreview, uploading, dragOver, fileInputRef,
-    handleFileInput, handleDrop, handleDragOver, handleDragLeave,
-    handleRemoveImage, handleImageUpload, hasNewImage,
-  } = useProductImageUpload(initialData?.image_url);
+  const [images, setImages] = useState(initialData?.images || []);
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [pendingRemovals, setPendingRemovals] = useState([]);
+  const [pendingPrimary, setPendingPrimary] = useState(null);
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -94,6 +91,28 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
+  const handleImageAction = async (action) => {
+    const productId = initialData?.id;
+    if (!productId) return;
+
+    if (action.remove) {
+      try {
+        await deleteProductImage(productId, action.remove);
+        setImages(prev => prev.filter(img => img.id !== action.remove));
+      } catch (err) {
+        console.error('Image delete error:', err);
+      }
+    }
+    if (action.setPrimary) {
+      try {
+        const res = await setPrimaryImage(productId, action.setPrimary);
+        if (res.data?.images) setImages(res.data.images);
+      } catch (err) {
+        console.error('Set primary error:', err);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError(null);
@@ -117,11 +136,16 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         final_price: parseFloat(form.final_price) || 0,
       });
       const productId = result?.id || initialData?.id;
-      if (hasNewImage && productId) await handleImageUpload(productId);
+
+      // Upload pending files
+      if (pendingFiles.length > 0 && productId) {
+        await uploadProductImages(productId, pendingFiles);
+      }
+
       if (onCancel) onCancel();
     } catch (err) {
       console.error('Submit error:', err);
-      setSubmitError(err?.response?.data?.detail || err?.message || 'خطا در ذخیره‌سازی');
+      setSubmitError(err?.response?.data?.detail || err?.message || 'خطا در ذخیرهسازی');
     } finally {
       setLoading(false);
     }
@@ -169,17 +193,10 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <textarea name="notes" value={form.notes} onChange={handleChange} className="input-field" rows={3} placeholder="توضیحات اضافی..." />
       </FormField>
 
-      <FormField label="تصویر محصول" name="image">
-        <ImageUploadZone
-          imagePreview={imagePreview}
-          dragOver={dragOver}
-          fileInputRef={fileInputRef}
-          onFileInput={handleFileInput}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onRemove={handleRemoveImage}
-          onTrigger={() => fileInputRef.current?.click()}
+      <FormField label="تصاویر محصول" name="images">
+        <MultiImageUpload
+          images={images}
+          onChange={handleImageAction}
         />
       </FormField>
 

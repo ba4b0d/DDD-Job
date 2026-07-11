@@ -18,7 +18,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(username, password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.detail || 'خطا در ورود');
     } finally {
@@ -103,7 +103,7 @@ export default function Login() {
 
         {/* Catalog link */}
         <p className="text-center text-xs mt-4">
-          <a href="/catalog"
+          <a href="/"
             className="underline"
             style={{ color: 'var(--accent)' }}>
             مشاهده کاتالوگ

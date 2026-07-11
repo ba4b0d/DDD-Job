@@ -41,6 +41,19 @@ class Material(Base):
     products = relationship("Product", back_populates="material")
 
 
+class ProductImage(Base):
+    __tablename__ = "product_images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_url = Column(String, nullable=False)
+    sort_order = Column(Integer, default=0, index=True)
+    is_primary = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    product = relationship("Product", back_populates="images")
+
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -57,13 +70,14 @@ class Product(Base):
     post_pro_hours = Column(Float, default=0)
     extras_cost = Column(Float, default=0)
     final_price = Column(Float, nullable=True)
-    image_url = Column(String, nullable=True, default=None)
+    image_url = Column(String, nullable=True, default=None)  # Kept for backward compat — primary image
     category = Column(String, default="", index=True)
     notes = Column(String, default="")
     is_active = Column(Boolean, default=True, index=True)
 
     machine = relationship("Machine", back_populates="products")
     material = relationship("Material", back_populates="products")
+    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
 
 
 class User(Base):

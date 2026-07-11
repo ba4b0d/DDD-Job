@@ -13,8 +13,9 @@ import {
   Loader2,
   Camera,
   Upload,
+  Star,
 } from 'lucide-react';
-import { getProduct, deleteProduct, calculate, uploadProductImage, deleteProductImage, updateProduct } from '../lib/api';
+import { getProduct, deleteProduct, calculate, uploadProductImages, deleteProductImage, setPrimaryImage, updateProduct } from '../lib/api';
 import CostBreakdown from '../components/CostBreakdown';
 import PriceDisplay from '../components/PriceDisplay';
 import { formatPrice, formatMinutes } from '../lib/utils';
@@ -32,7 +33,10 @@ export default function ProductDetail() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const fileInputRef = useRef(null);
+  const productImages = product?.images || [];
+  const currentImage = productImages.length > 0 ? productImages[activeImageIndex] : null;
 
   useEffect(() => {
     const load = async () => {
@@ -82,12 +86,14 @@ export default function ProductDetail() {
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !product) return;
+    const files = e.target.files;
+    if (!files || files.length === 0 || !product) return;
     setImageUploading(true);
     try {
-      const res = await uploadProductImage(product.id, file);
-      setProduct({ ...product, image_url: res.data.image_url });
+      const res = await uploadProductImages(product.id, Array.from(files));
+      if (res.data?.images) {
+        setProduct({ ...product, images: res.data.images, image_url: res.data.images[0]?.image_url });
+      }
     } catch (err) {
       console.error('Image upload error:', err);
     } finally {
@@ -96,16 +102,33 @@ export default function ProductDetail() {
     }
   };
 
-  const handleImageDelete = async () => {
+  const handleImageDelete = async (imageId) => {
     if (!product) return;
     setImageUploading(true);
     try {
-      await deleteProductImage(product.id);
-      setProduct({ ...product, image_url: null });
+      const res = await deleteProductImage(product.id, imageId);
+      if (res.data?.images) {
+        setProduct({ ...product, images: res.data.images, image_url: res.data.images[0]?.image_url || null });
+        if (activeImageIndex >= res.data.images.length) {
+          setActiveImageIndex(Math.max(0, res.data.images.length - 1));
+        }
+      }
     } catch (err) {
       console.error('Image delete error:', err);
     } finally {
       setImageUploading(false);
+    }
+  };
+
+  const handleSetPrimary = async (imageId) => {
+    if (!product) return;
+    try {
+      const res = await setPrimaryImage(product.id, imageId);
+      if (res.data?.images) {
+        setProduct({ ...product, images: res.data.images, image_url: res.data.images.find(i => i.is_primary)?.image_url });
+      }
+    } catch (err) {
+      console.error('Set primary error:', err);
     }
   };
 
@@ -222,23 +245,26 @@ export default function ProductDetail() {
             />
           </div>
 
-          {/* Product Image */}
+          {/* Product Images */}
           <div className="card p-5">
             <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>
-              تصویر محصول
+              تصاویر محصول ({productImages.length}/5)
             </h4>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
               onChange={handleImageUpload}
               className="hidden"
               id="detail-image-input"
             />
-            {product.image_url ? (
-              <div className="relative rounded-lg overflow-hidden">
+
+            {/* Main image display */}
+            {currentImage ? (
+              <div className="relative rounded-lg overflow-hidden mb-3">
                 <img
-                  src={product.image_url}
+                  src={currentImage.image_url}
                   alt={product.name}
                   className="w-full h-48 object-contain rounded-lg"
                   style={{ background: 'var(--bg-secondary)' }}
@@ -247,12 +273,26 @@ export default function ProductDetail() {
                   <label
                     htmlFor="detail-image-input"
                     className="p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white cursor-pointer transition-colors"
-                    title="تغییر تصویر"
+                    title="افزودن تصویر"
                   >
-                    <Camera size={14} />
+                    <Upload size={14} />
                   </label>
+                  {!currentImage.is_primary && (
+                    <button
+                      onClick={() => handleSetPrimary(currentImage.id)}
+                      className="p-1.5 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+                      title="تصویر اصلی"
+                    >
+                      <Star size={14} />
+                    </button>
+                  )}
+                  {currentImage.is_primary && (
+                    <span className="p-1.5 rounded-full text-white" style={{ backgroundColor: 'var(--accent)' }} title="تصویر اصلی">
+                      <Star size={14} fill="white" />
+                    </span>
+                  )}
                   <button
-                    onClick={handleImageDelete}
+                    onClick={() => handleImageDelete(currentImage.id)}
                     disabled={imageUploading}
                     className="p-1.5 rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-colors"
                     title="حذف تصویر"
@@ -272,11 +312,35 @@ export default function ProductDetail() {
                 }}
               >
                 <Upload size={28} style={{ color: 'var(--text-muted)' }} />
-                <span className="text-sm">تصویر را بکشید یا کلیک کنید</span>
+                <span className="text-sm">تصاویر را بکشید یا کلیک کنید</span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  JPEG, PNG, WebP, GIF
+                  حداکثر ۵ تصویر • JPEG, PNG, WebP, GIF
                 </span>
               </label>
+            )}
+
+            {/* Thumbnail strip */}
+            {productImages.length > 1 && (
+              <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                {productImages.map((img, idx) => (
+                  <button
+                    key={img.id}
+                    onClick={() => setActiveImageIndex(idx)}
+                    className="relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all"
+                    style={{
+                      border: idx === activeImageIndex ? '2px solid var(--accent)' : '2px solid var(--border)',
+                      opacity: idx === activeImageIndex ? 1 : 0.7,
+                    }}
+                  >
+                    <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                    {img.is_primary && (
+                      <div className="absolute top-0.5 left-0.5 p-0.5 rounded" style={{ backgroundColor: 'var(--accent)' }}>
+                        <Star size={8} className="text-white" fill="white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

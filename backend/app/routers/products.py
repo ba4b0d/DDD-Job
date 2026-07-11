@@ -5,7 +5,7 @@ import uuid, os, shutil, io, csv
 from openpyxl import Workbook, load_workbook
 
 from app.database import get_db
-from app.models import Product, Machine, Material
+from app.models import Product, Machine, Material, ProductImage
 from app.repositories.products import ProductRepository
 from app.schemas import (
     ProductCreate, ProductUpdate, ProductResponse,
@@ -68,6 +68,10 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
         "post_pro_hours": product.post_pro_hours,
         "extras_cost": product.extras_cost,
         "image_url": product.image_url,
+        "images": [
+            {"id": img.id, "image_url": img.image_url, "sort_order": img.sort_order, "is_primary": img.is_primary}
+            for img in (product.images if hasattr(product, 'images') and product.images else [])
+        ],
         "final_price": product.final_price,
         "category": product.category,
         "notes": product.notes,
@@ -350,71 +354,191 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return {"message": "Product deactivated", "id": product_id}
 
 
-@router.post("/products/{product_id}/image")
-async def upload_product_image(product_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Upload an image for a product. Accepts multipart file upload."""
+MAX_IMAGES = 5
+
+
+@router.post("/products/{product_id}/images")
+async def upload_product_images(
+    product_id: int,
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    """Upload one or more images for a product (max 5 total)."""
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Validate file type
+    # Check current count
+    current_count = db.query(ProductImage).filter(ProductImage.product_id == product_id).count()
+    remaining = MAX_IMAGES - current_count
+    if remaining <= 0:
+        raise HTTPException(status_code=400, detail=f"حداکثر {MAX_IMAGES} تصویر مجاز است")
+    if len(files) > remaining:
+        raise HTTPException(status_code=400, detail=f"فقط {remaining} تصویر دیگر مجاز است")
+
     allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="File must be JPEG, PNG, WebP, or GIF")
+    uploaded = []
 
-    # Check file size (read content first)
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_SIZE:
-        raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۱۰ مگابایت باشد")
-    await file.seek(0)
+    for file in files[:remaining]:
+        if file.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="File must be JPEG, PNG, WebP, or GIF")
+        content = await file.read()
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۱۰ مگابایت باشد")
 
-    # Delete old image if exists
-    if product.image_url:
-        old_filename = product.image_url.split("/")[-1]
-        old_path = os.path.join(UPLOAD_DIR, old_filename)
-        if os.path.exists(old_path):
-            os.remove(old_path)
+        ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+        filename = f"{uuid.uuid4().hex}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        with open(filepath, "wb") as buffer:
+            buffer.write(content)
 
-    # Save new image with UUID filename
-    ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
+        max_order = db.query(ProductImage).filter(ProductImage.product_id == product_id).count()
+        img = ProductImage(
+            product_id=product_id,
+            image_url=f"/uploads/{filename}",
+            sort_order=max_order,
+            is_primary=(current_count == 0 and len(uploaded) == 0),
+        )
+        db.add(img)
+        uploaded.append(img)
 
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Sync primary to product.image_url
+    primary = db.query(ProductImage).filter(
+        ProductImage.product_id == product_id, ProductImage.is_primary == True
+    ).first()
+    if primary:
+        product.image_url = primary.image_url
+    elif uploaded:
+        product.image_url = uploaded[0].image_url
 
-    product.image_url = f"/uploads/{filename}"
     try:
         db.commit()
     except Exception:
         db.rollback()
-        raise HTTPException(status_code=500, detail="خطا در ذخیره تصویر")
-    db.refresh(product)
+        raise HTTPException(status_code=500, detail="خطا در ذخیره تصاویر")
 
-    return {"message": "Image uploaded", "image_url": product.image_url}
+    for img in uploaded:
+        db.refresh(img)
+
+    return {
+        "message": f"{len(uploaded)} تصویر آپلود شد",
+        "images": [
+            {"id": img.id, "image_url": img.image_url, "sort_order": img.sort_order, "is_primary": img.is_primary}
+            for img in db.query(ProductImage).filter(ProductImage.product_id == product_id).order_by(ProductImage.sort_order).all()
+        ],
+    }
 
 
-@router.delete("/products/{product_id}/image")
-def delete_product_image(product_id: int, db: Session = Depends(get_db)):
-    """Remove the image from a product."""
+@router.delete("/products/{product_id}/images/{image_id}")
+def delete_product_image_by_id(product_id: int, image_id: int, db: Session = Depends(get_db)):
+    """Delete a specific image from a product."""
+    img = db.query(ProductImage).filter(
+        ProductImage.id == image_id, ProductImage.product_id == product_id
+    ).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="تصویر یافت نشد")
+
+    # Delete file from disk
+    filename = img.image_url.split("/")[-1]
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+    was_primary = img.is_primary
+    db.delete(img)
+    db.flush()
+
+    # If deleted was primary, assign new primary
     product = db.query(Product).filter(Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    if was_primary and product:
+        new_primary = db.query(ProductImage).filter(
+            ProductImage.product_id == product_id
+        ).order_by(ProductImage.sort_order).first()
+        if new_primary:
+            new_primary.is_primary = True
+            product.image_url = new_primary.image_url
+        else:
+            product.image_url = None
 
-    if product.image_url:
-        filename = product.image_url.split("/")[-1]
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-
-    product.image_url = None
     try:
         db.commit()
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در حذف تصویر")
 
-    return {"message": "Image removed"}
+    return {
+        "message": "تصویر حذف شد",
+        "images": [
+            {"id": i.id, "image_url": i.image_url, "sort_order": i.sort_order, "is_primary": i.is_primary}
+            for i in db.query(ProductImage).filter(ProductImage.product_id == product_id).order_by(ProductImage.sort_order).all()
+        ],
+    }
+
+
+@router.put("/products/{product_id}/images/{image_id}/primary")
+def set_primary_image(product_id: int, image_id: int, db: Session = Depends(get_db)):
+    """Set an image as the primary (catalog display) image."""
+    img = db.query(ProductImage).filter(
+        ProductImage.id == image_id, ProductImage.product_id == product_id
+    ).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="تصویر یافت نشد")
+
+    # Unset all primaries for this product
+    db.query(ProductImage).filter(
+        ProductImage.product_id == product_id
+    ).update({"is_primary": False})
+
+    img.is_primary = True
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if product:
+        product.image_url = img.image_url
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="خطا در تنظیم تصویر اصلی")
+
+    return {
+        "message": "تصویر اصلی تنظیم شد",
+        "images": [
+            {"id": i.id, "image_url": i.image_url, "sort_order": i.sort_order, "is_primary": i.is_primary}
+            for i in db.query(ProductImage).filter(ProductImage.product_id == product_id).order_by(ProductImage.sort_order).all()
+        ],
+    }
+
+
+@router.put("/products/{product_id}/images/reorder")
+def reorder_images(product_id: int, body: dict, db: Session = Depends(get_db)):
+    """Reorder images. Body: { "order": [image_id, image_id, ...] }"""
+    order = body.get("order", [])
+    if not order:
+        raise HTTPException(status_code=400, detail="لیست ترتیب الزامی است")
+
+    images = db.query(ProductImage).filter(
+        ProductImage.product_id == product_id,
+        ProductImage.id.in_(order),
+    ).all()
+    img_map = {img.id: img for img in images}
+
+    for idx, img_id in enumerate(order):
+        if img_id in img_map:
+            img_map[img_id].sort_order = idx
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="خطا در مرتب‌سازی تصاویر")
+
+    return {
+        "message": "ترتیب به‌روز شد",
+        "images": [
+            {"id": i.id, "image_url": i.image_url, "sort_order": i.sort_order, "is_primary": i.is_primary}
+            for i in db.query(ProductImage).filter(ProductImage.product_id == product_id).order_by(ProductImage.sort_order).all()
+        ],
+    }
 
 
 # ── Stateless calculator ──────────────────────────────────────────────

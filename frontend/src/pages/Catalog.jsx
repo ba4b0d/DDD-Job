@@ -1,7 +1,55 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Search, Package, Clock, Weight, Layers, Store } from 'lucide-react';
-import { getProducts, getCategories } from '../lib/api';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, Package, Clock, Weight, Layers, Store, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
+
+function CatalogImageCarousel({ images }) {
+  const [current, setCurrent] = useState(0);
+  const sorted = useMemo(() => {
+    if (!images || images.length === 0) return [];
+    return [...images].sort((a, b) => {
+      if (a.is_primary && !b.is_primary) return -1;
+      if (!a.is_primary && b.is_primary) return 1;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+  }, [images]);
+
+  const next = useCallback(() => setCurrent(c => (c + 1) % sorted.length), [sorted.length]);
+  const prev = useCallback(() => setCurrent(c => (c - 1 + sorted.length) % sorted.length), [sorted.length]);
+
+  if (sorted.length === 0) return null;
+  if (sorted.length === 1) {
+    return (
+      <img src={sorted[0].image_url} alt="" className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+    );
+  }
+
+  return (
+    <div className="relative w-full h-52">
+      <img src={sorted[current].image_url} alt="" className="w-full h-52 object-cover" loading="lazy" />
+      {/* Nav arrows */}
+      <button onClick={(e) => { e.stopPropagation(); prev(); }}
+        className="absolute left-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+      >
+        <ChevronLeft size={14} />
+      </button>
+      <button onClick={(e) => { e.stopPropagation(); next(); }}
+        className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+      >
+        <ChevronRight size={14} />
+      </button>
+      {/* Dots */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+        {sorted.map((_, i) => (
+          <button key={i} onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+            className="w-1.5 h-1.5 rounded-full transition-all"
+            style={{ backgroundColor: i === current ? '#fff' : 'rgba(255,255,255,0.4)' }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Catalog() {
   const [products, setProducts] = useState([]);
@@ -17,13 +65,12 @@ export default function Catalog() {
     const load = async () => {
       try {
         const [pRes, cRes] = await Promise.all([
-          getProducts(null, { signal: controller.signal }),
-          getCategories({ signal: controller.signal }),
+          getCatalog(),
+          getCatalogCategories(),
         ]);
-        const pList = Array.isArray(pRes.data) ? pRes.data : pRes.data?.items || [];
-        const catsData = cRes.data || {};
-        const catsList = typeof catsData === 'object' && !Array.isArray(catsData)
-          ? Object.keys(catsData).map(k => ({ key: k, count: catsData[k] }))
+        const pList = Array.isArray(pRes.data) ? pRes.data : [];
+        const catsList = Array.isArray(cRes.data)
+          ? cRes.data.map(c => ({ key: c.name, count: null }))
           : [];
         setProducts(pList);
         setCategories(catsList);
@@ -147,7 +194,7 @@ export default function Catalog() {
                 border: '1px solid var(--border-color)',
               }}
             >
-              {cat.key} ({cat.count})
+              {cat.key}
             </button>
           ))}
         </div>
@@ -171,9 +218,11 @@ export default function Catalog() {
               key={product.id}
               className="group card overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
             >
-              {/* Image */}
+              {/* Image carousel */}
               <div className="relative overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
-                {product.image_url ? (
+                {product.images && product.images.length > 0 ? (
+                  <CatalogImageCarousel images={product.images} />
+                ) : product.image_url ? (
                   <img
                     src={product.image_url}
                     alt={product.name}

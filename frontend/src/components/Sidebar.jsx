@@ -16,10 +16,10 @@ export default function Sidebar({ onLinkClick }) {
   const { isAdmin } = useAuth();
 
   const navItems = [
-    { path: '/', label: 'داشبورد', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
     { path: '/products', label: 'محصولات', icon: Package },
-    { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
-    { path: '/catalog', label: 'کاتالوگ', icon: Store },
+    { path: '/categories', label: 'دستهبندیها', icon: Tags },
+    { path: '/', label: 'کاتالوگ', icon: Store },
     // Admin only
     ...(isAdmin ? [
       { path: '/materials', label: 'مواد', icon: Layers },

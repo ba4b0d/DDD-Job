@@ -28,7 +28,7 @@ export default function CatalogLayout({ children }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/"
+            <Link to="/login"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
             >

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, SessionLocal, Base
-from app.models import Settings, Machine, Material, Product, Category
+from app.models import Settings, Machine, Material, Product, Category, ProductImage
 from app.seed import seed_all
 from fastapi import HTTPException
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -46,6 +46,28 @@ async def lifespan(app: FastAPI):
             print("Database seeded with initial data.")
         else:
             print("Database already contains data, skipping seed.")
+
+        # Migration: create product_images table if not exists
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        if "product_images" not in inspector.get_table_names():
+            print("Creating product_images table...")
+            ProductImage.__table__.create(bind=engine)
+            # Migrate existing image_url data
+            products_with_images = db.query(Product).filter(Product.image_url != None, Product.image_url != "").all()
+            migrated = 0
+            for p in products_with_images:
+                img = ProductImage(
+                    product_id=p.id,
+                    image_url=p.image_url,
+                    sort_order=0,
+                    is_primary=True,
+                )
+                db.add(img)
+                migrated += 1
+            if migrated:
+                db.commit()
+                print(f"Migrated {migrated} existing product images to product_images table.")
 
         # Sync: import existing product category strings into categories table
         existing_cat_names = {c.name for c in db.query(Category.name).all()}

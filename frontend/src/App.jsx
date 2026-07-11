@@ -45,10 +45,10 @@ function AppRoutes() {
       <Routes>
         {/* Public */}
         <Route path="/login" element={<Login />} />
-        <Route path="/catalog" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+        <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
 
         {/* Protected admin+employee */}
-        <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
         <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
         <Route path="/products/:id" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />
         <Route path="/products/:id/edit" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />

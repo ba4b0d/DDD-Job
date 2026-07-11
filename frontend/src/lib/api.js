@@ -58,15 +58,22 @@ export const createProduct = (data) => api.post('/products', data);
 export const updateProduct = (id, data) => api.put(`/products/${id}`, data);
 export const deleteProduct = (id) => api.delete(`/products/${id}`);
 
-// ===== Product Images =====
-export const uploadProductImage = (productId, file) => {
+// ===== Product Images (multi) =====
+export const uploadProductImages = (productId, files) => {
   const formData = new FormData();
-  formData.append('file', file);
-  return api.post(`/products/${productId}/image`, formData, {
+  for (const file of files) {
+    formData.append('files', file);
+  }
+  return api.post(`/products/${productId}/images`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
-export const deleteProductImage = (productId) => api.delete(`/products/${productId}/image`);
+export const deleteProductImage = (productId, imageId) =>
+  api.delete(`/products/${productId}/images/${imageId}`);
+export const setPrimaryImage = (productId, imageId) =>
+  api.put(`/products/${productId}/images/${imageId}/primary`);
+export const reorderProductImages = (productId, order) =>
+  api.put(`/products/${productId}/images/reorder`, { order });
 
 // ===== Product Import / Export =====
 export const exportProducts = () => api.get('/products/export', { responseType: 'blob' });
