@@ -34,9 +34,10 @@ DDD Job is a full-stack web application for managing 3D printing products, mater
 
 ## Screenshots
 
-| Admin Dashboard | Product Catalog | Cost Calculator |
-|:---:|:---:|:---:|
-| *Statistics & management* | *Public product view* | *Real-time pricing* |
+| Dashboard | Products | Calculator | Catalog |
+|:---:|:---:|:---:|:---:|
+| ![Dashboard](screenshots/dashboard.png) | ![Products](screenshots/products.png) | ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) |
+| *Statistics & management* | *Product management with import/export* | *Real-time cost calculation* | *Public product catalog* |
 
 ---
 
