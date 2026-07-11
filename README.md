@@ -153,9 +153,9 @@ npm run dev
 
 **Default Credentials:**
 - Username: `admin`
-- Password: `3djat2024`
+- Password: `admin`
 
-> ⚠️ Change the default password immediately after first login!
+> ⚠️ **Forced password change on first login!** You must set a new password immediately after logging in.
 
 ---
 
@@ -260,7 +260,7 @@ npm test
 |----------|----------|---------|-------------|
 | `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
 | `ADMIN_USER` | No | `admin` | Default admin username |
-| `ADMIN_PASS` | No | `3djat2024` | Default admin password |
+| `ADMIN_PASS` | No | `admin` | Default admin password (forced change on first login) |
 
 ---
 
@@ -305,6 +305,7 @@ Calculate product costs with live updates:
 - ✅ Pydantic input validation
 - ✅ File upload size limits (10MB)
 - ✅ Role-based endpoint protection
+- ✅ Forced password change on first login
 - ✅ SQL injection prevention (SQLAlchemy ORM)
 
 ---
