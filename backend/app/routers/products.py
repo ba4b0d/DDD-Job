@@ -4,6 +4,7 @@ import uuid, os, shutil
 
 from app.database import get_db
 from app.models import Product, Machine, Material
+from app.repositories.products import ProductRepository
 from app.schemas import (
     ProductCreate, ProductUpdate, ProductResponse,
     CalculateRequest, CalculateResponse,
@@ -85,7 +86,8 @@ def _batch_load_related(db: Session):
 @router.get("/products/all", response_model=list[ProductResponse])
 def get_all_products(db: Session = Depends(get_db)):
     """Return ALL products including inactive, with computed costs."""
-    products = db.query(Product).all()
+    repo = ProductRepository(db)
+    products = repo.get_all(active_only=False)
     machines_dict, materials_dict = _batch_load_related(db)
     return [_enrich_product(p, db, machines_dict, materials_dict) for p in products]
 
@@ -93,7 +95,8 @@ def get_all_products(db: Session = Depends(get_db)):
 @router.get("/products", response_model=list[ProductResponse])
 def get_active_products(db: Session = Depends(get_db)):
     """Return only active products with computed costs."""
-    products = db.query(Product).filter(Product.is_active == True).all()
+    repo = ProductRepository(db)
+    products = repo.get_all(active_only=True)
     machines_dict, materials_dict = _batch_load_related(db)
     return [_enrich_product(p, db, machines_dict, materials_dict) for p in products]
 
@@ -112,7 +115,8 @@ def get_categories(db: Session = Depends(get_db)):
 @router.get("/products/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     """Return single product with computed costs."""
-    product = db.query(Product).filter(Product.id == product_id).first()
+    repo = ProductRepository(db)
+    product = repo.get_by_id(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return _enrich_product(product, db)
@@ -120,46 +124,31 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 @router.post("/products", response_model=ProductResponse, status_code=201)
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
-    new_prod = Product(**product.model_dump())
-    db.add(new_prod)
+    repo = ProductRepository(db)
     try:
-        db.commit()
+        new_prod = repo.create(product.model_dump())
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ایجاد محصول")
-    db.refresh(new_prod)
     invalidate_stats()
     return _enrich_product(new_prod, db)
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
 def update_product(product_id: int, product: ProductUpdate, db: Session = Depends(get_db)):
-    existing = db.query(Product).filter(Product.id == product_id).first()
-    if not existing:
+    repo = ProductRepository(db)
+    updated = repo.update(product_id, product.model_dump(exclude_unset=True))
+    if not updated:
         raise HTTPException(status_code=404, detail="Product not found")
-    for field, value in product.model_dump(exclude_unset=True).items():
-        setattr(existing, field, value)
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="خطا در به‌روزرسانی محصول")
-    db.refresh(existing)
     invalidate_stats()
-    return _enrich_product(existing, db)
+    return _enrich_product(updated, db)
 
 
 @router.delete("/products/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db)):
-    existing = db.query(Product).filter(Product.id == product_id).first()
-    if not existing:
+    repo = ProductRepository(db)
+    if not repo.delete(product_id):
         raise HTTPException(status_code=404, detail="Product not found")
-    existing.is_active = False
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="خطا در حذف محصول")
     invalidate_stats()
     return {"message": "Product deactivated", "id": product_id}
 

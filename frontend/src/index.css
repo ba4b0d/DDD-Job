@@ -331,6 +331,18 @@ body {
 .stagger-4 { animation-delay: 0.2s; }
 .stagger-5 { animation-delay: 0.25s; }
 
+/* ===== SKELETON LOADING ===== */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.skeleton-pulse {
+  animation: skeletonPulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: var(--bg-tertiary);
+  border-radius: 0.5rem;
+}
+
 /* ===== PRINT STYLES ===== */
 @media print {
   .no-print {

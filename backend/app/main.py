@@ -14,7 +14,10 @@ from fastapi.staticfiles import StaticFiles
 from app.database import engine, SessionLocal, Base
 from app.models import Settings, Machine, Material, Product, Category
 from app.seed import seed_all
-from app.routers.auth import require_any_role
+from fastapi import HTTPException
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.routers.auth import require_any_role, limiter
 
 from app.routers.settings import router as settings_router
 from app.routers.materials import router as materials_router
@@ -72,6 +75,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS (explicit origins) ─────────────────────────────────────────
 app.add_middleware(

@@ -51,9 +51,13 @@ export function getInputStyle(fieldName, touched, errors) {
 
 /** Debounce delay for real-time calculation (ms). */
 export const DEBOUNCE_DELAY_CALC = 300;
+/** Debounce delay for real-time calculation (ms) — canonical name. */
+export const DEBOUNCE_DELAY = 300;
 
 /** Debounce delay for heavier calculation (ms). */
 export const DEBOUNCE_DELAY_FORM_CALC = 500;
+/** Debounce delay for heavier calculation (ms) — canonical name. */
+export const LONG_DEBOUNCE_DELAY = 500;
 
 /** Duration to show "saved" feedback (ms). */
 export const SAVED_FEEDBACK_DELAY = 2000;
@@ -67,10 +71,15 @@ export const Z_INDEX_STICKY = 20;
 export const Z_INDEX_OVERLAY = 30;
 
 /** z-index for sidebar on mobile. */
-export const Z_INDEX_SIDEBAR = 40;
+export const Z_INDEX_SIDEBAR = 50;
 
 /** z-index for modal backdrops (Tailwind z-50 equivalent). */
-export const Z_INDEX_MODAL = 50;
+export const Z_INDEX_MODAL = 9999;
 
 /** z-index for portal-rendered modals (highest). */
 export const Z_INDEX_MODAL_PORTAL = 9999;
+
+// ─── Validation Limits ─────────────────────────────────────────────────────
+
+/** Maximum upload file size in MB. */
+export const MAX_FILE_SIZE_MB = 10;

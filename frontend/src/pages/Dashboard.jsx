@@ -48,9 +48,28 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          در حال بارگذاری...
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          داشبورد
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card p-4 flex items-center gap-4">
+              <div className="skeleton-pulse w-12 h-12 rounded-xl shrink-0" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="skeleton-pulse h-3 w-20 rounded" />
+                <div className="skeleton-pulse h-5 w-16 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card overflow-hidden">
+          <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="skeleton-pulse h-4 w-28 rounded" />
+          </div>
+          <div className="p-8 text-center">
+            <div className="skeleton-pulse h-4 w-48 mx-auto rounded" />
+          </div>
         </div>
       </div>
     );

@@ -207,6 +207,7 @@ export default function Products() {
                     src={product.image_url}
                     alt={product.name}
                     className="w-full h-32 object-cover"
+                    loading="lazy"
                   />
                 </div>
               )}

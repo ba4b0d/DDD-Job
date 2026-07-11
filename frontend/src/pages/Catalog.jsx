@@ -178,6 +178,7 @@ export default function Catalog() {
                     src={product.image_url}
                     alt={product.name}
                     className="w-full h-52 object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-52 flex flex-col items-center justify-center gap-1.5">

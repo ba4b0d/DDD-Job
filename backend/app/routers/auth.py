@@ -8,21 +8,25 @@ import time
 import bcrypt
 import jwt
 from pydantic import BaseModel, Field, field_validator
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.database import get_db, SessionLocal
 from app.models import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+limiter = Limiter(key_func=get_remote_address)
 
 # ── Config ─────────────────────────────────────────────────────────
 _jwt_secret = os.getenv("JWT_SECRET")
 if not _jwt_secret:
     raise RuntimeError("JWT_SECRET environment variable is required but not set")
 JWT_SECRET = _jwt_secret
-TOKEN_EXPIRY_HOURS = 24 * 7
+TOKEN_EXPIRY_HOURS = 24  # 24-hour access tokens
+REFRESH_WINDOW_HOURS = 1  # allow refresh within 1 hour of expiry
 
 security = HTTPBearer(auto_error=False)
 
@@ -130,7 +134,8 @@ def _ensure_default_admin(db: Session):
 
 # ── Auth endpoints ─────────────────────────────────────────────────
 @router.post("/login")
-def login(body: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
     _ensure_default_admin(db)
 
     user = db.query(User).filter(User.username == body.username, User.is_active == True).first()
@@ -152,6 +157,28 @@ def verify(credentials: HTTPAuthorizationCredentials = Depends(security)):
         raise HTTPException(status_code=401, detail="Not authenticated")
     payload = verify_token(credentials.credentials)
     return {"username": payload.get("username"), "role": payload.get("role"), "valid": True}
+@router.post("/refresh")
+def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Issue a new token if the current one is valid and within REFRESH_WINDOW_HOURS of expiry."""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = verify_token(credentials.credentials)
+
+    exp = payload.get("exp", 0)
+    now = int(time.time())
+    hours_left = (exp - now) / 3600
+
+    if hours_left <= 0:
+        raise HTTPException(status_code=401, detail="Token expired")
+    if hours_left > REFRESH_WINDOW_HOURS:
+        raise HTTPException(status_code=400, detail=f"Token cannot be refreshed yet ({hours_left:.1f}h remaining, must be within {REFRESH_WINDOW_HOURS}h of expiry)")
+
+    new_token = create_token(
+        int(payload["sub"]),
+        payload["username"],
+        payload["role"],
+    )
+    return {"token": new_token, "username": payload["username"], "role": payload["role"]}
 
 
 # ── User CRUD (admin only) ────────────────────────────────────────
