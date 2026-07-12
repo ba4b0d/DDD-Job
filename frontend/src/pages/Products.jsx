@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload } from 'lucide-react';
-import { getProducts, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts } from '../lib/api';
+import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff } from 'lucide-react';
+import { getProducts, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -124,6 +124,16 @@ export default function Products() {
     // Modal closes in ProductForm.handleSubmit after full flow completes
     await loadProducts();
     return res.data;
+  };
+
+  const handleToggleCatalog = async (e, product) => {
+    e.stopPropagation();
+    try {
+      await updateProduct(product.id, { is_active: !product.is_active });
+      await loadProducts();
+    } catch (err) {
+      console.error('Toggle catalog error:', err);
+    }
   };
 
   const handleExport = async () => {
@@ -284,9 +294,22 @@ export default function Products() {
                 <h3 className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
                   {product.name}
                 </h3>
-                {product.category && (
-                  <span className="badge badge-accent shrink-0">{product.category}</span>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {product.category && (
+                    <span className="badge badge-accent">{product.category}</span>
+                  )}
+                  <button
+                    onClick={(e) => handleToggleCatalog(e, product)}
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: product.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                      color: product.is_active ? '#22c55e' : '#ef4444',
+                    }}
+                    title={product.is_active ? 'نمایش در کاتالوگ' : 'مخفی از کاتالوگ'}
+                  >
+                    {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                </div>
               </div>
               {product.product_id && (
                 <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{product.product_id}</p>

@@ -159,7 +159,7 @@ npm run dev
 
 **Default Credentials:**
 - Username: `admin`
-- Password: `3djat2024`
+- Password: `admin`
 
 > ⚠️ **Forced password change on first login!** You must set a new password immediately after logging in.
 
