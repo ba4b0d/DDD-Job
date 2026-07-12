@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, X, Check, Zap } from 'lucide-react'
 import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine } from '../lib/api'
 import Modal from '../components/Modal'
@@ -10,13 +10,9 @@ function validateMachineField(name, value) {
 }
 
 export default function Machines() {
-  const [machines, setMachines] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [editItem, setEditItem] = useState(null)
   const [form, setForm] = useState({ name: '', power_watts: '', purchase_price: '', life_hours: '', maintenance_pct: '0.05' })
-  const [settings, setSettings] = useState({})
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [submitError, setSubmitError] = useState(null)
@@ -90,6 +86,9 @@ export default function Machines() {
       life_hours: parseFloat(form.life_hours),
       maintenance_pct: parseFloat(form.maintenance_pct),
     }
+    if (Object.values(data).some((v) => Number.isNaN(v))) {
+      setSubmitError('مقدار عددی معتبر وارد کنید'); return
+    }
     try {
       if (editItem) {
         await updateMachine(editItem.id, data)
@@ -97,7 +96,7 @@ export default function Machines() {
         await createMachine(data)
       }
       setShowModal(false)
-      load()
+      reload()
     } catch (e) {
       console.error('Failed to save machine:', e)
       const msg = e?.response?.data?.detail || e?.message || 'خطا در ذخیره‌سازی'
@@ -109,14 +108,14 @@ export default function Machines() {
     if (!confirm(`"${m.name}" حذف شود؟`)) return
     try {
       await deleteMachine(m.id)
-      load()
+      reload()
     } catch (e) { console.error('Failed to delete machine:', e) }
   }
 
   async function toggleActive(m) {
     try {
       await updateMachine(m.id, { is_active: !m.is_active })
-      load()
+      reload()
     } catch (e) { console.error('Failed to toggle active:', e) }
   }
 
