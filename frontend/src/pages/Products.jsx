@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff } from 'lucide-react';
-import { getProductsAll, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
+import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -45,15 +45,18 @@ export default function Products() {
           getProductsAll({ signal: controller.signal }),
           getMaterialsAll({ signal: controller.signal }),
           getMachinesAll({ signal: controller.signal }),
-          getCategories({ signal: controller.signal }),
+          getCategoriesList({ signal: controller.signal }),
         ]);
         const pList = Array.isArray(pRes.data)
           ? pRes.data
           : pRes.data?.items || pRes.data?.products || [];
-        const catsData = cRes.data || {};
-        const catsList = typeof catsData === 'object' && !Array.isArray(catsData)
-          ? Object.keys(catsData)
-          : catsData;
+        // /categories returns [{id, name, description, product_count, sort_order}]
+        const catsData = cRes.data || [];
+        const catsList = Array.isArray(catsData)
+          ? catsData.map((c) => c.name)
+          : typeof catsData === 'object' && catsData !== null
+            ? Object.keys(catsData)
+            : [];
         setProducts(pList);
         setMaterials(mRes.data || []);
         setMachines(machRes.data || []);

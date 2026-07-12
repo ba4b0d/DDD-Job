@@ -85,9 +85,6 @@ export const importProducts = (file) => {
   });
 };
 
-// ===== Categories =====
-export const getCategories = (config) => api.get('/products/categories', config);
-
 // ===== Calculator =====
 export const calculate = (data) => api.post('/calculate', data);
 

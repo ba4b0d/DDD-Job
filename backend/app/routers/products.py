@@ -108,17 +108,6 @@ def get_active_products(db: Session = Depends(get_db)):
     return [_enrich_product(p, db, machines_dict, materials_dict) for p in products]
 
 
-@router.get("/products/categories")
-def get_categories(db: Session = Depends(get_db)):
-    """Return distinct product categories with counts."""
-    products = db.query(Product).filter(Product.is_active == True).all()
-    cats: dict[str, int] = {}
-    for p in products:
-        cat = p.category or "uncategorized"
-        cats[cat] = cats.get(cat, 0) + 1
-    return cats
-
-
 # ── Import / Export ─────────────────────────────────────────────────
 
 EXPORT_COLUMNS = [
