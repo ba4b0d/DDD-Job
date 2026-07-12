@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, X, Loader2 } from 'lucide-react';
+import { Save, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { getMaterialsAll, getMachinesAll, getCategoriesList, uploadProductImages, deleteProductImage, setPrimaryImage } from '../lib/api';
 import CostBreakdown from './CostBreakdown';
 import FormField from './FormField';
@@ -36,6 +36,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitError, setSubmitError] = useState(null);
+  const [costPreviewOpen, setCostPreviewOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: '', product_id: '', category: '', material_id: '', machine_id: '',
@@ -191,9 +192,23 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
       )}
 
       {calcResult && !calculating && (
-        <div className="card p-4">
-          <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>پیش‌نمایش هزینه</h4>
-          <CostBreakdown result={calcResult} compact />
+        <div className="card overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setCostPreviewOpen((v) => !v)}
+            className="w-full flex items-center justify-between p-3 text-sm font-semibold transition-colors"
+            style={{ color: 'var(--text-primary)' }}
+            aria-expanded={costPreviewOpen}
+            aria-controls="cost-preview-body"
+          >
+            <span>پیش‌نمایش هزینه</span>
+            {costPreviewOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+          {costPreviewOpen && (
+            <div id="cost-preview-body" className="px-4 pb-4 pt-1 border-t" style={{ borderColor: 'var(--border-color)' }}>
+              <CostBreakdown result={calcResult} compact />
+            </div>
+          )}
         </div>
       )}
 
