@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import Settings, Machine, Material, Product
+from app.models import Settings, Machine, Material
 from app.cache import get_settings_dict
 
 # Default values used when a setting is missing from the DB

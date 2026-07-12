@@ -7,6 +7,9 @@ venv/
 *.egg-info/
 dist/
 build/
+debug*.py
+=*.9
+.pytest_cache/
 
 # Environment
 .env
