@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff } from 'lucide-react';
-import { getProducts, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
+import { getProductsAll, getMaterialsAll, getMachinesAll, getCategories, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -27,7 +27,7 @@ export default function Products() {
 
   const loadProducts = async () => {
     try {
-      const pRes = await getProducts();
+      const pRes = await getProductsAll();
       const pList = Array.isArray(pRes.data)
         ? pRes.data
         : pRes.data?.items || pRes.data?.products || [];
@@ -42,7 +42,7 @@ export default function Products() {
     const load = async () => {
       try {
         const [pRes, mRes, machRes, cRes] = await Promise.all([
-          getProducts(null, { signal: controller.signal }),
+          getProductsAll({ signal: controller.signal }),
           getMaterialsAll({ signal: controller.signal }),
           getMachinesAll({ signal: controller.signal }),
           getCategories({ signal: controller.signal }),
