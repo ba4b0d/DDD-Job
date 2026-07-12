@@ -3,23 +3,10 @@ import { Calculator as CalcIcon, Save, RotateCcw } from 'lucide-react'
 import { getMaterials, getMachines, calculate } from '../lib/api'
 import CostBreakdown from '../components/CostBreakdown'
 import { formatPrice, ERROR_STYLE, getInputStyle, DEBOUNCE_DELAY_CALC } from '../lib/constants'
+import { validateField } from '../lib/validation'
+
 function validateCalcField(name, value) {
-  switch (name) {
-    case 'material_id':
-      if (!value) return 'لطفاً ماده را انتخاب کنید'
-      return ''
-    case 'machine_id':
-      if (!value) return 'لطفاً ماشین را انتخاب کنید'
-      return ''
-    case 'weight_g':
-      if (!value || parseFloat(value) <= 0) return 'وزن باید بزرگتر از صفر باشد'
-      return ''
-    case 'print_time_minutes':
-      if (!value || parseFloat(value) <= 0) return 'زمان چاپ باید بزرگتر از صفر باشد'
-      return ''
-    default:
-      return ''
-  }
+  return validateField('calculate', name, value)
 }
 
 export default function Calculator() {

@@ -1,0 +1,17 @@
+# Development / test dependencies for the 3DJAT Pricing backend.
+# Install with:  pip install -r requirements-dev.txt
+# These are kept separate from requirements.txt so production deploys
+# don't need pytest, httpx, or coverage tooling.
+
+# Test runner
+pytest>=7.4.0
+
+# HTTPX is required by fastapi.testclient (sync TestClient).
+# We pin a version compatible with FastAPI 0.104.x / Starlette 0.27.x.
+httpx>=0.25.0,<0.29.0
+
+# Coverage reporting — optional but useful for CI.
+pytest-cov>=4.1.0
+
+# Nice-to-have: faster test collection, better diffs.
+pytest-xdist>=3.5.0

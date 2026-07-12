@@ -3,22 +3,10 @@ import { Plus, Pencil, Trash2, X, Check, Zap } from 'lucide-react'
 import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, ERROR_STYLE, getInputStyle } from '../lib/constants'
+import { validateField } from '../lib/validation'
+
 function validateMachineField(name, value) {
-  switch (name) {
-    case 'name':
-      if (!value || !value.trim()) return 'نام ماشین نمی‌تواند خالی باشد'
-      return ''
-    case 'power_watts':
-      if (value === '' || value === null || value === undefined) return 'توان را وارد کنید'
-      if (parseFloat(value) <= 0) return 'توان باید بزرگتر از صفر باشد'
-      return ''
-    case 'purchase_price':
-      if (value === '' || value === null || value === undefined) return 'قیمت خرید را وارد کنید'
-      if (parseFloat(value) < 0) return 'قیمت نمی‌تواند منفی باشد'
-      return ''
-    default:
-      return ''
-  }
+  return validateField('machine', name, value)
 }
 
 export default function Machines() {

@@ -3,6 +3,11 @@ import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
 import { getMaterialsAll, createMaterial, updateMaterial, deleteMaterial } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, ERROR_STYLE, getInputStyle } from '../lib/constants'
+import { validateField } from '../lib/validation'
+
+function validateMaterialField(name, value) {
+  return validateField('material', name, value)
+}
 const colorMap = {
   black: '#1a1a1a', Black: '#1a1a1a', white: '#ffffff', White: '#ffffff',
   red: '#ef4444', Red: '#ef4444', orange: '#f97316', gray: '#9ca3af',
@@ -10,20 +15,6 @@ const colorMap = {
   'gold blue coper': '#d4a574', 'gold silver red': '#c0a080', walnut: '#5c4033',
   'dark mahaguni': '#4a0e0e', blue: '#3b82f6', 'lavander purple': '#b39ddb',
   transparent: '#e0e0e0', 'TRANSPARENT': '#e0e0e0',
-}
-
-function validateMaterialField(name, value) {
-  switch (name) {
-    case 'name':
-      if (!value || !value.trim()) return 'نام ماده نمی‌تواند خالی باشد'
-      return ''
-    case 'price_per_kg':
-      if (value === '' || value === null || value === undefined) return 'قیمت را وارد کنید'
-      if (parseFloat(value) < 0) return 'قیمت نمی‌تواند منفی باشد'
-      return ''
-    default:
-      return ''
-  }
 }
 
 export default function Materials() {

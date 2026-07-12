@@ -6,34 +6,17 @@ import FormField from './FormField';
 import MultiImageUpload from './MultiImageUpload';
 import useProductCalculation from '../hooks/useProductCalculation';
 import { useNavigate } from 'react-router-dom';
+import { validateField } from '../lib/validation';
 
-function validateField(name, value) {
-  switch (name) {
-    case 'name':
-      if (!value || value.trim().length < 2) return 'نام محصول باید حداقل ۲ کاراکتر باشد';
-      return '';
-    case 'material_id':
-      if (!value) return 'لطفاً ماده را انتخاب کنید';
-      return '';
-    case 'machine_id':
-      if (!value) return 'لطفاً ماشین را انتخاب کنید';
-      return '';
-    case 'weight_g':
-      if (!value || parseFloat(value) <= 0) return 'وزن باید بزرگتر از صفر باشد';
-      return '';
-    case 'print_time_minutes':
-      if (!value || parseFloat(value) <= 0) return 'زمان چاپ باید بزرگتر از صفر باشد';
-      return '';
-    default:
-      return '';
-  }
+function validateFieldProduct(name, value) {
+  return validateField('product', name, value);
 }
 
 function validateAll(form) {
   const errors = {};
   const requiredFields = ['name', 'material_id', 'machine_id', 'weight_g', 'print_time_minutes'];
   for (const field of requiredFields) {
-    const err = validateField(field, form[field]);
+    const err = validateFieldProduct(field, form[field]);
     if (err) errors[field] = err;
   }
   return errors;
@@ -81,14 +64,14 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     if (touched[name]) {
-      setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+      setErrors((prev) => ({ ...prev, [name]: validateField('product', name, value) }));
     }
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setErrors((prev) => ({ ...prev, [name]: validateField('product', name, value) }));
   };
 
   const handleImageAction = async (action) => {
