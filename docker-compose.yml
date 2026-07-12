@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-      - JWT_SECRET=change-me-in-production
+      - JWT_SECRET=${JWT_SECRET:?change-me-in-production}
 
   frontend:
     build:

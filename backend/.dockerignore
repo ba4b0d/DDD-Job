@@ -1,0 +1,10 @@
+.git
+data/
+tests/
+__pycache__
+*.db
+.venv/
+*.env
+.pytest_cache/
+*.log
+README.md

@@ -7,11 +7,11 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://192.168.100.9:8000',
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true
       },
       '/uploads': {
-        target: 'http://192.168.100.9:8000',
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true
       }
     }

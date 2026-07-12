@@ -292,7 +292,7 @@ export default function ProductDetail() {
                     </span>
                   )}
                   <button
-                    onClick={() => handleImageDelete(currentImage.id)}
+                    onClick={() => { if (!confirm('تصویر حذف شود؟')) return; handleImageDelete(currentImage.id); }}
                     disabled={imageUploading}
                     className="p-1.5 rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-colors"
                     title="حذف تصویر"
