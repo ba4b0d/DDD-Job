@@ -15,6 +15,7 @@ debug*.py
 .env
 .env.local
 .env.production
+!.env.example
 
 # Database
 data/*.db
