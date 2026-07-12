@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, X, Check, Zap } from 'lucide-react'
 import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine } from '../lib/api'
 import Modal from '../components/Modal'
-import { formatPrice, ERROR_STYLE, getInputStyle } from '../lib/constants'
+import { formatPrice, formatNumber, ERROR_STYLE, getInputStyle } from '../lib/constants'
 import { validateField } from '../lib/validation'
-
+import useApiWithAbort from '../hooks/useApiWithAbort'
 function validateMachineField(name, value) {
   return validateField('machine', name, value)
 }
@@ -21,30 +21,13 @@ export default function Machines() {
   const [touched, setTouched] = useState({})
   const [submitError, setSubmitError] = useState(null)
 
-  const load = useCallback(async (signal) => {
-    try {
-      const [mRes, sRes] = await Promise.all([
-        getMachinesAll({ signal }),
-        getSettings({ signal }),
-      ])
-      setMachines(mRes.data)
-      setSettings(sRes.data)
-      setError(null)
-    } catch (e) {
-      if (e?.name !== 'CanceledError' && e?.code !== 'ERR_CANCELED') {
-        console.error('Failed to load machines:', e)
-        setError('خطا در بارگذاری اطلاعات')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    load(controller.signal)
-    return () => controller.abort()
-  }, [load])
+  const fetcher = useCallback(({ signal } = {}) => Promise.all([
+    getMachinesAll({ signal }),
+    getSettings({ signal }),
+  ]).then(([mRes, sRes]) => ({ machines: mRes.data, settings: sRes.data })), []);
+  const { data, loading, error, reload } = useApiWithAbort(fetcher, []);
+  const machines = data?.machines || [];
+  const settings = data?.settings || {};
 
   function openAdd() {
     setEditItem(null)
@@ -179,7 +162,7 @@ export default function Machines() {
               </div>
               <div className="flex justify-between">
                 <span>عمر مفید:</span>
-                <span style={{color:'var(--text-primary)'}}>{formatPrice(m.life_hours)} ساعت</span>
+                <span style={{color:'var(--text-primary)'}}>{formatNumber(m.life_hours)} ساعت</span>
               </div>
               <div className="flex justify-between">
                 <span>تعمیرات:</span>
