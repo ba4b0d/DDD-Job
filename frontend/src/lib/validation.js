@@ -57,12 +57,12 @@ const SCHEMAS = {
     material_id: {
       required: true,
       requireTruthy: true,
-      validate: () => 'لطفاً ماده را انتخاب کنید',
+      validate: (v) => !v ? 'لطفاً ماده را انتخاب کنید' : '',
     },
     machine_id: {
       required: true,
       requireTruthy: true,
-      validate: () => 'لطفاً ماشین را انتخاب کنید',
+      validate: (v) => !v ? 'لطفاً ماشین را انتخاب کنید' : '',
     },
     weight_g: {
       required: true,
@@ -90,12 +90,12 @@ const SCHEMAS = {
     material_id: {
       required: true,
       requireTruthy: true,
-      validate: () => 'لطفاً ماده را انتخاب کنید',
+      validate: (v) => !v ? 'لطفاً ماده را انتخاب کنید' : '',
     },
     machine_id: {
       required: true,
       requireTruthy: true,
-      validate: () => 'لطفاً ماشین را انتخاب کنید',
+      validate: (v) => !v ? 'لطفاً ماشین را انتخاب کنید' : '',
     },
     weight_g: {
       required: true,
