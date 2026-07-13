@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 def get_all_settings(db: Session = Depends(get_db)):
     """Return all settings as a flat key-value dict."""
     settings = db.query(Settings).all()
-    return {s.key: {"value": s.value, "description": s.description, "id": s.id} for s in settings}
+    return {s.key: {"value": s.value, "description": s.description, "id": s.id, "string_value": s.string_value or ""} for s in settings}
 
 
 @router.put("")
@@ -24,11 +24,14 @@ def update_settings(payload: SettingsBulkUpdate, db: Session = Depends(get_db)):
         setting = db.query(Settings).filter(Settings.key == item.key).first()
         if setting:
             setting.value = item.value
+            if hasattr(item, 'string_value') and item.string_value is not None:
+                setting.string_value = item.string_value
             if item.description is not None:
                 setting.description = item.description
             updated.append(setting.key)
         else:
-            new_setting = Settings(key=item.key, value=item.value, description=item.description or "")
+            sv = getattr(item, 'string_value', None) or ""
+            new_setting = Settings(key=item.key, value=item.value, string_value=sv, description=item.description or "")
             db.add(new_setting)
             updated.append(item.key)
     db.commit()

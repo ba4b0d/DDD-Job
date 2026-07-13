@@ -24,18 +24,22 @@ export default function Settings() {
     setLoading(false)
   }
 
-  function handleChange(key, value) {
+  function handleChange(key, value, isString = false) {
     setSettings(prev => ({
       ...prev,
-      [key]: { ...prev[key], value: parseFloat(value) || 0 }
+      [key]: { ...prev[key], [isString ? 'string_value' : 'value']: isString ? value : (parseFloat(value) || 0) }
     }))
   }
 
   async function handleSave() {
     setSaving(true)
-    const updates = {}
+    const updates = { settings: [] }
     for (const [key, val] of Object.entries(settings)) {
-      updates[key] = val.value
+      updates.settings.push({
+        key,
+        value: val.value ?? 0,
+        string_value: val.string_value ?? '',
+      })
     }
     try {
       await updateSettings(updates)
@@ -53,9 +57,11 @@ export default function Settings() {
 
   const fields = [
     { key: 'electricity_rate_per_kwh', label: 'تعرفه برق (تومان/کیلووات)', icon: '⚡' },
-    { key: 'default_markup_pct', label: 'ضریب قیمت‌گذاری', icon: '💰', hint: '۳ = سه برابر هزینه پایه' },
+    { key: 'default_markup_pct', label: 'ضریب قیمتگذاری', icon: '💰', hint: '۳ = سه برابر هزینه پایه' },
     { key: 'overhead_fixed_per_job', label: 'هزینه سربار ثابت هر سفارش', icon: '📋' },
-    { key: 'coloring_cost_per_hour', label: 'هزینه رنگ‌آمیزی (تومان/ساعت)', icon: '🎨' },
+    { key: 'coloring_cost_per_hour', label: 'هزینه رنگآمیزی (تومان/ساعت)', icon: '🎨' },
+    { key: 'favicon_url', label: 'آدرس فاوآیکون', icon: '🌐', type: 'url', stringField: true, hint: 'مثلاً: /favicon.ico یا https://example.com/icon.png' },
+    { key: 'logo_url', label: 'آدرس لوگو', icon: '🖼️', type: 'url', stringField: true, hint: 'مثلاً: /logo.png یا https://example.com/logo.png' },
   ]
 
   return (
@@ -80,10 +86,10 @@ export default function Settings() {
               </div>
             </div>
             <input
-              type="number"
-              step="any"
-              value={settings[f.key]?.value ?? ''}
-              onChange={e => handleChange(f.key, e.target.value)}
+              type={f.type || 'number'}
+              step={f.type === 'url' ? undefined : 'any'}
+              value={f.stringField ? (settings[f.key]?.string_value ?? '') : (settings[f.key]?.value ?? '')}
+              onChange={e => handleChange(f.key, e.target.value, f.stringField)}
               className="w-full px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors"
               style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
             />

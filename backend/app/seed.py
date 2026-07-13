@@ -29,11 +29,13 @@ def seed_all(db: Session):
         ("overhead_pct_on_material", 0, "Overhead percentage on material cost"),
         ("overhead_rate_per_100g", 0, "Overhead rate per 100g in IRR"),
         ("coloring_cost_per_hour", 150000, "Coloring/post-processing cost per hour in IRR"),
+        ("favicon_url", 0, "URL of the favicon image (string)"),
+        ("logo_url", 0, "URL of the brand logo image (string)"),
     ]
     for key, value, desc in settings_data:
         existing = db.query(Settings).filter(Settings.key == key).first()
         if not existing:
-            db.add(Settings(key=key, value=value, description=desc))
+            db.add(Settings(key=key, value=value, description=desc, string_value=""))
 
     # ═══════════════════════════════════════════════════════════════════
     # MACHINES

@@ -10,6 +10,7 @@ class Settings(Base):
     id = Column(Integer, primary_key=True, index=True)
     key = Column(String, unique=True, nullable=False, index=True)
     value = Column(Float, nullable=False, default=0.0)
+    string_value = Column(String, default="")
     description = Column(String, default="")
 
 

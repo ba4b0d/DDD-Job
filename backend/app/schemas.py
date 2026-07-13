@@ -8,6 +8,7 @@ class SettingsUpdate(BaseModel):
     key: str
     value: float
     description: Optional[str] = None
+    string_value: Optional[str] = None
 
 
 class SettingsBulkUpdate(BaseModel):
