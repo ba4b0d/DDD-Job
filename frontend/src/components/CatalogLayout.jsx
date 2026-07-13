@@ -3,6 +3,8 @@ import { Sun, Moon, Store, Shield } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import { Z_INDEX_STICKY } from '../lib/constants';
 
+import BrandLogo from './BrandLogo';
+
 export default function CatalogLayout({ children }) {
   const { toggleTheme, isDark } = useTheme();
 
@@ -18,15 +20,17 @@ export default function CatalogLayout({ children }) {
         }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3">
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: 'var(--accent)' }}>
-              <Store size={16} className="text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
-              <p className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>کاتالوگ محصولات</p>
-            </div>
-          </div>
+                  <BrandLogo height={28}>
+                    <div className="flex items-center gap-2 sm:gap-2.5">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: 'var(--accent)' }}>
+                        <Store size={16} className="text-white" />
+                      </div>
+                      <div>
+                        <h1 className="font-bold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
+                        <p className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>کاتالوگ محصولات</p>
+                      </div>
+                    </div>
+                  </BrandLogo>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link to="/login"
               className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"

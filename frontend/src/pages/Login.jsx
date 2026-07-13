@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, Store } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../lib/auth';
 
 export default function Login() {
@@ -31,15 +32,19 @@ export default function Login() {
       style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-3 sm:mb-4"
-            style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
-            <Store size={28} className="text-white sm:hidden" />
-            <Store size={32} className="text-white hidden sm:block" />
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
-          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>پنل مدیریت</p>
-        </div>
+                <div className="text-center mb-6 sm:mb-8">
+                  <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
+                    <BrandLogo height={64}>
+                      <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl"
+                        style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
+                        <Store size={28} className="text-white sm:hidden" />
+                        <Store size={32} className="text-white hidden sm:block" />
+                      </div>
+                    </BrandLogo>
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
+                  <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>پنل مدیریت</p>
+                </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="card p-5 sm:p-6 space-y-4">
