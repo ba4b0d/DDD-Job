@@ -35,6 +35,13 @@ api.interceptors.response.use(
 // ===== Settings =====
 export const getSettings = (config) => api.get('/settings', config);
 export const updateSettings = (data) => api.put('/settings', data);
+export const uploadBranding = (key, file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post(`/settings/upload/${key}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 
 // ===== Materials =====
 export const getMaterials = (params, config) => api.get('/materials', { params, ...config });
