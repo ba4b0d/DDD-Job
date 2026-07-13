@@ -161,7 +161,7 @@ export default function Catalog() {
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>کاتالوگ محصولات</h2>
         <p className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
-          محصولات چاپ سهبعدی DDD Job را مرور کنید
+          محصولات چاپ سهبعدی Spaghetti را مرور کنید
         </p>
       </div>
 

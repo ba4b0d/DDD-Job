@@ -39,7 +39,7 @@ export default function Sidebar({ onLinkClick }) {
           3D
         </div>
         <div>
-          <h2 className="text-white font-bold text-base leading-tight">DDD Job</h2>
+          <h2 className="text-white font-bold text-base leading-tight">Spaghetti</h2>
           <p className="text-xs" style={{ color: 'var(--text-sidebar)' }}>قیمت‌گذاری چاپ سه‌بعدی</p>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function Sidebar({ onLinkClick }) {
       {/* Footer */}
       <div className="px-5 py-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
         <p className="text-xs text-center" style={{ color: 'var(--text-sidebar)' }}>
-          © DDD Job — سیستم قیمت‌گذاری
+          © Spaghetti — سیستم قیمت‌گذاری
         </p>
       </div>
     </nav>

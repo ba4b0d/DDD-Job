@@ -23,7 +23,7 @@ export default function CatalogLayout({ children }) {
               <Store size={16} className="text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>DDD Job</h1>
+              <h1 className="font-bold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
               <p className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>کاتالوگ محصولات</p>
             </div>
           </div>
@@ -52,7 +52,7 @@ export default function CatalogLayout({ children }) {
       <footer className="border-t py-6 text-center text-xs"
         style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
       >
-        © DDD Job — تمامی حقوق محفوظ است
+        © Spaghetti — تمامی حقوق محفوظ است
       </footer>
     </div>
   );

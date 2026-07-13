@@ -1,4 +1,4 @@
-# DDD Job — 3D Printing Product Pricing System
+# Spaghetti — 3D Printing Product Pricing System
 
 <div align="center">
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-DDD Job is a full-stack web application for managing 3D printing products, materials, machines, and calculating production costs with configurable formulas. It provides an admin panel for business management and a public catalog for customers to browse products.
+Spaghetti is a full-stack web application for managing 3D printing products, materials, machines, and calculating production costs with configurable formulas. It provides an admin panel for business management and a public catalog for customers to browse products.
 
 **Key Features:**
 - 🔐 Role-based authentication (Admin / Employee)

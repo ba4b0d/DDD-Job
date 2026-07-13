@@ -37,7 +37,7 @@ export default function Login() {
             <Store size={28} className="text-white sm:hidden" />
             <Store size={32} className="text-white hidden sm:block" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>DDD Job</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Spaghetti</h1>
           <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>پنل مدیریت</p>
         </div>
 
