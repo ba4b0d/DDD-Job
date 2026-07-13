@@ -4,7 +4,7 @@ from app.database import get_db
 from app.models import Material
 from app.schemas import MaterialCreate, MaterialUpdate, MaterialResponse
 from app.routers.stats import invalidate_stats
-
+from app.routers.auth import require_admin
 router = APIRouter(prefix="/api/v1/materials", tags=["materials"])
 
 

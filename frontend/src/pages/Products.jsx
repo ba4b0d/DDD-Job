@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff } from 'lucide-react';
-import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, createProduct, exportProducts, importProducts, updateProduct } from '../lib/api';
+import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, createProduct, exportProducts, importProducts, updateProduct, deleteProduct, permanentDeleteProduct } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -136,6 +136,19 @@ export default function Products() {
       await loadProducts();
     } catch (err) {
       console.error('Toggle catalog error:', err);
+    }
+  };
+
+  const handlePermanentDelete = async (e, product) => {
+    e.stopPropagation();
+    if (!confirm(`"${product.name}" برای همیشه حذف شود؟ این عملیات غیرقابل بازگشت است!`)) return;
+    if (!confirm('مطمئن هستید؟')) return;
+    try {
+      await permanentDeleteProduct(product.id);
+      await loadProducts();
+    } catch (err) {
+      console.error('Permanent delete error:', err);
+      alert('خطا: ' + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -302,7 +315,7 @@ export default function Products() {
                     <span className="badge badge-accent">{product.category}</span>
                   )}
                   <button
-                    onClick={(e) => handleToggleCatalog(e, product)}
+                    onClick={(e) => { e.stopPropagation(); handleToggleCatalog(e, product); }}
                     className="p-1.5 rounded-lg transition-colors"
                     style={{
                       backgroundColor: product.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
@@ -311,6 +324,14 @@ export default function Products() {
                     title={product.is_active ? 'نمایش در کاتالوگ' : 'مخفی از کاتالوگ'}
                   >
                     {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handlePermanentDelete(e, product); }}
+                    className="p-1.5 rounded-lg transition-colors hover:bg-red-700/30"
+                    style={{ backgroundColor: 'rgba(220,38,38,0.15)', color: '#dc2626' }}
+                    title="حذف دائمی"
+                  >
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

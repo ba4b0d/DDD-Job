@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
-import { getMaterialsAll, createMaterial, updateMaterial, deleteMaterial } from '../lib/api'
+import { getMaterialsAll, createMaterial, updateMaterial, deleteMaterial, permanentDeleteMaterial } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, ERROR_STYLE, getInputStyle } from '../lib/constants'
 import { validateField } from '../lib/validation'
@@ -133,6 +133,15 @@ export default function Materials() {
     } catch (e) { console.error('Failed to delete material:', e) }
   }
 
+  async function handlePermanentDelete(m) {
+    if (!confirm(`"${m.name} ${m.color}" برای همیشه حذف شود؟ این عملیات غیرقابل بازگشت است!`)) return
+    if (!confirm('مطمئن هستید؟')) return
+    try {
+      await permanentDeleteMaterial(m.id)
+      loadMaterials()
+    } catch (e) { console.error('Failed to permanently delete material:', e) }
+  }
+
   async function toggleActive(m) {
     try {
       await updateMaterial(m.id, { is_active: !m.is_active })
@@ -193,8 +202,11 @@ export default function Materials() {
                       <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-white/10" style={{color:'var(--accent)'}}>
                         <Pencil size={16} />
                       </button>
-                      <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg hover:bg-red-500/20" style={{color:'var(--danger)'}}>
+                      <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg hover:bg-red-500/20" style={{color:'var(--danger)'}} title="حذف (غیرفعال کردن)">
                         <Trash2 size={16} />
+                      </button>
+                      <button onClick={() => handlePermanentDelete(m)} className="p-1.5 rounded-lg hover:bg-red-700/40" style={{color:'#dc2626'}} title="حذف دائمی">
+                        <X size={16} />
                       </button>
                     </div>
                   </td>
