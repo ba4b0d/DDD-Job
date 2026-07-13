@@ -55,3 +55,14 @@ def delete_material(material_id: int, db: Session = Depends(get_db)):
     db.commit()
     invalidate_stats()
     return {"message": "Material deactivated", "id": material_id}
+
+
+@router.delete("/{material_id}/permanent")
+def permanent_delete_material(material_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
+    existing = db.query(Material).filter(Material.id == material_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Material not found")
+    db.delete(existing)
+    db.commit()
+    invalidate_stats()
+    return {"message": "Material permanently deleted", "id": material_id}

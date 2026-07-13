@@ -343,6 +343,18 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return {"message": "Product deactivated", "id": product_id}
 
 
+@router.delete("/products/{product_id}/permanent")
+def permanent_delete_product(product_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
+    from app.models import Product
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    db.delete(product)
+    db.commit()
+    invalidate_stats()
+    return {"message": "Product permanently deleted", "id": product_id}
+
+
 MAX_IMAGES = 5
 
 
