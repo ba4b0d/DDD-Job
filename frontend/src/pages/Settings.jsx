@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Save, Check, Upload } from 'lucide-react'
 import { getSettings, updateSettings, uploadBranding } from '../lib/api'
 import { SAVED_FEEDBACK_DELAY } from '../lib/constants'
@@ -87,11 +87,11 @@ export default function Settings() {
 
   const fields = [
     { key: 'electricity_rate_per_kwh', label: 'تعرفه برق (تومان/کیلووات)', icon: '⚡' },
-    { key: 'default_markup_pct', label: 'ضریب قیمتگذاری', icon: '💰', hint: '۳ = سه برابر هزینه پایه' },
+    { key: 'default_markup_pct', label: 'ضریب قیمت‌گذاری', icon: '💰', hint: '۳ = سه برابر هزینه پایه' },
     { key: 'overhead_fixed_per_job', label: 'هزینه سربار ثابت هر سفارش', icon: '📋' },
-    { key: 'coloring_cost_per_hour', label: 'هزینه رنگآمیزی (تومان/ساعت)', icon: '🎨' },
-    { key: 'favicon_url', label: 'آدرس فاوآیکون', icon: '🌐', type: 'url', stringField: true, hint: 'مثلاً: /favicon.ico یا https://example.com/icon.png' },
-    { key: 'logo_url', label: 'آدرس لوگو', icon: '🖼️', type: 'url', stringField: true, hint: 'مثلاً: /logo.png یا https://example.com/logo.png' },
+    { key: 'coloring_cost_per_hour', label: 'هزینه رنگ‌آمیزی (تومان/ساعت)', icon: '🎨' },
+    { key: 'favicon_url', label: 'فاوآیکون (favicon)', icon: '🌐', type: 'url', stringField: true, accept: '.png,.jpg,.jpeg,.svg,.ico,.webp', hint: 'تصویر کوچک نمایش داده‌شده در تب مرورگر' },
+    { key: 'logo_url', label: 'لوگو', icon: '🖼️', type: 'url', stringField: true, accept: '.png,.jpg,.jpeg,.svg,.webp', hint: 'لوگوی اصلی برند' },
   ]
 
   return (
@@ -110,20 +110,60 @@ export default function Settings() {
           <div key={f.key} className="rounded-xl p-5" style={{background:'var(--bg-card)', border:'1px solid var(--border)'}}>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">{f.icon}</span>
-              <div>
+              <div className="flex-1">
                 <label className="font-semibold" style={{color:'var(--text-primary)'}}>{f.label}</label>
                 {f.hint && <p className="text-sm mt-0.5" style={{color:'var(--text-secondary)'}}>{f.hint}</p>}
               </div>
             </div>
-            <input
-                type={f.type || 'number'}
-                step={f.type === 'url' ? undefined : 'any'}
-                value={f.stringField ? (settings[f.key]?.string_value ?? '') : (settings[f.key]?.value ?? '')}
-                onChange={e => handleChange(f.key, e.target.value, f.stringField)}
-                placeholder={f.stringField ? 'https://...' : ''}
+
+            {f.stringField ? (
+              <>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type={f.type || 'text'}
+                    value={settings[f.key]?.string_value ?? ''}
+                    onChange={e => handleChange(f.key, e.target.value, true)}
+                    placeholder="https://..."
+                    className="flex-1 px-4 py-3 rounded-lg border text-base outline-none transition-colors"
+                    style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
+                  />
+                  <label className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors hover:opacity-80 flex-shrink-0"
+                    style={{background:'var(--accent)', color:'white'}}>
+                    <Upload size={18} />
+                    <span>{uploading[f.key] ? '...' : 'آپلود'}</span>
+                    <input
+                      type="file"
+                      accept={f.accept}
+                      className="hidden"
+                      onChange={e => handleFileUpload(f.key, e.target.files?.[0])}
+                      disabled={uploading[f.key]}
+                    />
+                  </label>
+                </div>
+                {settings[f.key]?.string_value && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <img src={settings[f.key].string_value} alt={f.key}
+                      className={f.key === 'favicon_url' ? 'w-8 h-8 object-contain border rounded p-1' : 'h-12 object-contain border rounded px-2 py-1'}
+                      style={{borderColor: 'var(--border)', maxWidth: 200}}
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                    <span className="text-xs" style={{color:'var(--text-secondary)'}}>
+                      {f.key === 'favicon_url' ? '✓ فاوآیکون فعلی' : '✓ لوگوی فعلی'}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <input
+                type="number"
+                step="any"
+                value={settings[f.key]?.value ?? ''}
+                onChange={e => handleChange(f.key, e.target.value, false)}
                 className="w-full px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors"
                 style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
               />
+            )}
+
             {settings[f.key]?.description && (
               <p className="text-xs mt-2" style={{color:'var(--text-secondary)'}}>{settings[f.key].description}</p>
             )}

@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env file if present
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -19,7 +19,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.routers.auth import require_any_role, limiter
 
-from app.routers.settings import router as settings_router
+from app.routers.settings import router as settings_router, get_public_settings
 from app.routers.materials import router as materials_router
 from app.routers.machines import router as machines_router
 from app.routers.products import router as products_router
@@ -117,6 +117,10 @@ app.add_middleware(
 
 # ── Include routers ──────────────────────────────────────────────────
 app.include_router(settings_router, dependencies=[Depends(require_any_role)])
+# Public branding endpoint (favicon/logo) — no auth required, different path to avoid auth collision
+public_settings_router = APIRouter(prefix="/api/v1", tags=["public-settings"])
+public_settings_router.add_api_route("/brand", get_public_settings, methods=["GET"])
+app.include_router(public_settings_router)
 app.include_router(materials_router, dependencies=[Depends(require_any_role)])
 app.include_router(machines_router, dependencies=[Depends(require_any_role)])
 app.include_router(products_router, dependencies=[Depends(require_any_role)])

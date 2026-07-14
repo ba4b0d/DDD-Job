@@ -1,15 +1,16 @@
-import { getSettings } from './api';
+import axios from 'axios';
 
 /**
- * Fetches settings from backend and applies favicon/logo dynamically.
- * Safe to call on app startup; non-blocking.
+ * Fetches public branding settings (favicon URL, logo URL) WITHOUT auth.
+ * Safe to call on app startup; won't trigger auth refresh loops.
  */
 export async function applyDynamicBranding() {
   try {
-    const res = await getSettings();
+    // Use a fresh axios instance to avoid main api.js interceptor (which redirects on 401)
+    const res = await axios.get('/api/v1/brand');
     const settings = res.data || {};
-    const faviconUrl = settings.favicon_url?.string_value;
-    const logoUrl = settings.logo_url?.string_value;
+    const faviconUrl = settings.favicon_url;
+    const logoUrl = settings.logo_url;
 
     if (faviconUrl) {
       let link = document.querySelector("link[rel*='icon']");
@@ -25,11 +26,7 @@ export async function applyDynamicBranding() {
       window.__APP_LOGO_URL = logoUrl;
     }
   } catch (err) {
-    // Suppress expected errors: aborted (page refresh), network failure on cold start
-    if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.message === 'Request aborted') {
-      return;
-    }
-    console.debug('Branding not available:', err.message);
+    // Branding is optional — never break the app
   }
 }
 

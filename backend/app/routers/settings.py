@@ -9,11 +9,22 @@ from app.routers.stats import invalidate_stats
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
 
+ALLOWED_PUBLIC_KEYS = {"favicon_url", "logo_url", "site_name", "site_title"}
+
+
 @router.get("")
 def get_all_settings(db: Session = Depends(get_db)):
     """Return all settings as a flat key-value dict."""
     settings = db.query(Settings).all()
     return {s.key: {"value": s.value, "description": s.description, "id": s.id, "string_value": s.string_value or ""} for s in settings}
+
+
+@router.get("/public")
+def get_public_settings(db: Session = Depends(get_db)):
+    """DEPRECATED: This route is currently shadowed by the auth-protected settings router.
+    Use /api/v1/brand (no auth) instead. Kept here for backward reference only."""
+    settings = db.query(Settings).filter(Settings.key.in_(ALLOWED_PUBLIC_KEYS)).all()
+    return {s.key: s.string_value or "" for s in settings}
 
 
 @router.put("")
