@@ -22,11 +22,13 @@ export async function applyDynamicBranding() {
     }
 
     if (logoUrl) {
-      // Expose as global for components that want to use it
       window.__APP_LOGO_URL = logoUrl;
     }
   } catch (err) {
-    // Silently fail - branding is optional
+    // Suppress expected errors: aborted (page refresh), network failure on cold start
+    if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.message === 'Request aborted') {
+      return;
+    }
     console.debug('Branding not available:', err.message);
   }
 }
