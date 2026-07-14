@@ -5,6 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
+    hmr: {
+      clientPort: 5174,
+      overlay: false
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:8000',
