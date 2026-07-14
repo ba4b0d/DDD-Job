@@ -11,7 +11,6 @@ import {
   Tags,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
-import BrandLogo from './BrandLogo';
 
 export default function Sidebar({ onLinkClick }) {
   const { isAdmin } = useAuth();
@@ -35,18 +34,14 @@ export default function Sidebar({ onLinkClick }) {
     <nav className="flex flex-col h-full overflow-y-auto" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       {/* Logo */}
             <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <BrandLogo height={36}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-xl font-bold text-white text-sm"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
-                    3D
-                  </div>
-                  <div>
-                    <h2 className="text-white font-bold text-base leading-tight">Spaghetti</h2>
-                    <p className="text-xs" style={{ color: 'var(--text-sidebar)' }}>قیمت‌گذاری چاپ سه‌بعدی</p>
-                  </div>
-                </div>
-              </BrandLogo>
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl font-bold text-white text-sm"
+                style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
+                3D
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-base leading-tight">Spaghetti</h2>
+                <p className="text-xs" style={{ color: 'var(--text-sidebar)' }}>قیمت‌گذاری چاپ سه‌بعدی</p>
+              </div>
             </div>
 
       {/* Navigation */}

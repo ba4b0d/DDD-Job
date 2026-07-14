@@ -3,7 +3,6 @@ import { Sun, Moon, Menu, X, LogOut } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 import { useAuth } from '../lib/auth';
 import Sidebar from './Sidebar';
-import BrandLogo from './BrandLogo';
 import { Z_INDEX_STICKY, Z_INDEX_OVERLAY, Z_INDEX_SIDEBAR } from '../lib/constants';
 
 export default function Layout({ children }) {
@@ -54,11 +53,9 @@ export default function Layout({ children }) {
             >
               {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
-            <BrandLogo height={28}>
-              <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--accent)' }}>
-                Spaghetti
-              </h1>
-            </BrandLogo>
+            <h1 className="text-lg font-bold tracking-tight" style={{ color: 'var(--accent)' }}>
+              Spaghetti
+            </h1>
           </div>
 
           <button

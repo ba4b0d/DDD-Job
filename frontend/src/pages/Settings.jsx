@@ -115,41 +115,15 @@ export default function Settings() {
                 {f.hint && <p className="text-sm mt-0.5" style={{color:'var(--text-secondary)'}}>{f.hint}</p>}
               </div>
             </div>
-            <div className="flex gap-2 items-center">
-              <input
+            <input
                 type={f.type || 'number'}
                 step={f.type === 'url' ? undefined : 'any'}
                 value={f.stringField ? (settings[f.key]?.string_value ?? '') : (settings[f.key]?.value ?? '')}
                 onChange={e => handleChange(f.key, e.target.value, f.stringField)}
-                placeholder={f.stringField ? '/uploads/branding/file.png یا https://...' : ''}
-                className="flex-1 px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors"
+                placeholder={f.stringField ? 'https://...' : ''}
+                className="w-full px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors"
                 style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
               />
-              {f.stringField && (
-                <label className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors hover:opacity-80"
-                  style={{background:'var(--accent)', color:'white'}}>
-                  <Upload size={18} />
-                  <span>{uploading[f.key] ? '...' : 'آپلود'}</span>
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.svg,.ico,.webp"
-                    className="hidden"
-                    onChange={e => handleFileUpload(f.key, e.target.files?.[0])}
-                    disabled={uploading[f.key]}
-                  />
-                </label>
-              )}
-            </div>
-            {f.stringField && settings[f.key]?.string_value && (
-              <div className="mt-3 flex items-center gap-3">
-                {f.key === 'favicon_url' ? (
-                  <img src={settings[f.key].string_value} alt="favicon" className="w-8 h-8 object-contain border rounded" style={{borderColor: 'var(--border)'}} />
-                ) : (
-                  <img src={settings[f.key].string_value} alt="logo" className="h-12 object-contain border rounded px-2" style={{borderColor: 'var(--border)'}} />
-                )}
-                <span className="text-xs" style={{color:'var(--text-secondary)'}}>پیش‌نمایش فعلی</span>
-              </div>
-            )}
             {settings[f.key]?.description && (
               <p className="text-xs mt-2" style={{color:'var(--text-secondary)'}}>{settings[f.key].description}</p>
             )}
