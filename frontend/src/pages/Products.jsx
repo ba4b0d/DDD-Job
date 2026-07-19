@@ -220,17 +220,23 @@ export default function Products() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>محصولات</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={handleExport} className="btn-secondary" title="خروجی اکسل">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            محصولات
+          </h2>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            {filtered.length} از {products.length} محصول
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={handleExport} className="btn-secondary" title="خروجی اکسل">
             <Download size={16} />
-            خروجی اکسل
+            <span className="hidden sm:inline">خروجی</span>
           </button>
-          <button onClick={handleImportClick} className="btn-secondary" title="ورودی اکسل/ csv">
+          <button type="button" onClick={handleImportClick} className="btn-secondary" title="ورودی اکسل/csv">
             <Upload size={16} />
-            ورودی فایل
+            <span className="hidden sm:inline">ورودی</span>
           </button>
           <input
             ref={fileInputRef}
@@ -239,23 +245,22 @@ export default function Products() {
             onChange={handleImportFile}
             className="hidden"
           />
-          <button onClick={() => setShowAddModal(true)} className="btn-primary">
+          <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary">
             <Plus size={16} />
             محصول جدید
           </button>
         </div>
       </div>
 
-      {/* Search and filters */}
-      <div className="flex flex-col gap-3">
+      <div className="card p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
-            <SearchBar value={search} onChange={setSearch} placeholder="جستجو در نام، شناسه یا دسته‌بندی..." />
+            <SearchBar value={search} onChange={setSearch} placeholder="جستجو در نام، کد یا دسته‌بندی..." />
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="select-field w-auto"
+            className="select-field w-full sm:w-auto"
             style={{ minWidth: '150px' }}
           >
             <option value="created_at">جدیدترین</option>
@@ -278,85 +283,162 @@ export default function Products() {
         />
       </div>
 
-      {/* Results count */}
-      <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
-        {filtered.length} محصول یافت شد
-      </div>
-
-      {/* Products grid */}
       {filtered.length === 0 ? (
-        <div className="card p-8 text-center">
-          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>محصولی یافت نشد</div>
+        <div className="card p-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+          محصولی یافت نشد
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((product) => (
-            <div
-              key={product.id}
-              onClick={() => navigate(`/products/${product.id}`)}
-              className="card card-hover p-4 cursor-pointer animate-fade-in"
-            >
-              {product.image_url && (
-                <div className="rounded-lg overflow-hidden mb-3" style={{ background: 'var(--bg-secondary)' }}>
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-32 object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              )}
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <h3 className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                  {product.name}
-                </h3>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {product.category && (
-                    <span className="badge badge-accent">{product.category}</span>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleToggleCatalog(e, product); }}
-                    className="p-1.5 rounded-lg transition-colors"
+        <>
+          {/* Desktop table — matches dashboard language */}
+          <div className="hidden md:block card overflow-hidden">
+            <table className="w-full text-sm" dir="rtl">
+              <thead>
+                <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>کد</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>نام</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>ماده</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>وزن / زمان</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>قیمت</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>وضعیت</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>عملیات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((product) => (
+                  <tr
+                    key={product.id}
+                    className="table-row cursor-pointer"
+                    onClick={() => navigate(`/products/${product.id}`)}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {product.product_id || `P${product.id}`}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{product.name}</div>
+                      {product.category && (
+                        <span className="badge badge-accent text-[10px] mt-1 inline-block">{product.category}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                      {product.material_name || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <span className="inline-flex items-center gap-1 ml-2">
+                        <Weight size={12} />{product.weight_g != null ? `${product.weight_g}g` : '—'}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock size={12} />
+                        {product.print_time_hours != null
+                          ? formatMinutes(product.print_time_hours * 60)
+                          : '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <PriceDisplay
+                        suggestedPrice={product.suggested_price}
+                        finalPrice={product.final_price}
+                        size="small"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                        style={{
+                          backgroundColor: product.is_active
+                            ? 'rgba(34, 197, 94, 0.18)'
+                            : 'rgba(245, 158, 11, 0.18)',
+                          color: product.is_active ? '#4ade80' : '#fbbf24',
+                        }}
+                      >
+                        {product.is_active ? 'فعال' : 'مخفی'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleCatalog(e, product)}
+                          className="p-2 rounded-lg transition-colors"
+                          style={{
+                            backgroundColor: product.is_active
+                              ? 'rgba(34,197,94,0.15)'
+                              : 'rgba(239,68,68,0.15)',
+                            color: product.is_active ? '#22c55e' : '#ef4444',
+                          }}
+                          title={product.is_active ? 'مخفی از کاتالوگ' : 'نمایش در کاتالوگ'}
+                        >
+                          {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handlePermanentDelete(e, product)}
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: 'rgba(220,38,38,0.12)', color: '#f87171' }}
+                          title="حذف دائمی"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/products/${product.id}`)}
+                          className="p-2 rounded-lg"
+                          style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-light)' }}
+                          title="جزئیات"
+                        >
+                          <ArrowUpLeft size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden grid grid-cols-1 gap-3">
+            {filtered.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => navigate(`/products/${product.id}`)}
+                className="card p-4 cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                      {product.product_id || `P${product.id}`}
+                    </div>
+                    <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                      {product.name}
+                    </h3>
+                  </div>
+                  <span
+                    className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     style={{
-                      backgroundColor: product.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                      color: product.is_active ? '#22c55e' : '#ef4444',
+                      backgroundColor: product.is_active
+                        ? 'rgba(34, 197, 94, 0.18)'
+                        : 'rgba(245, 158, 11, 0.18)',
+                      color: product.is_active ? '#4ade80' : '#fbbf24',
                     }}
-                    title={product.is_active ? 'نمایش در کاتالوگ' : 'مخفی از کاتالوگ'}
                   >
-                    {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handlePermanentDelete(e, product); }}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-red-700/30"
-                    style={{ backgroundColor: 'rgba(220,38,38,0.15)', color: '#dc2626' }}
-                    title="حذف دائمی"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                    {product.is_active ? 'فعال' : 'مخفی'}
+                  </span>
                 </div>
+                <div className="flex items-center gap-3 text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  <span>{product.material_name || '—'}</span>
+                  {product.weight_g != null && <span>{product.weight_g}g</span>}
+                </div>
+                <PriceDisplay
+                  suggestedPrice={product.suggested_price}
+                  finalPrice={product.final_price}
+                  size="small"
+                />
               </div>
-              {product.product_id && (
-                <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{product.product_id}</p>
-              )}
-              <div className="flex items-center gap-4 mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {product.weight_g != null && (
-                  <span className="flex items-center gap-1"><Weight size={13} />{product.weight_g}g</span>
-                )}
-                {product.print_time_hours != null && (
-                  <span className="flex items-center gap-1"><Clock size={13} />{formatMinutes(product.print_time_hours * 60)}</span>
-                )}
-              </div>
-              <PriceDisplay suggestedPrice={product.suggested_price} finalPrice={product.final_price} size="small" />
-              <div className="flex items-center gap-1 mt-3 text-xs" style={{ color: 'var(--accent)' }}>
-                <span>مشاهده جزئیات</span>
-                <ArrowUpLeft size={12} />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Add Product Modal */}
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="محصول جدید" size="xl">
         <ProductForm
           initialData={{}}

@@ -122,4 +122,12 @@ export const createCategory = (data) => api.post('/categories', data);
 export const updateCategory = (id, data) => api.put(`/categories/${id}`, data);
 export const deleteCategory = (id) => api.delete(`/categories/${id}`);
 
+// ===== Orders (shop ops board B) =====
+export const getOrders = (params, config) => api.get('/orders', { params, ...config });
+export const getOrderStatuses = (config) => api.get('/orders/statuses', config);
+export const getOrder = (id, config) => api.get(`/orders/${id}`, config);
+export const createOrder = (data) => api.post('/orders', data);
+export const updateOrder = (id, data) => api.put(`/orders/${id}`, data);
+export const deleteOrder = (id) => api.delete(`/orders/${id}`);
+
 export default api;

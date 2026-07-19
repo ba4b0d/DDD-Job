@@ -8,13 +8,40 @@ import { validateField } from '../lib/validation'
 function validateMaterialField(name, value) {
   return validateField('material', name, value)
 }
+
 const colorMap = {
   black: '#1a1a1a', Black: '#1a1a1a', white: '#ffffff', White: '#ffffff',
   red: '#ef4444', Red: '#ef4444', orange: '#f97316', gray: '#9ca3af',
   'olive green': '#6b8e23', 'pine green': '#01796f', 'gold black': '#b8860b',
   'gold blue coper': '#d4a574', 'gold silver red': '#c0a080', walnut: '#5c4033',
   'dark mahaguni': '#4a0e0e', blue: '#3b82f6', 'lavander purple': '#b39ddb',
-  transparent: '#e0e0e0', 'TRANSPARENT': '#e0e0e0',
+  transparent: '#e0e0e0', TRANSPARENT: '#e0e0e0',
+}
+
+function StatusBadge({ active }) {
+  return (
+    <span
+      className="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+      style={{
+        backgroundColor: active ? 'rgba(34, 197, 94, 0.18)' : 'rgba(239, 68, 68, 0.15)',
+        color: active ? '#4ade80' : '#f87171',
+      }}
+    >
+      {active ? 'فعال' : 'غیرفعال'}
+    </span>
+  )
+}
+
+function ColorDot({ color }) {
+  return (
+    <span
+      className="w-3.5 h-3.5 rounded-full border shrink-0 inline-block"
+      style={{
+        background: colorMap[color?.toLowerCase()] || color || '#ccc',
+        borderColor: 'var(--border-color)',
+      }}
+    />
+  )
 }
 
 export default function Materials() {
@@ -31,7 +58,7 @@ export default function Materials() {
   const loadMaterials = useCallback(async (signal) => {
     try {
       const res = await getMaterialsAll(signal ? { signal } : undefined)
-      setMaterials(res.data)
+      setMaterials(Array.isArray(res.data) ? res.data : [])
       setError(null)
     } catch (e) {
       if (e?.name !== 'CanceledError' && e?.code !== 'ERR_CANCELED') {
@@ -74,15 +101,15 @@ export default function Materials() {
   }
 
   function handleFieldChange(name, value) {
-    setForm(prev => ({ ...prev, [name]: value }))
+    setForm((prev) => ({ ...prev, [name]: value }))
     if (touched[name]) {
-      setErrors(prev => ({ ...prev, [name]: validateMaterialField(name, value) }))
+      setErrors((prev) => ({ ...prev, [name]: validateMaterialField(name, value) }))
     }
   }
 
   function handleFieldBlur(name, value) {
-    setTouched(prev => ({ ...prev, [name]: true }))
-    setErrors(prev => ({ ...prev, [name]: validateMaterialField(name, value) }))
+    setTouched((prev) => ({ ...prev, [name]: true }))
+    setErrors((prev) => ({ ...prev, [name]: validateMaterialField(name, value) }))
   }
 
   async function handleSave() {
@@ -126,171 +153,279 @@ export default function Materials() {
   }
 
   async function handleDelete(m) {
-    if (!confirm(`"${m.name} ${m.color}" حذف شود؟`)) return
+    if (!confirm(`"${m.name} ${m.color || ''}" حذف شود؟`)) return
     try {
       await deleteMaterial(m.id)
       loadMaterials()
-    } catch (e) { console.error('Failed to delete material:', e) }
+    } catch (e) {
+      console.error('Failed to delete material:', e)
+    }
   }
 
   async function handlePermanentDelete(m) {
-    if (!confirm(`"${m.name} ${m.color}" برای همیشه حذف شود؟ این عملیات غیرقابل بازگشت است!`)) return
+    if (!confirm(`"${m.name} ${m.color || ''}" برای همیشه حذف شود؟ این عملیات غیرقابل بازگشت است!`)) return
     if (!confirm('مطمئن هستید؟')) return
     try {
       await permanentDeleteMaterial(m.id)
       loadMaterials()
-    } catch (e) { console.error('Failed to permanently delete material:', e) }
+    } catch (e) {
+      console.error('Failed to permanently delete material:', e)
+    }
   }
 
   async function toggleActive(m) {
     try {
       await updateMaterial(m.id, { is_active: !m.is_active })
       loadMaterials()
-    } catch (e) { console.error('Failed to toggle active:', e) }
+    } catch (e) {
+      console.error('Failed to toggle active:', e)
+    }
   }
 
   const inputStyle = (fieldName) => getInputStyle(fieldName, touched, errors)
 
-  if (loading) return <div className="p-8 text-center" style={{color:'var(--text-secondary)'}}>در حال بارگذاری...</div>
-  if (error) return <div className="p-8 text-center" style={{color:'#ef4444'}}>{error}</div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>در حال بارگذاری...</div>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-sm" style={{ color: '#ef4444' }}>{error}</div>
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{color:'var(--text-primary)'}}>مواد اولیه</h1>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium" style={{background:'var(--accent)'}}>
-          <Plus size={18} /> افزودن ماده
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            مواد اولیه
+          </h1>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+            {materials.length} ماده · قیمت/کیلو و ضایعات
+          </p>
+        </div>
+        <button type="button" onClick={openAdd} className="btn-primary">
+          <Plus size={16} />
+          افزودن ماده
         </button>
       </div>
 
-      <div className="rounded-xl overflow-hidden" style={{background:'var(--bg-card)', border:'1px solid var(--border)'}}>
-        {/* Desktop table */}
-        <div className="hidden sm:block">
-          <table className="w-full text-right">
-            <thead>
-              <tr style={{background:'var(--bg-secondary)'}}>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>نام</th>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>رنگ</th>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>قیمت/کیلو</th>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>ضریب ضایعات</th>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>وضعیت</th>
-                <th className="px-4 py-3 text-sm font-semibold" style={{color:'var(--text-secondary)'}}>عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {materials.map(m => (
-                <tr key={m.id} className="border-t" style={{borderColor:'var(--border)'}}>
-                  <td className="px-4 py-3 font-medium" style={{color:'var(--text-primary)'}}>{m.name}</td>
-                  <td className="px-4 py-3">
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full border inline-block" style={{
-                        background: colorMap[m.color?.toLowerCase()] || m.color || '#ccc',
-                        borderColor: 'var(--border)'
-                      }} />
-                      <span style={{color:'var(--text-primary)'}}>{m.color}</span>
-                    </span>
-                  </td>
-                  <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>{formatPrice(m.price_per_kg)}</td>
-                  <td className="px-4 py-3" style={{color:'var(--text-primary)'}}>%{(m.waste_pct * 100).toFixed(0)}</td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => toggleActive(m)} className={`px-2 py-1 rounded text-xs font-medium ${m.is_active ? 'text-green-400' : 'text-red-400'}`} style={{background: m.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}}>
-                      {m.is_active ? 'فعال' : 'غیرفعال'}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg hover:bg-white/10" style={{color:'var(--accent)'}}>
-                        <Pencil size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(m)} className="p-1.5 rounded-lg hover:bg-red-500/20" style={{color:'var(--danger)'}} title="حذف (غیرفعال کردن)">
-                        <Trash2 size={16} />
-                      </button>
-                      <button onClick={() => handlePermanentDelete(m)} className="p-1.5 rounded-lg hover:bg-red-700/40" style={{color:'#dc2626'}} title="حذف دائمی">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </td>
+      {materials.length === 0 ? (
+        <div className="card p-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+          ماده‌ای ثبت نشده است
+        </div>
+      ) : (
+        <>
+          <div className="hidden sm:block card overflow-hidden">
+            <table className="w-full text-sm" dir="rtl">
+              <thead>
+                <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>نام</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>رنگ</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>قیمت/کیلو</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>ضایعات</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>وضعیت</th>
+                  <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>عملیات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {materials.map((m) => (
+                  <tr key={m.id} className="table-row">
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {m.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                        <ColorDot color={m.color} />
+                        {m.color || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-primary)' }}>
+                      {formatPrice(m.price_per_kg)}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                      %{((m.waste_pct || 0) * 100).toFixed(0)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button type="button" onClick={() => toggleActive(m)} title="تغییر وضعیت">
+                        <StatusBadge active={m.is_active} />
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(m)}
+                          className="p-2 rounded-lg"
+                          style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-light)' }}
+                          title="ویرایش"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(m)}
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171' }}
+                          title="حذف (غیرفعال)"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePermanentDelete(m)}
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: 'rgba(220,38,38,0.12)', color: '#dc2626' }}
+                          title="حذف دائمی"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Mobile cards */}
-        <div className="sm:hidden divide-y" style={{borderColor:'var(--border)'}}>
-          {materials.map(m => (
-            <div key={m.id} className="p-4">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 rounded-full border shrink-0" style={{
-                    background: colorMap[m.color?.toLowerCase()] || m.color || '#ccc',
-                    borderColor: 'var(--border)'
-                  }} />
-                  <span className="font-medium text-sm" style={{color:'var(--text-primary)'}}>{m.name}</span>
+          <div className="sm:hidden space-y-3">
+            {materials.map((m) => (
+              <div key={m.id} className="card p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ColorDot color={m.color} />
+                    <span className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                      {m.name}
+                    </span>
+                  </div>
+                  <button type="button" onClick={() => toggleActive(m)}>
+                    <StatusBadge active={m.is_active} />
+                  </button>
                 </div>
-                <button onClick={() => toggleActive(m)} className={`px-2 py-0.5 rounded text-[10px] font-medium ${m.is_active ? 'text-green-400' : 'text-red-400'}`} style={{background: m.is_active ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}}>
-                  {m.is_active ? 'فعال' : 'غیرفعال'}
-                </button>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  <span>{m.color || '—'}</span>
+                  <span>{formatPrice(m.price_per_kg)}/کیلو</span>
+                  <span>%{((m.waste_pct || 0) * 100).toFixed(0)} ضایعات</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(m)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                    style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                  >
+                    <Pencil size={12} /> ویرایش
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(m)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                    style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}
+                  >
+                    <Trash2 size={12} /> حذف
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs mb-2" style={{color:'var(--text-secondary)'}}>
-                <span>{m.color}</span>
-                <span>{formatPrice(m.price_per_kg)}/کیلو</span>
-                <span>%{(m.waste_pct * 100).toFixed(0)} ضایعات</span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => openEdit(m)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" style={{background:'var(--bg-secondary)', color:'var(--accent)'}}>
-                  <Pencil size={12} /> ویرایش
-                </button>
-                <button onClick={() => handleDelete(m)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs" style={{background:'rgba(239,68,68,0.15)', color:'var(--danger)'}}>
-                  <Trash2 size={12} /> حذف
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editItem ? 'ویرایش ماده' : 'افزودن ماده جدید'}>
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editItem ? 'ویرایش ماده' : 'افزودن ماده جدید'}
+      >
         <div className="space-y-4">
           {submitError && (
-            <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <div
+              className="p-3 rounded-lg text-sm"
+              style={{
+                background: 'rgba(239,68,68,0.15)',
+                color: '#ef4444',
+                border: '1px solid rgba(239,68,68,0.3)',
+              }}
+            >
               {submitError}
             </div>
           )}
           <div>
-            <label className="block text-sm mb-1" style={{color:'var(--text-secondary)'}}>نام ماده *</label>
-            <input value={form.name} onChange={e => handleFieldChange('name', e.target.value)}
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+              نام ماده *
+            </label>
+            <input
+              value={form.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
               onBlur={() => handleFieldBlur('name', form.name)}
-              className="w-full px-3 py-2 rounded-lg border outline-none" style={inputStyle('name')} />
+              className="input-field w-full"
+              style={inputStyle('name')}
+            />
             {touched.name && errors.name && <span style={ERROR_STYLE}>{errors.name}</span>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm mb-1" style={{color:'var(--text-secondary)'}}>قیمت هر کیلو (تومان) *</label>
-              <input type="number" value={form.price_per_kg} onChange={e => handleFieldChange('price_per_kg', e.target.value)}
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+                قیمت هر کیلو (تومان) *
+              </label>
+              <input
+                type="number"
+                value={form.price_per_kg}
+                onChange={(e) => handleFieldChange('price_per_kg', e.target.value)}
                 onBlur={() => handleFieldBlur('price_per_kg', form.price_per_kg)}
-                className="w-full px-3 py-2 rounded-lg border outline-none" style={inputStyle('price_per_kg')} />
-              {touched.price_per_kg && errors.price_per_kg && <span style={ERROR_STYLE}>{errors.price_per_kg}</span>}
+                className="input-field w-full"
+                style={inputStyle('price_per_kg')}
+              />
+              {touched.price_per_kg && errors.price_per_kg && (
+                <span style={ERROR_STYLE}>{errors.price_per_kg}</span>
+              )}
             </div>
             <div>
-              <label className="block text-sm mb-1" style={{color:'var(--text-secondary)'}}>ضریب ضایعات</label>
-              <input type="number" step="0.01" value={form.waste_pct} onChange={e => handleFieldChange('waste_pct', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border outline-none" style={inputStyle('waste_pct')} />
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+                ضریب ضایعات
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.waste_pct}
+                onChange={(e) => handleFieldChange('waste_pct', e.target.value)}
+                className="input-field w-full"
+                style={inputStyle('waste_pct')}
+              />
             </div>
           </div>
           <div>
-            <label className="block text-sm mb-1" style={{color:'var(--text-secondary)'}}>رنگ</label>
-            <input value={form.color} onChange={e => handleFieldChange('color', e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border outline-none" style={inputStyle('color')} />
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+              رنگ
+            </label>
+            <input
+              value={form.color}
+              onChange={(e) => handleFieldChange('color', e.target.value)}
+              className="input-field w-full"
+              style={inputStyle('color')}
+            />
           </div>
           <div>
-            <label className="block text-sm mb-1" style={{color:'var(--text-secondary)'}}>توضیحات</label>
-            <input value={form.notes} onChange={e => handleFieldChange('notes', e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border outline-none" style={inputStyle('notes')} />
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+              توضیحات
+            </label>
+            <input
+              value={form.notes}
+              onChange={(e) => handleFieldChange('notes', e.target.value)}
+              className="input-field w-full"
+              style={inputStyle('notes')}
+            />
           </div>
           <div className="flex gap-3 justify-end pt-2">
-            <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg" style={{color:'var(--text-secondary)'}}>لغو</button>
-            <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium" style={{background:'var(--accent)'}}>
+            <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+              لغو
+            </button>
+            <button type="button" onClick={handleSave} className="btn-primary">
               <Check size={16} /> ذخیره
             </button>
           </div>

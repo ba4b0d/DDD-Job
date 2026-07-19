@@ -16,8 +16,11 @@ const Machines = lazy(() => import('./pages/Machines'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Calculator = lazy(() => import('./pages/Calculator'));
 const Catalog = lazy(() => import('./pages/Catalog'));
+const Contact = lazy(() => import('./pages/Contact'));
+const HowToOrder = lazy(() => import('./pages/HowToOrder'));
 const UsersPage = lazy(() => import('./pages/Users'));
 const Categories = lazy(() => import('./pages/Categories'));
+const Orders = lazy(() => import('./pages/Orders'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -44,8 +47,10 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/contact" element={<CatalogLayout><Contact /></CatalogLayout>} />
+                <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />
 
         {/* Protected admin+employee */}
         <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
@@ -54,6 +59,7 @@ function AppRoutes() {
         <Route path="/products/:id/edit" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />
         <Route path="/calculator" element={<ProtectedRoute><Layout><Calculator /></Layout></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><Layout><Categories /></Layout></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
 
         {/* Protected admin only */}
         <Route path="/materials" element={<ProtectedRoute><Layout><Materials /></Layout></ProtectedRoute>} />

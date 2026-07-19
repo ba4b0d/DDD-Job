@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, Boolean, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.database import Base
@@ -102,3 +102,41 @@ class Category(Base):
     description = Column(String, default="")
     is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
+
+
+# Fixed shop-ops statuses (B board) — keep list short for ADHD/OCD-friendly UI
+ORDER_STATUSES = (
+    "new",        # جدید
+    "quoted",     # قیمت‌داده‌شده
+    "printing",   # در حال چاپ
+    "ready",      # آماده تحویل
+    "delivered",  # تحویل‌شده
+    "cancelled",  # لغو
+)
+
+
+class Order(Base):
+    """Minimal shop order board — not accounting."""
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_name = Column(String, nullable=False, default="")
+    contact = Column(String, default="")  # phone / Telegram / etc.
+    product_label = Column(String, default="")  # free text what they ordered
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=True, index=True)
+    quoted_price = Column(Float, default=0)  # تومان
+    paid_amount = Column(Float, default=0)   # تومان
+    status = Column(String, nullable=False, default="new", index=True)
+    notes = Column(String, default="")
+    # Shop schedule (optional) — not notifications yet
+    started_at = Column(Date, nullable=True)   # تاریخ شروع کار
+    ready_by = Column(Date, nullable=True)     # موعد آماده ارسال / تحویل
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    product = relationship("Product")

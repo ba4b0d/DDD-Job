@@ -96,23 +96,26 @@ export default function Settings() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{color:'var(--text-primary)'}}>تنظیمات</h1>
+      <div className="flex items-center justify-between mb-6 gap-3">
+        <h1 className="settings-page-title text-2xl font-bold text-white">تنظیمات</h1>
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white font-medium transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white font-medium transition-all shrink-0"
           style={{background: saved ? '#22c55e' : 'var(--accent)'}}>
           {saved ? <><Check size={18} /> ذخیره شد!</> : <><Save size={18} /> {saving ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}</>}
         </button>
       </div>
 
-      <div className="max-w-2xl space-y-4">
+      <div className="settings-fields-grid max-w-6xl">
         {fields.map(f => (
-          <div key={f.key} className="rounded-xl p-5" style={{background:'var(--bg-card)', border:'1px solid var(--border)'}}>
+          <div
+            key={f.key}
+            className="settings-field-card rounded-xl p-5"
+          >
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">{f.icon}</span>
               <div className="flex-1">
-                <label className="font-semibold" style={{color:'var(--text-primary)'}}>{f.label}</label>
-                {f.hint && <p className="text-sm mt-0.5" style={{color:'var(--text-secondary)'}}>{f.hint}</p>}
+                <label className="font-semibold text-white">{f.label}</label>
+                {f.hint && <p className="text-sm mt-0.5 settings-field-hint">{f.hint}</p>}
               </div>
             </div>
 
@@ -124,8 +127,7 @@ export default function Settings() {
                     value={settings[f.key]?.string_value ?? ''}
                     onChange={e => handleChange(f.key, e.target.value, true)}
                     placeholder="https://..."
-                    className="flex-1 px-4 py-3 rounded-lg border text-base outline-none transition-colors"
-                    style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
+                    className="flex-1 px-4 py-3 rounded-lg border text-base outline-none transition-colors settings-field-input"
                   />
                   <label className="flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors hover:opacity-80 flex-shrink-0"
                     style={{background:'var(--accent)', color:'white'}}>
@@ -144,10 +146,10 @@ export default function Settings() {
                   <div className="mt-3 flex items-center gap-3">
                     <img src={settings[f.key].string_value} alt={f.key}
                       className={f.key === 'favicon_url' ? 'w-8 h-8 object-contain border rounded p-1' : 'h-12 object-contain border rounded px-2 py-1'}
-                      style={{borderColor: 'var(--border)', maxWidth: 200}}
+                      style={{borderColor: 'rgba(255,255,255,0.2)', maxWidth: 200}}
                       onError={(e) => { e.target.style.display = 'none' }}
                     />
-                    <span className="text-xs" style={{color:'var(--text-secondary)'}}>
+                    <span className="text-xs settings-field-hint">
                       {f.key === 'favicon_url' ? '✓ فاوآیکون فعلی' : '✓ لوگوی فعلی'}
                     </span>
                   </div>
@@ -159,13 +161,12 @@ export default function Settings() {
                 step="any"
                 value={settings[f.key]?.value ?? ''}
                 onChange={e => handleChange(f.key, e.target.value, false)}
-                className="w-full px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors"
-                style={{background:'var(--bg-secondary)', borderColor:'var(--border)', color:'var(--text-primary)'}}
+                className="w-full px-4 py-3 rounded-lg border text-lg font-medium outline-none transition-colors settings-field-input"
               />
             )}
 
             {settings[f.key]?.description && (
-              <p className="text-xs mt-2" style={{color:'var(--text-secondary)'}}>{settings[f.key].description}</p>
+              <p className="text-xs mt-2 settings-field-hint">{settings[f.key].description}</p>
             )}
           </div>
         ))}

@@ -4,13 +4,17 @@ Stats endpoint — optimized to avoid N+1 queries.
 Loads settings, materials, and machines ONCE per request, then iterates
 products using the pure-calculation function (no DB calls per product).
 
+Also returns KISS shop-ops monthly order totals (not accounting).
+
 Results are cached in-memory for 60 seconds.
 """
 import time
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import Product, Material, Machine
+from app.models import Product, Material, Machine, Order
 from app.cache import get_settings_dict
 from app.calculator import calculate_product_costs_from_values
 
@@ -20,9 +24,65 @@ router = APIRouter(prefix="/api/v1/stats", tags=["stats"])
 _STATS_TTL = 60  # seconds
 _stats_cache: dict = {}
 
+_OPEN_STATUSES = frozenset({"new", "quoted", "printing", "ready"})
+
 
 def _invalidate_stats_cache():
     _stats_cache.clear()
+
+
+def _month_bounds_utc(now: datetime | None = None) -> tuple[datetime, datetime, int, int]:
+    """Inclusive start / exclusive end of current calendar month (UTC)."""
+    now = now or datetime.now(timezone.utc)
+    y, m = now.year, now.month
+    start = datetime(y, m, 1, tzinfo=timezone.utc)
+    # exclusive end = first day of next month
+    if m == 12:
+        end = datetime(y + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        end = datetime(y, m + 1, 1, tzinfo=timezone.utc)
+    return start, end, y, m
+
+
+def _order_ops_stats(db: Session) -> dict:
+    """Monthly order volume + cash in — board B only, not a ledger."""
+    start, end, year, month = _month_bounds_utc()
+    # SQLite often stores naive UTC; compare both naive and aware safely
+    start_naive = start.replace(tzinfo=None)
+    end_naive = end.replace(tzinfo=None)
+
+    active = (
+        db.query(Order)
+        .filter(Order.is_active == True)  # noqa: E712
+        .all()
+    )
+
+    month_rows = []
+    open_count = 0
+    for o in active:
+        if o.status in _OPEN_STATUSES:
+            open_count += 1
+        ca = o.created_at
+        if not ca:
+            continue
+        # normalize to naive for range check
+        ca_n = ca.replace(tzinfo=None) if getattr(ca, "tzinfo", None) else ca
+        if start_naive <= ca_n < end_naive and o.status != "cancelled":
+            month_rows.append(o)
+
+    paid = round(sum(float(o.paid_amount or 0) for o in month_rows), 2)
+    quoted = round(sum(float(o.quoted_price or 0) for o in month_rows), 2)
+    remaining = round(sum(max(0.0, float(o.quoted_price or 0) - float(o.paid_amount or 0)) for o in month_rows), 2)
+
+    return {
+        "orders_this_month": len(month_rows),
+        "orders_paid_this_month": paid,
+        "orders_quoted_this_month": quoted,
+        "orders_remaining_this_month": remaining,
+        "orders_open": open_count,
+        "orders_month": month,
+        "orders_year": year,
+    }
 
 
 @router.get("")
@@ -78,6 +138,8 @@ def get_stats(db: Session = Depends(get_db)):
     price_min = round(min(prices), 2) if prices else None
     price_max = round(max(prices), 2) if prices else None
 
+    order_ops = _order_ops_stats(db)
+
     result = {
         "total_products": total_products,
         "active_products": len(active_products),
@@ -87,6 +149,7 @@ def get_stats(db: Session = Depends(get_db)):
         "price_min": price_min,
         "price_max": price_max,
         "products_per_category": categories,
+        **order_ops,
     }
 
     _stats_cache["stats"] = {"data": result, "ts": now}
@@ -95,5 +158,5 @@ def get_stats(db: Session = Depends(get_db)):
 
 # Expose invalidation for other routers to call after writes
 def invalidate_stats():
-    """Call from product/material/machine/settings routers after mutations."""
+    """Call from product/material/machine/settings/order routers after mutations."""
     _stats_cache.clear()

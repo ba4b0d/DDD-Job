@@ -9,47 +9,66 @@ import {
   Store,
   Users,
   Tags,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import BrandLogo from './BrandLogo';
 
 export default function Sidebar({ onLinkClick }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   const navItems = [
     { path: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
+    { path: '/orders', label: 'سفارش‌ها', icon: ClipboardList },
     { path: '/products', label: 'محصولات', icon: Package },
-    { path: '/categories', label: 'دستهبندیها', icon: Tags },
-    { path: '/', label: 'کاتالوگ', icon: Store },
-    // Admin only
-    ...(isAdmin ? [
-      { path: '/materials', label: 'مواد', icon: Layers },
-      { path: '/machines', label: 'ماشین‌ها', icon: Cog },
-      { path: '/settings', label: 'تنظیمات', icon: Settings },
-      { path: '/users', label: 'کاربران', icon: Users },
-    ] : []),
+    { path: '/materials', label: 'مواد', icon: Layers },
+    { path: '/machines', label: 'ماشین‌ها', icon: Cog },
+    { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
     { path: '/calculator', label: 'ماشین حساب', icon: Calculator },
+    { path: '/', label: 'کاتالوگ', icon: Store },
+    ...(isAdmin
+      ? [
+          { path: '/settings', label: 'تنظیمات', icon: Settings },
+          { path: '/users', label: 'کاربران', icon: Users },
+        ]
+      : []),
   ];
 
   return (
-    <nav className="flex flex-col h-full overflow-y-auto" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-      {/* Logo */}
-            <div className="flex items-center gap-3 px-5 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <BrandLogo height={36}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-xl font-bold text-white text-sm"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-hover))' }}>
-                    3D
-                  </div>
-                  <div>
-                    <h2 className="text-white font-bold text-base leading-tight">Spaghetti</h2>
-                    <p className="text-xs" style={{ color: 'var(--text-sidebar)' }}>قیمت‌گذاری چاپ سه‌بعدی</p>
-                  </div>
-                </div>
-              </BrandLogo>
+    <nav
+      className="flex flex-col h-full overflow-y-auto border-l"
+      style={{
+        backgroundColor: 'var(--bg-sidebar)',
+        borderColor: 'var(--border-color)',
+      }}
+    >
+      <div
+        className="flex items-center gap-3 px-5 py-5 border-b"
+        style={{ borderColor: 'var(--border-color)' }}
+      >
+        <BrandLogo height={36}>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center justify-center w-9 h-9 rounded-[10px] font-bold text-white text-sm shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+                boxShadow: '0 0 18px rgba(129, 140, 248, 0.45)',
+              }}
+            >
+              S
             </div>
+            <div className="min-w-0">
+              <h2 className="font-bold text-base leading-tight truncate" style={{ color: 'var(--text-primary)' }}>
+                Spaghetti
+              </h2>
+              <p className="text-[11px] truncate" style={{ color: 'var(--text-sidebar)' }}>
+                سیستم مدیریت
+              </p>
+            </div>
+          </div>
+        </BrandLogo>
+      </div>
 
-      {/* Navigation */}
       <div className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => (
           <NavLink
@@ -57,27 +76,61 @@ export default function Sidebar({ onLinkClick }) {
             to={item.path}
             end={item.path === '/'}
             onClick={onLinkClick}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                isActive ? '' : 'hover:bg-white/5'
-              }`
-            }
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
             style={({ isActive }) => ({
-              backgroundColor: isActive ? 'var(--accent)' : 'transparent',
-              color: isActive ? '#ffffff' : 'var(--text-sidebar)',
+              backgroundColor: isActive ? 'var(--bg-sidebar-active)' : 'transparent',
+              color: isActive ? 'var(--text-sidebar-active)' : 'var(--text-sidebar)',
+              border: isActive
+                ? '1px solid color-mix(in srgb, var(--accent) 50%, transparent)'
+                : '1px solid transparent',
+              boxShadow: isActive ? '0 0 22px rgba(129, 140, 248, 0.14)' : 'none',
+              minHeight: 44,
             })}
           >
-            <item.icon size={18} style={{ color: 'inherit' }} />
-            <span>{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{
+                    backgroundColor: isActive ? 'var(--accent-2, #22d3ee)' : 'var(--text-muted)',
+                    boxShadow: isActive ? '0 0 8px var(--accent-2, #22d3ee)' : 'none',
+                  }}
+                />
+                <item.icon size={18} style={{ color: 'inherit' }} />
+                <span className="truncate">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-        <p className="text-xs text-center" style={{ color: 'var(--text-sidebar)' }}>
-          © Spaghetti — سیستم قیمت‌گذاری
-        </p>
+      <div className="px-4 py-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+        <div
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+          style={{
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-color)',
+          }}
+        >
+          <div
+            className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-bold"
+            style={{
+              backgroundColor: 'var(--accent-light)',
+              color: 'var(--accent)',
+              border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)',
+            }}
+          >
+            {(user?.username || 'A').slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1 text-right">
+            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+              {isAdmin ? 'مدیر سیستم' : 'کاربر'}
+            </p>
+            <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+              {user?.username || 'admin'}
+            </p>
+          </div>
+        </div>
       </div>
     </nav>
   );

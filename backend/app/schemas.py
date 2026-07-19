@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
@@ -261,6 +262,89 @@ class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     sort_order: Optional[int] = None
+
+
+# ── Order (shop ops board B) ──────────────────────────────────────────────
+
+ORDER_STATUS_VALUES = ("new", "quoted", "printing", "ready", "delivered", "cancelled")
+
+
+def _empty_date(v):
+    """Treat '', whitespace, and missing as None for optional date fields."""
+    if v is None:
+        return None
+    if isinstance(v, str) and not v.strip():
+        return None
+    return v
+
+
+class OrderCreate(BaseModel):
+    customer_name: str
+    contact: str = ""
+    product_label: str = ""
+    product_id: Optional[int] = None
+    quoted_price: float = Field(default=0, ge=0)
+    paid_amount: float = Field(default=0, ge=0)
+    status: str = "new"
+    notes: str = ""
+    started_at: Optional[date] = None
+    ready_by: Optional[date] = None
+
+    @field_validator("customer_name")
+    @classmethod
+    def customer_name_not_empty(cls, v):
+        if not v or not str(v).strip():
+            raise ValueError("نام مشتری الزامی است")
+        return str(v).strip()
+
+    @field_validator("status")
+    @classmethod
+    def status_allowed(cls, v):
+        if v not in ORDER_STATUS_VALUES:
+            raise ValueError("وضعیت نامعتبر است")
+        return v
+
+    @field_validator("started_at", "ready_by", mode="before")
+    @classmethod
+    def optional_dates(cls, v):
+        return _empty_date(v)
+
+
+class OrderUpdate(BaseModel):
+    customer_name: Optional[str] = None
+    contact: Optional[str] = None
+    product_label: Optional[str] = None
+    product_id: Optional[int] = None
+    quoted_price: Optional[float] = Field(default=None, ge=0)
+    paid_amount: Optional[float] = Field(default=None, ge=0)
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    started_at: Optional[date] = None
+    ready_by: Optional[date] = None
+    is_active: Optional[bool] = None
+
+    @field_validator("customer_name")
+    @classmethod
+    def customer_name_not_empty(cls, v):
+        if v is None:
+            return v
+        if not str(v).strip():
+            raise ValueError("نام مشتری الزامی است")
+        return str(v).strip()
+
+    @field_validator("status")
+    @classmethod
+    def status_allowed(cls, v):
+        if v is None:
+            return v
+        if v not in ORDER_STATUS_VALUES:
+            raise ValueError("وضعیت نامعتبر است")
+        return v
+
+    @field_validator("started_at", "ready_by", mode="before")
+    @classmethod
+    def optional_dates(cls, v):
+        return _empty_date(v)
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────

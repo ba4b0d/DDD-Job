@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, SessionLocal, Base
-from app.models import Settings, Machine, Material, Product, Category, ProductImage
+from app.models import Settings, Machine, Material, Product, Category, ProductImage, Order
 from app.seed import seed_all
 from fastapi import HTTPException
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -27,6 +27,7 @@ from app.routers.stats import router as stats_router
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.catalog import router as catalog_router
+from app.routers.orders import router as orders_router
 
 # ── Uploads directory ────────────────────────────────────────────────
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
@@ -86,6 +87,17 @@ async def lifespan(app: FastAPI):
         if imported:
             db.commit()
             print(f"Imported {imported} product categories into categories table.")
+
+        # Migration: order schedule dates (start + ready-to-send)
+        if "orders" in inspector.get_table_names():
+            order_cols = {c["name"] for c in inspector.get_columns("orders")}
+            if "started_at" not in order_cols:
+                db.execute(text("ALTER TABLE orders ADD COLUMN started_at DATE"))
+                print("Added orders.started_at column.")
+            if "ready_by" not in order_cols:
+                db.execute(text("ALTER TABLE orders ADD COLUMN ready_by DATE"))
+                print("Added orders.ready_by column.")
+            db.commit()
     finally:
         db.close()
 
@@ -127,6 +139,7 @@ app.include_router(products_router, dependencies=[Depends(require_any_role)])
 app.include_router(stats_router, dependencies=[Depends(require_any_role)])
 app.include_router(auth_router)
 app.include_router(categories_router)
+app.include_router(orders_router)  # Shop ops board B — auth via route Depends
 app.include_router(catalog_router)  # No auth — public catalog
 
 # ── Static files for uploads ────────────────────────────────────────
