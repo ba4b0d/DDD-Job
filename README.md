@@ -10,35 +10,42 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat&logo=sqlite&logoColor=white)](https://sqlite.org)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
+**Repos**
+- GitHub: [ba4b0d/DDD-Job](https://github.com/ba4b0d/DDD-Job) · [ba4b0d/3djat-pricing](https://github.com/ba4b0d/3djat-pricing)
+- Gitea: `http://192.168.100.33:3000/ba4b0d/DDD-Job`
+
 </div>
 
 ---
 
 ## Overview
 
-Spaghetti is a full-stack web application for managing 3D printing products, materials, machines, and calculating production costs with configurable formulas. It provides an admin panel for business management and a public catalog for customers to browse products.
+Spaghetti is a full-stack web app for **FDM 3D-print** product catalog, cost calculation, inventory, and a lightweight workshop **orders board**. Admin manages products/materials/machines; customers browse a public Farsi catalog.
 
 **Key Features:**
-- 🔐 Role-based authentication (Admin / Employee)
-- 📊 Real-time cost calculation engine
-- 🖼️ Multi-image support (up to 5 per product) with carousel
-- 📦 Material and machine inventory
-- 🏷️ Category management
-- 🌐 Public product catalog as main page (no auth required)
-- ✏️ Inline product editing
+- 🔐 Role-based auth (Admin / Employee) — bcrypt + JWT
+- 📊 Real-time cost engine (material, power, downtime, overhead, markup)
+- 🛒 **Orders board (B)** — fixed statuses, start/ready Shamsi dates, paid/quoted amounts
+- 📈 Dashboard KPIs — inventory strip + **monthly order ops** (count, paid, quoted, open)
+- 🖼️ Multi-image products (up to 5) + public catalog
+- 📦 Materials & machines · 🏷️ categories
 - 📥 Excel/CSV import & export
-- 🌙 Dark & Hybrid themes
-- 🇮🇷 Persian/Farsi RTL interface
-- 📱 Fully mobile-responsive design
+- 🇮🇷 Persian/Farsi **RTL** (Vazirmatn) · soft-blue + logo orange branding
+- 📱 Mobile-responsive admin + catalog
 
 ---
 
 ## Screenshots
 
-| Dashboard | Products | Calculator | Catalog |
-|:---:|:---:|:---:|:---:|
-| ![Dashboard](screenshots/dashboard.png) | ![Products](screenshots/products.png) | ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) |
-| *Statistics & management* | *Product management with import/export* | *Real-time cost calculation* | *Public product catalog* |
+| Dashboard | Orders | Products |
+|:---:|:---:|:---:|
+| ![Dashboard](screenshots/dashboard.png) | ![Orders](screenshots/orders.png) | ![Products](screenshots/products.png) |
+| *KPIs + monthly سفارش‌ها* | *Board + Shamsi dates* | *Catalog management* |
+
+| Calculator | Public catalog |
+|:---:|:---:|
+| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) |
+| *Live cost breakdown* | *Farsi public storefront* |
 
 ---
 
@@ -51,7 +58,8 @@ Spaghetti is a full-stack web application for managing 3D printing products, mat
 | Database | SQLite (SQLAlchemy ORM) |
 | Auth | bcrypt + JWT (PyJWT) |
 | Validation | Pydantic v2 |
-| Rate Limiting | slowapi |
+| Rate limiting | slowapi |
+| Dates | Gregorian ISO in API · Shamsi in UI |
 
 ### Frontend
 | Component | Technology |
@@ -60,8 +68,9 @@ Spaghetti is a full-stack web application for managing 3D printing products, mat
 | Bundler | Vite 5 |
 | Styling | TailwindCSS |
 | Routing | React Router v6 |
-| HTTP Client | Axios |
+| HTTP | Axios |
 | Icons | Lucide React |
+| Calendar | `jalaali-js` + `react-multi-date-picker` |
 
 ---
 
@@ -71,38 +80,34 @@ Spaghetti is a full-stack web application for managing 3D printing products, mat
 3djat-pricing/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI app, CORS, startup
-│   │   ├── models.py            # SQLAlchemy models (includes ProductImage)
-│   │   ├── schemas.py           # Pydantic schemas
-│   │   ├── calculator.py        # Cost calculation engine
-│   │   ├── cache.py             # In-memory settings cache
-│   │   ├── seed.py              # Database seeding
-│   │   ├── database.py          # SQLAlchemy engine
-│   │   ├── repositories/
-│   │   │   └── products.py      # Product repository pattern
+│   │   ├── main.py              # FastAPI, CORS, startup
+│   │   ├── models.py            # Settings, Machine, Material, Product, Order, …
+│   │   ├── schemas.py           # Pydantic models
+│   │   ├── calculator.py        # Cost engine
+│   │   ├── cache.py             # Settings/stats cache
+│   │   ├── seed.py              # First-run seed
+│   │   ├── database.py
 │   │   └── routers/
-│   │       ├── auth.py          # Authentication + user management
-│   │       ├── products.py      # Product CRUD + multi-image
-│   │       ├── catalog.py       # Public catalog (no auth)
-│   │       ├── materials.py     # Material CRUD
-│   │       ├── machines.py      # Machine CRUD
-│   │       ├── categories.py    # Category CRUD
-│   │       ├── settings.py      # App settings
-│   │       └── stats.py         # Dashboard statistics
-│   ├── tests/                   # pytest test suite
-│   ├── uploads/                 # Product images
+│   │       ├── auth.py
+│   │       ├── products.py      # CRUD + images + calculate + import/export
+│   │       ├── catalog.py       # Public catalog
+│   │       ├── orders.py        # Workshop board + invalidate stats
+│   │       ├── materials.py · machines.py · categories.py
+│   │       ├── settings.py
+│   │       └── stats.py         # Dashboard + monthly order KPIs
+│   ├── tests/
+│   ├── uploads/
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx              # Routes + code splitting
-│   │   ├── components/          # Reusable UI components
-│   │   ├── pages/               # Page components
-│   │   ├── hooks/               # Custom React hooks
-│   │   └── lib/                 # Utilities, API client, auth
-│   ├── __tests__/               # Vitest test suite
+│   │   ├── pages/               # Dashboard, Orders, Products, Catalog, …
+│   │   ├── components/          # Layout, ShamsiDateField, CostBreakdown, …
+│   │   └── lib/                 # api, auth, shamsi, utils, theme
 │   ├── package.json
 │   └── Dockerfile
+├── screenshots/                 # README captures
+├── scripts/                     # Gitea release build/publish/deploy
 ├── docker-compose.yml
 └── README.md
 ```
@@ -114,130 +119,88 @@ Spaghetti is a full-stack web application for managing 3D printing products, mat
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- npm or yarn
+- npm
 
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
-
-# Install dependencies
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/Mac: source .venv/bin/activate
 pip install -r requirements.txt
-
-# Create .env file
 echo "JWT_SECRET=your-super-secret-key-here" > .env
-
-# Run the server
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-### Access the App
+Vite proxies `/api` and `/uploads` → `http://localhost:8000` by default.  
+Override with `VITE_API_URL` if the API runs elsewhere (e.g. `:8001`).
+
+### Access
 
 | Page | URL | Auth |
 |------|-----|------|
-| Public Catalog (Main Page) | http://localhost:5173/ | ❌ |
-| Admin Login | http://localhost:5173/login | ❌ |
+| Public catalog | http://localhost:5173/ | ❌ |
+| Login | http://localhost:5173/login | ❌ |
 | Dashboard | http://localhost:5173/dashboard | ✅ |
-| API Docs | http://localhost:8000/docs | ❌ |
+| Orders | http://localhost:5173/orders | ✅ |
+| API docs | http://localhost:8000/docs | ❌ |
 
-**Default Credentials:**
-- Username: `admin`
-- Password: `admin`
-
-> ⚠️ **Forced password change on first login!** You must set a new password immediately after logging in.
+**Default credentials:** `admin` / `admin`  
+> ⚠️ Forced password change on first login.
 
 ---
 
-## Docker Deployment
+## Docker
 
 ```bash
-# Build and start all services
 docker-compose up -d
-
-# View logs
 docker-compose logs -f
-
-# Stop services
 docker-compose down
 ```
 
----
-
-## API Documentation
-
-### Authentication
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/auth/login` | POST | Login and get JWT token |
-| `/api/v1/auth/verify` | GET | Verify current token |
-| `/api/v1/auth/refresh` | POST | Refresh token (within 1h of expiry) |
-
-### Public Catalog (No Auth)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/catalog` | GET | List all active products for public catalog |
-| `/api/v1/catalog/categories` | GET | List active categories for public catalog |
-
-### Products
-
-| Endpoint | Method | Description | Auth |
-|----------|--------|-------------|------|
-| `/api/v1/products` | GET | List all products | ✅ |
-| `/api/v1/products/active` | GET | List active products | ❌ |
-| `/api/v1/products/{id}` | GET | Get product details | ❌ |
-| `/api/v1/products` | POST | Create product | ✅ |
-| `/api/v1/products/{id}` | PUT | Update product | ✅ |
-| `/api/v1/products/{id}` | DELETE | Delete product | ✅ |
-| `/api/v1/products/{id}/images` | POST | Upload images (max 5) | ✅ |
-| `/api/v1/products/{id}/images/{img_id}` | DELETE | Delete specific image | ✅ |
-| `/api/v1/products/{id}/images/{img_id}/primary` | PUT | Set primary image | ✅ |
-| `/api/v1/products/{id}/images/reorder` | PUT | Reorder images | ✅ |
-| `/api/v1/products/calculate` | POST | Calculate costs | ✅ |
-| `/api/v1/products/export` | GET | Export all products as .xlsx | ✅ |
-| `/api/v1/products/import` | POST | Import products from .xlsx/.csv | ✅ |
-
-> 📋 A sample Excel template is available at `sample-products.xlsx` in the repo root.
-
-### Materials
-
-| Endpoint | Method | Description | Auth |
-|----------|--------|-------------|------|
-| `/api/v1/materials` | GET | List materials | ✅ |
-| `/api/v1/materials` | POST | Create material | ✅ |
-| `/api/v1/materials/{id}` | PUT | Update material | ✅ |
-| `/api/v1/materials/{id}` | DELETE | Delete material | ✅ |
-
-### Machines
-
-| Endpoint | Method | Description | Auth |
-|----------|--------|-------------|------|
-| `/api/v1/machines` | GET | List machines | ✅ |
-| `/api/v1/machines` | POST | Create machine | ✅ |
-| `/api/v1/machines/{id}` | PUT | Update machine | ✅ |
-| `/api/v1/machines/{id}` | DELETE | Delete machine | ✅ |
+Release-oriented scripts live under `scripts/` (Gitea build / publish / deploy).
 
 ---
 
-## Cost Calculation Formula
+## Orders board & dashboard KPIs
+
+Minimal workshop board (**not** full accounting):
+
+| Status | Meaning |
+|--------|---------|
+| `new` | New |
+| `quoted` | Price given |
+| `printing` | In print |
+| `ready` | Ready for delivery |
+| `delivered` | Delivered |
+| `cancelled` | Cancelled |
+
+- **Dates:** `started_at` / `ready_by` — ISO Gregorian in API, **Shamsi** in UI (Jalali picker).
+- **Money:** `quoted_price`, `paid_amount` (تومان). Soft-archive via `is_active=false`.
+
+**Monthly dashboard strip** (`GET /api/v1/stats`, calendar month UTC):
+
+| Field | Description |
+|-------|-------------|
+| `orders_this_month` | Active non-cancelled, `created_at` this month |
+| `orders_paid_this_month` | Σ `paid_amount` |
+| `orders_quoted_this_month` | Σ `quoted_price` |
+| open / in-progress counts | Pipeline hints (`new`→`ready`) |
+
+Stats cache is invalidated on order create/update/archive.
+
+---
+
+## Cost formula
 
 ```
 material_cost = (weight + support + flushed) × (1 + waste%) × price_per_kg ÷ 1000
@@ -252,113 +215,80 @@ suggested_price = base_price × markup  [default 3x]
 
 ---
 
+## API (summary)
+
+Base path: `/api/v1/`
+
+| Area | Notes |
+|------|--------|
+| Auth | `POST /auth/login`, verify, refresh |
+| Catalog | Public product + category lists |
+| Products | CRUD, images, calculate, import/export |
+| Orders | Board CRUD + soft archive |
+| Materials / Machines / Categories | CRUD |
+| Settings | Bulk update |
+| Stats | Dashboard aggregates + monthly order KPIs |
+
+Interactive docs: `/docs` when the backend is running.
+
+---
+
 ## Testing
 
-### Backend Tests (pytest)
-
 ```bash
-cd backend
-pytest tests/ -v
-# 40 tests covering auth, calculator, CRUD, settings
-```
+# Backend
+cd backend && pytest tests/ -v
 
-### Frontend Tests (Vitest)
-
-```bash
-cd frontend
-npm test
-# 36 tests covering utils, components, pages
+# Frontend
+cd frontend && npm test
 ```
 
 ---
 
-## Environment Variables
-
-### Backend (.env)
+## Environment
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `JWT_SECRET` | Yes | - | Secret key for JWT tokens |
-| `ADMIN_USER` | No | `admin` | Default admin username |
-| `ADMIN_PASS` | No | `admin` | Default admin password (forced change on first login) |
+| `JWT_SECRET` | Yes | — | JWT signing key |
+| `ADMIN_USER` | No | `admin` | Seed admin user |
+| `ADMIN_PASS` | No | `admin` | Seed password (force-change) |
+| `VITE_API_URL` | No | `http://localhost:8000` | Dev proxy target |
 
 ---
 
-## Features in Detail
+## Security
 
-### 🔐 Role-Based Access Control
-
-| Role | Permissions |
-|------|-------------|
-| **Admin** | Full access (products, materials, machines, settings, users) |
-| **Employee** | Products + categories only |
-
-### 📊 Real-Time Cost Calculator
-
-Calculate product costs with live updates:
-- Material costs (weight, support, waste)
-- Power consumption
-- Machine downtime & maintenance
-- Post-processing (coloring, assembly)
-- Overhead & markup
-
-### 🌙 Theme System
-
-- **Hybrid:** Light sidebar + dark content area
-- **Dark:** Full dark mode
-- Persistent theme selection (localStorage)
-
-### 📱 Responsive Design
-
-- **Mobile-first** approach with Tailwind breakpoints
-- Catalog: touch swipe carousel, scrollable categories
-- Dashboard: cards on mobile, table on desktop
-- Materials: cards on mobile, table on desktop
-- Admin: hamburger menu sidebar on mobile
-- RTL (Right-to-Left) layout for Persian
-
----
-
-## Security Features
-
-- ✅ bcrypt password hashing
-- ✅ JWT authentication with 24h expiry
-- ✅ Rate limiting (5 attempts/minute on login)
-- ✅ CORS restricted to explicit origins
-- ✅ Pydantic input validation
-- ✅ File upload size limits (10MB)
-- ✅ Role-based endpoint protection
-- ✅ Forced password change on first login
-- ✅ SQL injection prevention (SQLAlchemy ORM)
+- bcrypt passwords · JWT (24h) · login rate limit  
+- CORS allow-list · Pydantic validation · upload size caps  
+- RBAC on admin routes · SQLAlchemy (no raw SQL) · soft deletes
 
 ---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork / clone  
+2. Branch: `git checkout -b feature/…`  
+3. Commit & push  
+4. Open a PR on GitHub or Gitea  
+
+Mirror remotes typically used:
+
+```bash
+git remote add origin https://github.com/ba4b0d/DDD-Job.git   # or 3djat-pricing
+git remote add gitea  http://192.168.100.33:3000/ba4b0d/DDD-Job.git
+git push origin master && git push gitea master
+```
 
 ---
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
-
-## Support
-
-For issues and questions:
-- Open an [Issue](https://github.com/ba4b0d/3djat-pricing/issues)
-- Contact: [Your Contact Info]
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for 3D printing businesses**
+**Built with ❤️ for 3D printing businesses · FDM · تومان · RTL**
 
 </div>
