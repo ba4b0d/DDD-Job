@@ -418,9 +418,75 @@ def api_upload_images(api: str, token: str, pid: int, images: list) -> dict:
 
 # ── Main ────────────────────────────────────────────────────────────
 
+def process_folder(folder_path: str, args, slicer_path: str, token: str = None) -> dict:
+    """Process one product folder. Returns {"id": ..., "name": ..., "ok": bool}."""
+    info = parse_folder(folder_path)
+
+    # Slice
+    slice_data = {}
+    if slicer_path:
+        slice_data = slice_with_prusaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
+        if slice_data.get("error"):
+            print(f"   ⚠ {slice_data['error']}")
+            slice_data = {}
+
+    # Parse mesh
+    ext = info["model_file"].suffix.lower()
+    mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
+
+    # Weight + time
+    weight = slice_data.get("weight_g") or mesh.get("slice", {}).get("weight_g")
+    time_s = slice_data.get("time_seconds") or mesh.get("slice", {}).get("time_seconds")
+    if not weight and mesh["volume_mm3"] > 0:
+        weight = estimate_weight(mesh["volume_mm3"], args.density)
+
+    # Summary
+    print(f"\n  📁 {info['folder'].name}")
+    print(f"     🏷️  {info['product_id'] or '(auto)'}  📝 {info['name']}")
+    print(f"     📦 {info['model_file'].name}")
+    if slice_data.get("time_seconds"):
+        print(f"     ⚖️  {weight}g  ⏱️  {fmt_time(time_s)}  🧵 {slice_data.get('filament_mm', 0):.0f}mm")
+    elif weight:
+        print(f"     ⚖️  ~{weight}g (estimated)")
+    print(f"     🖼️  {len(info['images'])} image(s)")
+
+    if args.dry:
+        return {"ok": True, "name": info["name"]}
+
+    # Create product
+    if args.existing_id:
+        pid = args.existing_id
+    else:
+        data = {
+            "product_id": info["product_id"],
+            "name": info["name"],
+            "weight_g": weight or 0,
+            "print_time_hours": round(time_s / 3600, 2) if time_s else 0,
+            "category": args.category,
+            "machine_id": args.machine_id,
+            "material_id": args.material_id,
+        }
+        try:
+            result = api_create(args.api, token, data)
+            pid = result["id"]
+        except requests.HTTPError as e:
+            print(f"     ✗ Create failed: {e.response.text}")
+            return {"ok": False, "name": info["name"]}
+
+    # Upload images
+    if info["images"]:
+        try:
+            api_upload_images(args.api, token, pid, info["images"])
+        except requests.HTTPError as e:
+            print(f"     ✗ Images failed: {e.response.text}")
+
+    print(f"     ✅ #{pid} {info['name']}")
+    return {"ok": True, "id": pid, "name": info["name"]}
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Create product from folder (images + model)")
-    ap.add_argument("folder", help="Product folder path")
+    ap = argparse.ArgumentParser(description="Create products from folders (images + model)")
+    ap.add_argument("folder", help="Product folder — or parent folder with sub-folders (batch mode)")
     ap.add_argument("--api", default="http://127.0.0.1:8000", help="Backend API URL")
     ap.add_argument("--user", default="admin")
     ap.add_argument("--pass", dest="password", default="admin")
@@ -433,115 +499,76 @@ def main():
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
     args = ap.parse_args()
 
-    info = parse_folder(args.folder)
-
-    # 1. Try PrusaSlicer CLI for accurate slicing
-    print("🔍 Checking PrusaSlicer CLI...")
-    slicer_path = find_prusaslicer()
-    slice_data = {}
-    if slicer_path:
-        print(f"   ✓ Found: {Path(slicer_path).name}")
-        print(f"   ⏳ Slicing with PrusaSlicer (accurate)...")
-        slice_data = slice_with_prusaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
-        if slice_data.get("error"):
-            print(f"   ⚠ {slice_data['error']}")
-            slice_data = {}
-        else:
-            print(f"   ✓ Sliced!")
-    else:
-        print("   ✗ PrusaSlicer not found — falling back to mesh estimation")
-
-    # 2. Parse mesh for volume/bbox
-    ext = info["model_file"].suffix.lower()
-    mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
-
-    # 3. Determine weight + time (PrusaSlicer > OrcaSlicer metadata > mesh estimate)
-    weight = slice_data.get("weight_g") or mesh.get("slice", {}).get("weight_g")
-    time_s = slice_data.get("time_seconds") or mesh.get("slice", {}).get("time_seconds")
-
-    if not weight and mesh["volume_mm3"] > 0:
-        weight = estimate_weight(mesh["volume_mm3"], args.density)
-
-    # ─ Print summary ─
-    print(f"\n{'='*50}")
-    print(f"  📁 Folder:    {info['folder'].name}")
-    print(f"  🏷️  ID:        {info['product_id'] or '(auto)'}")
-    print(f"  📝 Name:      {info['name']}")
-    print(f"  📦 Model:     {info['model_file'].name} ({ext})")
-    print(f"  📐 Volume:    {mesh['volume_mm3']:.0f} mm³")
-    if mesh.get("bbox"):
-        b = mesh["bbox"]
-        print(f"  📏 Size:      {b['x']} × {b['y']} × {b['z']} mm")
-    print(f"  🔺 Triangles: {mesh['triangles']:,}")
-
-    if slice_data.get("time_seconds"):
-        print(f"\n  🎯 PrusaSlicer (accurate):")
-        print(f"     ⚖️  Weight:   {weight}g")
-        print(f"     ⏱️  Time:     {fmt_time(time_s)} ({time_s:.0f}s)")
-        if slice_data.get("filament_mm"):
-            print(f"     🧵 Filament: {slice_data['filament_mm']:.0f}mm ({slice_data.get('filament_cm3', 0):.1f}cm³)")
-    elif mesh.get("slice"):
-        s = mesh["slice"]
-        print(f"\n  🎯 OrcaSlicer metadata:")
-        if weight:
-            print(f"     ⚖️  Weight:  {weight}g")
-        if time_s:
-            print(f"     ⏱️  Time:    {fmt_time(time_s)} ({time_s:.0f}s)")
-    else:
-        print(f"  ⚖️  Est. weight: ~{weight or 0}g ({'PLA' if args.density == 1.24 else f'density={args.density}'})")
-
-    print(f"  🖼️  Images:   {len(info['images'])}")
-    for img in info["images"]:
-        print(f"     • {img.name}")
-    print(f"{'='*50}\n")
-
-    if args.dry:
-        print("  (--dry — stopping)")
-        return
-
-    # Login
-    print("🔑 Login...")
-    try:
-        token = api_login(args.api, args.user, args.password)
-        print("   ✓ OK")
-    except Exception as e:
-        print(f"   ✗ {e}")
+    folder = Path(args.folder)
+    if not folder.is_dir():
+        print(f"✗ Not a directory: {folder}")
         sys.exit(1)
 
-    # Create or use existing
-    if args.existing_id:
-        pid = args.existing_id
-        print(f"📦 Product #{pid} (existing)")
+    # Detect batch vs single: batch = folder has subfolders with model files
+    subfolders = sorted([
+        d for d in folder.iterdir()
+        if d.is_dir() and any(f.suffix.lower() in MODEL_EXTS for f in d.iterdir())
+    ])
+
+    if subfolders:
+        # ── Batch mode ──
+        print(f"\n📦 Batch mode: {len(subfolders)} product(s) in {folder.name}\n")
+        print(f"   🖨️  PrusaSlicer: {find_prusaslicer() or 'not found'}")
+        if args.profile:
+            print(f"   📄 Profile: {args.profile}")
+        print()
+
+        # Find slicer once
+        slicer_path = find_prusaslicer()
+
+        # Login once (unless dry)
+        token = None
+        if not args.dry:
+            try:
+                token = api_login(args.api, args.user, args.password)
+            except Exception as e:
+                print(f"✗ Login failed: {e}")
+                sys.exit(1)
+
+        results = []
+        for i, sf in enumerate(subfolders, 1):
+            print(f"\n{'─'*50}")
+            print(f"  [{i}/{len(subfolders)}] {sf.name}")
+            print(f"{'─'*50}")
+            r = process_folder(str(sf), args, slicer_path, token)
+            results.append(r)
+
+        # Summary
+        ok = sum(1 for r in results if r.get("ok"))
+        fail = len(results) - ok
+        print(f"\n{'='*50}")
+        print(f"  ✅ {ok} uploaded  ❌ {fail} failed")
+        print(f"{'='*50}\n")
+
     else:
-        data = {
-            "product_id": info["product_id"],
-            "name": info["name"],
-            "weight_g": weight or 0,
-            "print_time_hours": round(time_s / 3600, 2) if time_s else 0,
-            "category": args.category,
-            "machine_id": args.machine_id,
-            "material_id": args.material_id,
-        }
-        print("📦 Creating product...")
-        try:
-            result = api_create(args.api, token, data)
-            pid = result["id"]
-            print(f"   ✓ #{pid} — {result.get('name', '')}")
-        except requests.HTTPError as e:
-            print(f"   ✗ {e.response.text}")
-            sys.exit(1)
+        # ── Single mode ──
+        slicer_path = find_prusaslicer()
 
-    # Upload images
-    if info["images"]:
-        print(f"🖼️  Uploading {len(info['images'])} image(s)...")
-        try:
-            result = api_upload_images(args.api, token, pid, info["images"])
-            print(f"   ✓ {result.get('message', '')}")
-        except requests.HTTPError as e:
-            print(f"   ✗ {e.response.text}")
+        print(f"\n🔍 PrusaSlicer: {Path(slicer_path).name if slicer_path else 'not found'}")
+        if args.profile:
+            print(f"📄 Profile: {args.profile}")
 
-    print(f"\n✅ Done → #{pid} {info['name']}")
-    print(f"   http://localhost:5173/ (catalog)")
+        token = None
+        if not args.dry:
+            print("🔑 Login...")
+            try:
+                token = api_login(args.api, args.user, args.password)
+                print("   ✓ OK")
+            except Exception as e:
+                print(f"   ✗ {e}")
+                sys.exit(1)
+
+        r = process_folder(str(folder), args, slicer_path, token)
+
+        if args.dry:
+            print("\n  (--dry — stopping)")
+        elif r.get("ok"):
+            print(f"\n   http://localhost:5173/ (catalog)")
 
 
 if __name__ == "__main__":
