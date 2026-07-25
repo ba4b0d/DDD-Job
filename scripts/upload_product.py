@@ -408,9 +408,16 @@ def api_create(api: str, token: str, data: dict) -> dict:
     return r.json()
 
 
+MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+        ".webp": "image/webp", ".gif": "image/gif", ".bmp": "image/bmp"}
+
+
 def api_upload_images(api: str, token: str, pid: int, images: list) -> dict:
     headers = {"Authorization": f"Bearer {token}"}
-    files = [("files", (img.name, open(img, "rb"), "image/jpeg")) for img in images]
+    files = []
+    for img in images:
+        ct = MIME.get(img.suffix.lower(), "application/octet-stream")
+        files.append(("files", (img.name, open(img, "rb"), ct)))
     r = requests.post(f"{api}/api/v1/products/{pid}/images", files=files, headers=headers)
     r.raise_for_status()
     return r.json()
@@ -491,8 +498,8 @@ def main():
     ap.add_argument("--user", default="admin")
     ap.add_argument("--pass", dest="password", default="admin")
     ap.add_argument("--category", default="")
-    ap.add_argument("--material-id", type=int, default=None)
-    ap.add_argument("--machine-id", type=int, default=None)
+    ap.add_argument("--material-id", type=int, default=1, help="Material ID (default: 1 = PLA Black)")
+    ap.add_argument("--machine-id", type=int, default=2, help="Machine ID (default: 2 = Kobra S1 barbod)")
     ap.add_argument("--density", type=float, default=1.24, help="Material density g/cm3 (PLA=1.24, PETG=1.27, ABS=1.04)")
     ap.add_argument("--profile", default=None, help="PrusaSlicer .ini profile (printer+print+filament)")
     ap.add_argument("--dry", action="store_true", help="Parse only — no API calls")
