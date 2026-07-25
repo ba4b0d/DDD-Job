@@ -419,7 +419,7 @@ export default function Catalog() {
                           className="text-[10px] uppercase tracking-wide mb-0.5"
                           style={{ color: 'var(--text-muted)' }}
                         >
-                          {product.final_price ? 'قیمت نهایی' : 'پیشنهادی'}
+                          {product.final_price ? 'قیمت نهایی' : 'قیمت'}
                         </div>
                         <span className="catalog-price text-lg font-bold tabular-nums">
                           {formatPrice(price)}
