@@ -8,7 +8,7 @@ services:
     ports:
       - "8080:8000"
     volumes:
-      - ./data:/app/data
+      - db_data:/app/data
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
@@ -24,3 +24,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  db_data:
+    driver: local
