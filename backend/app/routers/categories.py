@@ -13,7 +13,7 @@ from app.routers.auth import require_any_role
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(require_any_role)])
 def list_categories(db: Session = Depends(get_db)):
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
 

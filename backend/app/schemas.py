@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ── Settings ──────────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ class SettingsResponse(BaseModel):
 
 class MachineCreate(BaseModel):
     name: str
-    power_watts: float = 0
+    power_watts: float = Field(default=100, gt=0)
     purchase_price: float = Field(default=0, ge=0)
     life_hours: float = Field(default=5000, ge=0)
     maintenance_pct: float = Field(default=0.05, ge=0, le=1)
@@ -42,13 +42,6 @@ class MachineCreate(BaseModel):
         if not v or not v.strip():
             raise ValueError('نام ماشین نمی‌تواند خالی باشد')
         return v.strip()
-
-    @field_validator('power_watts')
-    @classmethod
-    def power_positive(cls, v):
-        if v <= 0:
-            raise ValueError('توان باید بزرگتر از صفر باشد')
-        return v
 
 
 class MachineUpdate(BaseModel):
@@ -150,16 +143,16 @@ class ProductCreate(BaseModel):
 
     @field_validator('weight_g')
     @classmethod
-    def weight_positive(cls, v):
-        if v <= 0:
-            raise ValueError('وزن باید بزرگتر از صفر باشد')
+    def weight_non_negative(cls, v):
+        if v < 0:
+            raise ValueError('وزن نمی‌تواند منفی باشد')
         return v
 
     @field_validator('print_time_hours')
     @classmethod
-    def print_time_positive(cls, v):
-        if v <= 0:
-            raise ValueError('زمان چاپ باید بزرگتر از صفر باشد')
+    def print_time_non_negative(cls, v):
+        if v < 0:
+            raise ValueError('زمان چاپ نمی‌تواند منفی باشد')
         return v
 
 
@@ -321,7 +314,7 @@ class OrderUpdate(BaseModel):
     product_id: Optional[int] = None
     quoted_price: Optional[float] = Field(default=None, ge=0)
     paid_amount: Optional[float] = Field(default=None, ge=0)
-    status: Optional[str] = None
+    status: Optional[str] = Field(default=None, exclude=True)
     notes: Optional[str] = None
     started_at: Optional[date] = None
     ready_by: Optional[date] = None
@@ -336,14 +329,20 @@ class OrderUpdate(BaseModel):
             raise ValueError("نام مشتری الزامی است")
         return str(v).strip()
 
-    @field_validator("status")
+    @field_validator("status", mode="before")
     @classmethod
     def status_allowed(cls, v):
-        if v is None:
-            return v
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
         if v not in ORDER_STATUS_VALUES:
             raise ValueError("وضعیت نامعتبر است")
         return v
+
+    @model_validator(mode="after")
+    def ensure_status_present(self):
+        if self.status is None:
+            self.status = "new"
+        return self
 
     @field_validator("started_at", "ready_by", mode="before")
     @classmethod

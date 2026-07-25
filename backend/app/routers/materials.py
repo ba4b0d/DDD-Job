@@ -22,9 +22,13 @@ def get_active_materials(db: Session = Depends(get_db)):
 
 @router.post("", response_model=MaterialResponse, status_code=201)
 def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
-    # Uniqueness check: reject duplicate names
-    if db.query(Material).filter(Material.name == material.name).first():
-        raise HTTPException(status_code=400, detail="ماده با این نام قبلاً وجود دارد")
+    # Uniqueness check: reject duplicate (name + color) combos
+    if (
+        db.query(Material)
+        .filter(Material.name == material.name, Material.color == material.color)
+        .first()
+    ):
+        raise HTTPException(status_code=400, detail="ماده با این نام و رنگ قبلاً وجود دارد")
     new_mat = Material(**material.model_dump())
     db.add(new_mat)
     db.commit()

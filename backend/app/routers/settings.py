@@ -6,6 +6,8 @@ from app.schemas import SettingsUpdate, SettingsBulkUpdate, SettingsResponse
 from app.cache import invalidate_settings_cache
 from app.routers.stats import invalidate_stats
 
+from app.routers.auth import require_admin
+
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
 
@@ -59,8 +61,8 @@ os.makedirs(BRANDING_UPLOAD_DIR, exist_ok=True)
 
 
 @router.post("/upload/{key}")
-async def upload_branding_asset(key: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Upload a favicon or logo image and store its URL in settings."""
+async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Depends(require_admin), db: Session = Depends(get_db)):
+    """Upload a favicon or logo image and store its URL in settings (admin only)."""
     if key not in ("favicon_url", "logo_url"):
         raise HTTPException(status_code=400, detail="Invalid key. Must be 'favicon_url' or 'logo_url'")
 

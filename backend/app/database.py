@@ -11,8 +11,21 @@ SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(DATA_DIR, '3djat.db')}"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}  # SQLite specific
+    connect_args={"check_same_thread": False},
+    execution_options={"isolation_level": "AUTOCOMMIT"},
 )
+
+# Enable WAL mode for better concurrent write performance.
+def _enable_wal():
+    """One-time setup: enable SQLite WAL mode."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
+        conn.execute(text("PRAGMA synchronous=NORMAL"))
+
+
+# Run on import so tests/dev/Docker all get WAL mode.
+_enable_wal()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
