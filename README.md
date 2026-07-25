@@ -11,9 +11,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 **Repos**
-- GitHub: [ba4b0d/DDD-Job](https://github.com/ba4b0d/DDD-Job) · [ba4b0d/3djat-pricing](https://github.com/ba4b0d/3djat-pricing)
-- Gitea: `http://192.168.100.33:3000/ba4b0d/DDD-Job`
-
+- GitHub: [ba4b0d/3djat-pricing](https://github.com/ba4b0d/3djat-pricing)
 </div>
 
 ---
@@ -31,7 +29,7 @@ Spaghetti is a full-stack web app for **FDM 3D-print** product catalog, cost cal
 - 📦 Materials & machines · 🏷️ categories
 - 📥 Excel/CSV import & export
 - 🇮🇷 Persian/Farsi **RTL** (Vazirmatn) · soft-blue + logo orange branding
-- 📱 Mobile-responsive admin + catalog
+- 📱 Mobile-responsive admin + catalog · hamburger drawer menu · stacked hero on mobile
 
 ---
 
@@ -269,14 +267,11 @@ cd frontend && npm test
 1. Fork / clone  
 2. Branch: `git checkout -b feature/…`  
 3. Commit & push  
-4. Open a PR on GitHub or Gitea  
-
-Mirror remotes typically used:
+4. Open a PR on GitHub
 
 ```bash
-git remote add origin https://github.com/ba4b0d/DDD-Job.git   # or 3djat-pricing
-git remote add gitea  http://192.168.100.33:3000/ba4b0d/DDD-Job.git
-git push origin master && git push gitea master
+git remote add origin https://github.com/ba4b0d/3djat-pricing.git
+git push origin master
 ```
 
 ---
