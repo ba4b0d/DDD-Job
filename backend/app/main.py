@@ -119,17 +119,17 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS (configurable via env) ────────────────────────────────────
-default_origins = [o for o in os.environ.get('CORS_ORIGINS', '').split(',') if o.strip()]
-default_origins += [
-    'http://localhost:5173',
-    'http://192.168.100.9:5173',
-]
+# Only use explicitly configured origins in production; localhost:5173 is for dev.
+allow_origins = [o.strip() for o in os.environ.get('CORS_ORIGINS', '').split(',') if o.strip()]
+if not allow_origins:
+    allow_origins = ['http://localhost:5173']
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=default_origins,
+    allow_origins=allow_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # ── Include routers ──────────────────────────────────────────────────

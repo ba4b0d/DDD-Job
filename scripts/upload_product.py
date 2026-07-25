@@ -32,7 +32,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import XMLParser, fromstring
 from pathlib import Path
 
 try:
@@ -130,9 +130,9 @@ def parse_3mf(path: str) -> dict:
                         pass
                     # Also check XML
                     try:
-                        root = ET.fromstring(data)
+                        root = _safe_xml_fromstring(data)
                         result["slice"].update(_extract_orca_slice_xml(root))
-                    except ET.ParseError:
+                    except Exception:
                         pass
                 except Exception:
                     pass
@@ -194,6 +194,14 @@ def _extract_orca_slice_json(j: dict) -> dict:
     return info
 
 
+def _safe_xml_fromstring(xml_bytes: bytes):
+    """Parse XML with external entity expansion disabled."""
+    parser = XMLParser()
+    parser.parser.UseForeignDTD(False)
+    parser.entity["nbsp"] = " "
+    return fromstring(xml_bytes, parser=parser)
+
+
 def _extract_orca_slice_xml(root) -> dict:
     """Pull data from OrcaSlicer XML metadata."""
     info = {}
@@ -223,8 +231,8 @@ def _extract_orca_slice_xml(root) -> dict:
 def _parse_model_xml(xml_bytes: bytes) -> dict:
     """Extract mesh volume from 3MF model XML."""
     try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError:
+        root = _safe_xml_fromstring(xml_bytes)
+    except Exception:
         return {"volume_mm3": 0, "triangles": 0}
 
     min_xyz = [float("inf")] * 3

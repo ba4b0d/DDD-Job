@@ -41,4 +41,10 @@ frontend/.vite/
 
 # Logs
 *.log
-backend/tests/test.db
+
+# Test artifacts
+backend/tests/*.db
+!.env.example
+
+# hermes
+.hermes/
