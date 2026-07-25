@@ -23,11 +23,14 @@ Workflow:
 """
 
 import argparse
+import glob
 import json
 import os
 import re
 import struct
+import subprocess
 import sys
+import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -272,6 +275,88 @@ def fmt_time(seconds: float) -> str:
     return f"{m} min"
 
 
+# ── PrusaSlicer CLI (headless accurate slicing) ─────────────────────
+
+def find_prusaslicer() -> str | None:
+    """Find prusa-slicer-console.exe on the system."""
+    candidates = [
+        r"C:\Program Files\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
+        r"C:\Program Files (x86)\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            return p
+    # Try PATH
+    import shutil
+    found = shutil.which("prusa-slicer-console") or shutil.which("prusa-slicer")
+    return found
+
+
+def slice_with_prusaslicer(model_path: str, slicer: str = None, filament_density: float = 1.24, profile: str = None) -> dict:
+    """Slice with PrusaSlicer CLI → accurate time + filament stats from gcode."""
+    if not slicer:
+        slicer = find_prusaslicer()
+    if not slicer:
+        return {"error": "PrusaSlicer not found", "time_seconds": None, "weight_g": None, "filament_mm": None}
+
+    # Create temp gcode output
+    tmp = tempfile.mktemp(suffix=".gcode")
+    try:
+        cmd = [slicer, "--slice", "--export-gcode", "--output", tmp]
+        if profile and os.path.isfile(profile):
+            cmd.extend(["--load", profile])
+        cmd.append(model_path)
+        r = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=300,
+        )
+        if not os.path.isfile(tmp):
+            return {"error": f"Slice failed: {r.stderr[-200:]}" if r.stderr else "Slice failed"}
+
+        result = {"time_seconds": None, "weight_g": None, "filament_mm": None, "filament_cm3": None}
+
+        with open(tmp) as f:
+            for line in f:
+                if not line.startswith(";"):
+                    continue
+                line = line.strip()
+                m = re.match(r";\s*estimated printing time.*?=\s*(.+)", line, re.I)
+                if m:
+                    result["time_seconds"] = _parse_time_str(m.group(1))
+                m = re.match(r";\s*filament used \[mm\]\s*=\s*([\d.]+)", line, re.I)
+                if m:
+                    result["filament_mm"] = float(m.group(1))
+                m = re.match(r";\s*filament used \[cm3\]\s*=\s*([\d.]+)", line, re.I)
+                if m:
+                    result["filament_cm3"] = float(m.group(1))
+                    # Calculate weight from volume × density
+                    result["weight_g"] = round(float(m.group(1)) * filament_density, 1)
+                m = re.match(r";\s*total filament used \[g\]\s*=\s*([\d.]+)", line, re.I)
+                if m and float(m.group(1)) > 0:
+                    result["weight_g"] = float(m.group(1))
+
+        return result
+
+    except subprocess.TimeoutExpired:
+        return {"error": "Slice timed out (300s)"}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def _parse_time_str(s: str) -> float | None:
+    """Parse '2h 14m 25s' → seconds."""
+    total = 0.0
+    m = re.search(r"(\d+)\s*h", s)
+    if m: total += int(m.group(1)) * 3600
+    m = re.search(r"(\d+)\s*m", s)
+    if m: total += int(m.group(1)) * 60
+    m = re.search(r"(\d+)\s*s", s)
+    if m: total += int(m.group(1))
+    return total if total > 0 else None
+
+
 MODEL_EXTS = {".3mf", ".stl"}
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 
@@ -314,7 +399,7 @@ def parse_folder(folder_path: str) -> dict:
 def api_login(api: str, user: str, pw: str) -> str:
     r = requests.post(f"{api}/api/v1/auth/login", json={"username": user, "password": pw})
     r.raise_for_status()
-    return r.json()["access_token"]
+    return r.json().get("token") or r.json().get("access_token")
 
 
 def api_create(api: str, token: str, data: dict) -> dict:
@@ -342,20 +427,37 @@ def main():
     ap.add_argument("--category", default="")
     ap.add_argument("--material-id", type=int, default=None)
     ap.add_argument("--machine-id", type=int, default=None)
-    ap.add_argument("--density", type=float, default=1.24, help="Material density g/cm³ (PLA=1.24, PETG=1.27, ABS=1.04)")
+    ap.add_argument("--density", type=float, default=1.24, help="Material density g/cm3 (PLA=1.24, PETG=1.27, ABS=1.04)")
+    ap.add_argument("--profile", default=None, help="PrusaSlicer .ini profile (printer+print+filament)")
     ap.add_argument("--dry", action="store_true", help="Parse only — no API calls")
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
     args = ap.parse_args()
 
     info = parse_folder(args.folder)
 
-    # Parse mesh
+    # 1. Try PrusaSlicer CLI for accurate slicing
+    print("🔍 Checking PrusaSlicer CLI...")
+    slicer_path = find_prusaslicer()
+    slice_data = {}
+    if slicer_path:
+        print(f"   ✓ Found: {Path(slicer_path).name}")
+        print(f"   ⏳ Slicing with PrusaSlicer (accurate)...")
+        slice_data = slice_with_prusaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
+        if slice_data.get("error"):
+            print(f"   ⚠ {slice_data['error']}")
+            slice_data = {}
+        else:
+            print(f"   ✓ Sliced!")
+    else:
+        print("   ✗ PrusaSlicer not found — falling back to mesh estimation")
+
+    # 2. Parse mesh for volume/bbox
     ext = info["model_file"].suffix.lower()
     mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
 
-    # Determine weight + time
-    weight = mesh.get("slice", {}).get("weight_g")
-    time_s = mesh.get("slice", {}).get("time_seconds")
+    # 3. Determine weight + time (PrusaSlicer > OrcaSlicer metadata > mesh estimate)
+    weight = slice_data.get("weight_g") or mesh.get("slice", {}).get("weight_g")
+    time_s = slice_data.get("time_seconds") or mesh.get("slice", {}).get("time_seconds")
 
     if not weight and mesh["volume_mm3"] > 0:
         weight = estimate_weight(mesh["volume_mm3"], args.density)
@@ -372,17 +474,19 @@ def main():
         print(f"  📏 Size:      {b['x']} × {b['y']} × {b['z']} mm")
     print(f"  🔺 Triangles: {mesh['triangles']:,}")
 
-    if mesh.get("slice"):
+    if slice_data.get("time_seconds"):
+        print(f"\n  🎯 PrusaSlicer (accurate):")
+        print(f"     ⚖️  Weight:   {weight}g")
+        print(f"     ⏱️  Time:     {fmt_time(time_s)} ({time_s:.0f}s)")
+        if slice_data.get("filament_mm"):
+            print(f"     🧵 Filament: {slice_data['filament_mm']:.0f}mm ({slice_data.get('filament_cm3', 0):.1f}cm³)")
+    elif mesh.get("slice"):
         s = mesh["slice"]
-        print(f"\n  🎯 OrcaSlicer slice data:")
+        print(f"\n  🎯 OrcaSlicer metadata:")
         if weight:
             print(f"     ⚖️  Weight:  {weight}g")
         if time_s:
             print(f"     ⏱️  Time:    {fmt_time(time_s)} ({time_s:.0f}s)")
-        if s.get("filament_mm"):
-            print(f"     🧵 Filament: {s['filament_mm']:.0f}mm")
-        if s.get("volume_mm3"):
-            print(f"     📐 Volume:  {s['volume_mm3']:.0f}mm³")
     else:
         print(f"  ⚖️  Est. weight: ~{weight or 0}g ({'PLA' if args.density == 1.24 else f'density={args.density}'})")
 
