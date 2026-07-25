@@ -72,6 +72,7 @@ class Product(Base):
     extras_cost = Column(Float, default=0)
     final_price = Column(Float, nullable=True)
     image_url = Column(String, nullable=True, default=None)  # Kept for backward compat — primary image
+    model_file = Column(String, nullable=True, default=None)  # 3MF/STL model file path
     category = Column(String, default="", index=True)
     notes = Column(String, default="")
     is_active = Column(Boolean, default=True, index=True)

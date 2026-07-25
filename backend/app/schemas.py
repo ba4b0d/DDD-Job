@@ -136,6 +136,7 @@ class ProductCreate(BaseModel):
     extras_cost: float = 0
     final_price: Optional[float] = None
     image_url: Optional[str] = None
+    model_file: Optional[str] = None
     category: str = ""
     notes: str = ""
     is_active: bool = True
@@ -176,6 +177,7 @@ class ProductUpdate(BaseModel):
     extras_cost: Optional[float] = None
     final_price: Optional[float] = None
     image_url: Optional[str] = None
+    model_file: Optional[str] = None
     category: Optional[str] = None
     notes: Optional[str] = None
     is_active: Optional[bool] = None
@@ -199,6 +201,7 @@ class ProductResponse(BaseModel):
     extras_cost: float
     final_price: Optional[float]
     image_url: Optional[str] = None
+    model_file: Optional[str] = None
     category: str
     notes: str
     is_active: bool
