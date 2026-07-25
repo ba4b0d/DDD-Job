@@ -5,7 +5,7 @@
 
 set -e
 PI5="${PI5_HOST:-pi5}"
-REMOTE_DIR="${REMOTE_DIR:-~/3djat-pricing}"
+REMOTE_DIR="${REMOTE_DIR:-~/ddd-job}"
 
 # 1. Git push
 if [[ "$1" != "--no-push" ]]; then
@@ -20,11 +20,9 @@ if [[ "$1" != "--no-push" ]]; then
   fi
 fi
 
-# 2. SSH + pull + rebuild (named volume preserves DB)
+# 2. SSH + pull + rebuild
 echo "🔄 Deploying to Pi5..."
-ssh "$PI5" "cd $REMOTE_DIR && git pull && docker-compose up -d --build"
+ssh "$PI5" "cd $REMOTE_DIR && git pull && docker compose up -d --build"
 
 echo ""
 echo "✅ Done — http://${PI5_HOST:-192.168.100.51}:8080"
-echo ""
-echo "⚠️  NEVER use 'docker-compose down -v' — the -v flag deletes the database!"
