@@ -1,8 +1,9 @@
 """Public catalog — no auth required."""
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
+from app.models import Product
 from app.routers.products import _enrich_product, _batch_load_related
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
@@ -11,8 +12,7 @@ router = APIRouter(prefix="/api/v1", tags=["catalog"])
 @router.get("/catalog")
 def get_catalog(db: Session = Depends(get_db)):
     """Public endpoint — return active products for the customer catalog."""
-    from app.models import Product
-    products = db.query(Product).filter(Product.is_active == True).all()
+    products = db.query(Product).options(selectinload(Product.images)).filter(Product.is_active == True).all()
     machines_dict, materials_dict = _batch_load_related(db)
     return [_enrich_product(p, db, machines_dict, materials_dict) for p in products]
 

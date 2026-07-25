@@ -5,15 +5,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-// Request interceptor: attach auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('3djat_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 // Response interceptor: handle 401 globally
@@ -21,7 +13,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && !error.config.url.includes('/auth/')) {
-      localStorage.removeItem('3djat_token');
       window.location.href = '/login';
     }
     const message = error.response?.data?.detail
@@ -98,14 +89,16 @@ export const importProducts = (file) => {
 export const calculate = (data) => api.post('/calculate', data);
 
 // ===== Public Catalog (no auth) =====
-export const getCatalog = () => axios.get('/api/v1/catalog');
-export const getCatalogCategories = () => axios.get('/api/v1/catalog/categories');
+const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
+export const getCatalog = () => publicApi.get('/catalog');
+export const getCatalogCategories = () => publicApi.get('/catalog/categories');
 
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);
 
 // ===== Auth =====
 export const login = (username, password) => api.post('/auth/login', { username, password });
+export const logout = () => api.post('/auth/logout');
 export const verifyToken = () => api.get('/auth/verify');
 
 // ===== Users (admin only) =====

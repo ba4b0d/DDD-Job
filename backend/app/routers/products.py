@@ -16,6 +16,32 @@ from app.cache import get_settings_dict
 from app.routers.stats import invalidate_stats
 from app.routers.auth import require_admin
 
+# Magic byte signatures for image validation
+IMAGE_MAGIC_BYTES = {
+    ".jpg": [(b"\xff\xd8\xff", "image/jpeg")],
+    ".jpeg": [(b"\xff\xd8\xff", "image/jpeg")],
+    ".png": [(b"\x89PNG\r\n\x1a\n", "image/png")],
+    ".gif": [(b"GIF87a", "image/gif"), (b"GIF89a", "image/gif")],
+    ".webp": [(b"RIFF", "image/webp")],  # RIFF....WEBP
+}
+
+
+def _validate_image_bytes(content: bytes, content_type: str) -> str | None:
+    """Validate image by magic bytes. Returns extension or None."""
+    if len(content) < 12:
+        return None
+    for ext, signatures in IMAGE_MAGIC_BYTES.items():
+        for magic, _ in signatures:
+            if content.startswith(magic):
+                # Special check for WEBP: RIFF header + WEBP fourcc
+                if ext == ".webp":
+                    if content[8:12] == b"WEBP":
+                        return ext
+                    continue
+                return ext
+    return None
+
+
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -377,17 +403,17 @@ async def upload_product_images(
     if len(files) > remaining:
         raise HTTPException(status_code=400, detail=f"فقط {remaining} تصویر دیگر مجاز است")
 
-    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
     uploaded = []
 
     for file in files[:remaining]:
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="File must be JPEG, PNG, WebP, or GIF")
         content = await file.read()
         if len(content) > MAX_UPLOAD_SIZE:
             raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۱۰ مگابایت باشد")
 
-        ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+        ext = _validate_image_bytes(content, file.content_type or "")
+        if not ext:
+            raise HTTPException(status_code=400, detail="فایل نامعتبر است. فقط JPEG, PNG, WebP, GIF مجاز است")
+
         filename = f"{uuid.uuid4().hex}{ext}"
         filepath = os.path.join(UPLOAD_DIR, filename)
         with open(filepath, "wb") as buffer:

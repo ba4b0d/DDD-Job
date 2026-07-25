@@ -8,7 +8,7 @@ import time
 import bcrypt
 import jwt
 from pydantic import BaseModel, Field, field_validator
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -28,7 +28,24 @@ JWT_SECRET = _jwt_secret
 TOKEN_EXPIRY_HOURS = 24  # 24-hour access tokens
 REFRESH_WINDOW_HOURS = 1  # allow refresh within 1 hour of expiry
 
+AUTH_COOKIE_NAME = "access_token"
+
 security = HTTPBearer(auto_error=False)
+
+
+def _set_auth_cookie(response: Response, token: str):
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=False,  # set True when HTTPS is enabled
+        samesite="lax",
+        max_age=TOKEN_EXPIRY_HOURS * 3600,
+    )
+
+
+def _clear_auth_cookie(response: Response):
+    response.delete_cookie(key=AUTH_COOKIE_NAME)
 
 
 # ── Password hashing (bcrypt) ──────────────────────────────────────
@@ -99,11 +116,16 @@ def verify_token(token: str) -> dict:
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    if not credentials:
+    # Prefer cookie, fallback to Authorization header (for API compatibility)
+    token = request.cookies.get(AUTH_COOKIE_NAME)
+    if not token and credentials:
+        token = credentials.credentials
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    return verify_token(credentials.credentials)
+    return verify_token(token)
 
 
 def require_admin(user=Depends(get_current_user)):
@@ -145,29 +167,33 @@ def _ensure_default_admin(db: Session):
 # ── Auth endpoints ─────────────────────────────────────────────────
 @router.post("/login")
 @limiter.limit("5/minute")
-def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
-    _ensure_default_admin(db)
-
+def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == body.username, User.is_active == True).first()
     if not user or not _verify(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="نام کاربری یا رمز عبور اشتباه است")
 
     token = create_token(user.id, user.username, user.role)
-    response = {
-        "token": token,
+    _set_auth_cookie(response, token)
+    return {
         "username": user.username,
         "display_name": user.display_name,
         "role": user.role,
         "must_change_password": user.must_change_password,
     }
-    return response
+
+
+@router.post("/logout")
+def logout(response: Response):
+    _clear_auth_cookie(response)
+    return {"message": "خروج انجام شد"}
 
 
 @router.get("/verify")
-def verify(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    if not credentials:
+def verify(request: Request):
+    token = request.cookies.get(AUTH_COOKIE_NAME)
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    payload = verify_token(credentials.credentials)
+    payload = verify_token(token)
     
     # Check if user must change password
     db = SessionLocal()
@@ -183,12 +209,14 @@ def verify(credentials: HTTPAuthorizationCredentials = Depends(security)):
         "valid": True,
         "must_change_password": must_change,
     }
+
 @router.post("/refresh")
-def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def refresh_token(request: Request, response: Response):
     """Issue a new token if the current one is valid and within REFRESH_WINDOW_HOURS of expiry."""
-    if not credentials:
+    token = request.cookies.get(AUTH_COOKIE_NAME)
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    payload = verify_token(credentials.credentials)
+    payload = verify_token(token)
 
     exp = payload.get("exp", 0)
     now = int(time.time())
@@ -204,7 +232,8 @@ def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security))
         payload["username"],
         payload["role"],
     )
-    return {"token": new_token, "username": payload["username"], "role": payload["role"]}
+    _set_auth_cookie(response, new_token)
+    return {"username": payload["username"], "role": payload["role"]}
 
 
 # ── User CRUD (admin only) ────────────────────────────────────────

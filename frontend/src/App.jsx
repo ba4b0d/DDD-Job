@@ -34,12 +34,22 @@ function PageLoader() {
   );
 }
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+function ProtectedRoute({ children, requireAdmin = false }) {
+  const { isAuthenticated, user, loading } = useAuth();
   if (loading) {
     return <PageLoader />;
   }
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  if (requireAdmin && user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
+function AdminRoute({ children }) {
+  return <ProtectedRoute requireAdmin>{children}</ProtectedRoute>;
 }
 
 function AppRoutes() {
@@ -62,10 +72,10 @@ function AppRoutes() {
         <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
 
         {/* Protected admin only */}
-        <Route path="/materials" element={<ProtectedRoute><Layout><Materials /></Layout></ProtectedRoute>} />
-        <Route path="/machines" element={<ProtectedRoute><Layout><Machines /></Layout></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute><Layout><UsersPage /></Layout></ProtectedRoute>} />
+        <Route path="/materials" element={<AdminRoute><Layout><Materials /></Layout></AdminRoute>} />
+        <Route path="/machines" element={<AdminRoute><Layout><Machines /></Layout></AdminRoute>} />
+        <Route path="/settings" element={<AdminRoute><Layout><Settings /></Layout></AdminRoute>} />
+        <Route path="/users" element={<AdminRoute><Layout><UsersPage /></Layout></AdminRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

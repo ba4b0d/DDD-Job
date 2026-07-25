@@ -19,10 +19,17 @@ export default function MultiImageUpload({ images = [], onChange }) {
       preview: URL.createObjectURL(file),
       isNew: true,
     }));
-    setNewFiles(prev => [...prev, ...previews]);
-  }, [images.length, newFiles.length]);
+    setNewFiles(prev => {
+      const next = [...prev, ...previews];
+      onChange({ add: toAdd });
+      return next;
+    });
+  }, [images.length, newFiles.length, onChange]);
 
-  const handleInput = useCallback((e) => handleFiles(e.target.files), [handleFiles]);
+  const handleInput = useCallback((e) => {
+    handleFiles(e.target.files);
+    e.target.value = ''; // allow re-selecting same files
+  }, [handleFiles]);
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);

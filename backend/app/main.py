@@ -17,7 +17,8 @@ from app.seed import seed_all
 from fastapi import HTTPException
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from app.routers.auth import require_any_role, limiter
+from slowapi.middleware import SlowAPIMiddleware
+from app.routers.auth import require_any_role, limiter, _ensure_default_admin
 
 from app.routers.settings import router as settings_router, get_public_settings
 from app.routers.materials import router as materials_router
@@ -47,6 +48,9 @@ async def lifespan(app: FastAPI):
             print("Database seeded with initial data.")
         else:
             print("Database already contains data, skipping seed.")
+
+        # Ensure default admin exists (one-time, at startup)
+        _ensure_default_admin(db)
 
         # Migration: create product_images table if not exists
         from sqlalchemy import inspect, text
@@ -111,6 +115,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS (configurable via env) ────────────────────────────────────

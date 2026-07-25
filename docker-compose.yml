@@ -9,6 +9,7 @@ services:
       - "8080:8000"
     volumes:
       - db_data:/app/data
+      - uploads_data:/app/uploads
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
@@ -27,4 +28,6 @@ services:
 
 volumes:
   db_data:
+    driver: local
+  uploads_data:
     driver: local

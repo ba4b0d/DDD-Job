@@ -77,6 +77,12 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
 
   const handleImageAction = async (action) => {
     const productId = initialData?.id;
+
+    if (action.add) {
+      setPendingFiles(prev => [...prev, ...action.add]);
+      return;
+    }
+
     if (!productId) return;
 
     if (action.remove) {
