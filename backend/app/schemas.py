@@ -217,6 +217,7 @@ class ProductResponse(BaseModel):
     suggested_price: float = 0
     gross_margin: float = 0
     margin_pct: float = 0
+    images: list = []
 
     class Config:
         from_attributes = True

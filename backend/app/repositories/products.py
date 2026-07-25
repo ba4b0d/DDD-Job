@@ -2,7 +2,7 @@
 Lightweight repository for Product CRUD and search.
 Centralizes DB access logic for products in one place.
 """
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import or_
 
 from app.models import Product
@@ -13,13 +13,13 @@ class ProductRepository:
         self.db = db
 
     def get_all(self, active_only: bool = True) -> list[Product]:
-        q = self.db.query(Product)
+        q = self.db.query(Product).options(selectinload(Product.images))
         if active_only:
             q = q.filter(Product.is_active == True)
         return q.all()
 
     def get_by_id(self, product_id: int) -> Product | None:
-        return self.db.query(Product).filter(Product.id == product_id).first()
+        return self.db.query(Product).options(selectinload(Product.images)).filter(Product.id == product_id).first()
 
     def create(self, data: dict) -> Product:
         product = Product(**data)
