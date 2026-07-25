@@ -47,9 +47,11 @@ class ProductRepository:
         return True
 
     def search(self, query: str) -> list[Product]:
+        """Search active products by name, product_id, category, or notes."""
         pattern = f"%{query}%"
         return (
             self.db.query(Product)
+            .options(selectinload(Product.images))
             .filter(
                 Product.is_active == True,
                 or_(

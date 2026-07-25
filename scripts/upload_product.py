@@ -308,21 +308,22 @@ def slice_with_prusaslicer(model_path: str, slicer: str = None, filament_density
         return {"error": "PrusaSlicer not found", "time_seconds": None, "weight_g": None, "filament_mm": None}
 
     # Create temp gcode output
-    tmp = tempfile.mktemp(suffix=".gcode")
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".gcode")
+    os.close(tmp_fd)
     try:
-        cmd = [slicer, "--slice", "--export-gcode", "--output", tmp]
+        cmd = [slicer, "--slice", "--export-gcode", "--output", tmp_path]
         if profile and os.path.isfile(profile):
             cmd.extend(["--load", profile])
         cmd.append(model_path)
         r = subprocess.run(
             cmd, capture_output=True, text=True, timeout=300,
         )
-        if not os.path.isfile(tmp):
+        if not os.path.isfile(tmp_path):
             return {"error": f"Slice failed: {r.stderr[-200:]}" if r.stderr else "Slice failed"}
 
         result = {"time_seconds": None, "weight_g": None, "filament_mm": None, "filament_cm3": None}
 
-        with open(tmp) as f:
+        with open(tmp_path) as f:
             for line in f:
                 if not line.startswith(";"):
                     continue
@@ -349,8 +350,8 @@ def slice_with_prusaslicer(model_path: str, slicer: str = None, filament_density
     except Exception as e:
         return {"error": str(e)}
     finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 def _parse_time_str(s: str) -> float | None:
@@ -425,7 +426,7 @@ def api_upload_images(api: str, token: str, pid: int, images: list) -> dict:
     files = []
     for img in images:
         ct = MIME.get(img.suffix.lower(), "application/octet-stream")
-        files.append(("files", (img.name, open(img, "rb"), ct)))
+        files.append(("files", (img.name, img.read_bytes(), ct)))
     r = requests.post(f"{api}/api/v1/products/{pid}/images", files=files, headers=headers)
     r.raise_for_status()
     return r.json()

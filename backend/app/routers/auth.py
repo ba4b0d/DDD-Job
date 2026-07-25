@@ -189,19 +189,15 @@ def logout(response: Response):
 
 
 @router.get("/verify")
-def verify(request: Request):
+def verify(request: Request, db: Session = Depends(get_db)):
     token = request.cookies.get(AUTH_COOKIE_NAME)
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     payload = verify_token(token)
     
     # Check if user must change password
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.id == int(payload["sub"])).first()
-        must_change = user.must_change_password if user else False
-    finally:
-        db.close()
+    user = db.query(User).filter(User.id == int(payload["sub"])).first()
+    must_change = user.must_change_password if user else False
     
     return {
         "username": payload.get("username"),

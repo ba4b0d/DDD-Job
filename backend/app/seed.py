@@ -6,22 +6,12 @@ from sqlalchemy.orm import Session
 from app.models import Settings, Machine, Material, Product
 
 
-def _get_or_create(db: Session, model, defaults: dict, **kwargs):
-    """Get existing or create new record."""
-    instance = db.query(model).filter_by(**kwargs).first()
-    if instance:
-        return instance
-    instance = model(**defaults)
-    db.add(instance)
-    return instance
-
-
 def seed_all(db: Session):
     """Populate the database with all seed data."""
 
     # ═══════════════════════════════════════════════════════════════════
     # SETTINGS
-    # ═══════════════════════════════════════════════════════════════════
+
     settings_data = [
         ("electricity_rate_per_kwh", 812, "Cost per kWh in IRR"),
         ("default_markup_pct", 3, "Default markup multiplier (3x = 200% margin)"),
@@ -74,10 +64,8 @@ def seed_all(db: Session):
         {"name": "PLA MATE", "price_per_kg": 3300000, "waste_pct": 0.05, "color": "lavander purple", "notes": "General purpose"},
         {"name": "PLA Fast", "price_per_kg": 3300000, "waste_pct": 0.05, "color": "white", "notes": ""},
         {"name": "petg transparent", "price_per_kg": 3300000, "waste_pct": 0.05, "color": "TRANSPARENT", "notes": ""},
+        {"name": "PLA Fast", "price_per_kg": 3300000, "waste_pct": 0.05, "color": "black", "notes": "Fast printing"},
     ]
-    # Note: we have 20 unique material+color combos above; the 21st is implied as
-    # a second PLA Fast or similar. Adding an extra for completeness:
-    materials_data.append({"name": "PLA Fast", "price_per_kg": 3300000, "waste_pct": 0.05, "color": "black", "notes": "Fast printing"})
 
     for md in materials_data:
         existing = db.query(Material).filter(

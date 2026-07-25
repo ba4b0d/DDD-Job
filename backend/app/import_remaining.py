@@ -8,9 +8,9 @@ import openpyxl
 import sqlite3
 import re
 
-# Paths
-EXCEL_PATH = r'C:\Users\barba\.hermes\desktop-attachments\Prodouct(AutoRecovered).xlsx'
-DB_PATH = r'C:\Users\barba\3djat-pricing\data\3djat.db'
+# Paths — use environment variables or defaults relative to project
+EXCEL_PATH = os.environ.get("IMPORT_EXCEL_PATH", os.path.join(os.path.dirname(__file__), "..", "..", "Prodouct(AutoRecovered).xlsx"))
+DB_PATH = os.environ.get("IMPORT_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data", "3djat.db"))
 
 def parse_print_time_hours(td):
     """Convert timedelta to hours (float)."""

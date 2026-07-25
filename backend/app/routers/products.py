@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models import Product, Machine, Material, ProductImage
 from app.repositories.products import ProductRepository
 from app.schemas import (
-    ProductCreate, ProductUpdate, ProductResponse,
+    ProductCreate, ProductUpdate, ProductResponse, ImageReorderRequest,
     CalculateRequest, CalculateResponse,
 )
 from app.calculator import calculate_product_costs, calculate_product_costs_from_dicts
@@ -537,9 +537,9 @@ def set_primary_image(product_id: int, image_id: int, db: Session = Depends(get_
 
 
 @router.put("/products/{product_id}/images/reorder")
-def reorder_images(product_id: int, body: dict, db: Session = Depends(get_db)):
+def reorder_images(product_id: int, body: ImageReorderRequest, db: Session = Depends(get_db)):
     """Reorder images. Body: { "order": [image_id, image_id, ...] }"""
-    order = body.get("order", [])
+    order = body.order
     if not order:
         raise HTTPException(status_code=400, detail="لیست ترتیب الزامی است")
 

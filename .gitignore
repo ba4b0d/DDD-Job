@@ -8,7 +8,6 @@ venv/
 dist/
 build/
 debug*.py
-=*.9
 .pytest_cache/
 
 # Environment

@@ -11,10 +11,14 @@ REMOTE_DIR="${REMOTE_DIR:-~/ddd-job}"
 if [[ "$1" != "--no-push" ]]; then
   echo "📤 Pushing to GitHub..."
   cd "$(dirname "$0")"
-  git add -A
-  if ! git diff --cached --quiet; then
-    git commit -m "deploy: $(date '+%Y-%m-%d %H:%M')"
-    git push origin master
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    git add -u  # Only add tracked files, not new untracked ones
+    if ! git diff --cached --quiet; then
+      git commit -m "deploy: $(date '+%Y-%m-%d %H:%M')"
+      git push origin master
+    else
+      echo "   Nothing staged for commit"
+    fi
   else
     echo "   Nothing to commit"
   fi

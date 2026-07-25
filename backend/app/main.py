@@ -30,6 +30,8 @@ from app.routers.categories import router as categories_router
 from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
 
+from sqlalchemy import inspect, text
+
 # ── Uploads directory ────────────────────────────────────────────────
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -53,7 +55,6 @@ async def lifespan(app: FastAPI):
         _ensure_default_admin(db)
 
         # Migration: create product_images table if not exists
-        from sqlalchemy import inspect, text
         inspector = inspect(engine)
         if "product_images" not in inspector.get_table_names():
             print("Creating product_images table...")

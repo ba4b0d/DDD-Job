@@ -1,6 +1,6 @@
 from datetime import date
 from typing import Optional
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
 # ── Settings ──────────────────────────────────────────────────────────────
@@ -22,8 +22,7 @@ class SettingsResponse(BaseModel):
     value: float
     description: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Machine ───────────────────────────────────────────────────────────────
@@ -62,8 +61,7 @@ class MachineResponse(BaseModel):
     maintenance_pct: float
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Material ──────────────────────────────────────────────────────────────
@@ -109,11 +107,19 @@ class MaterialResponse(BaseModel):
     notes: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Product ───────────────────────────────────────────────────────────────
+
+class ProductImageResponse(BaseModel):
+    id: int
+    image_url: str
+    sort_order: int
+    is_primary: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ProductCreate(BaseModel):
     product_id: str = ""
@@ -210,10 +216,9 @@ class ProductResponse(BaseModel):
     suggested_price: float = 0
     gross_margin: float = 0
     margin_pct: float = 0
-    images: list = []
+    images: list[ProductImageResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Calculator (stateless) ───────────────────────────────────────────────
@@ -240,6 +245,8 @@ class CalculateResponse(BaseModel):
     suggested_price: float
     gross_margin: float
     margin_pct: float
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Category ──────────────────────────────────────────────────────────────
@@ -350,6 +357,12 @@ class OrderUpdate(BaseModel):
         return _empty_date(v)
 
 
+# ── Image Reorder ────────────────────────────────────────────────────────
+
+class ImageReorderRequest(BaseModel):
+    order: list[int]
+
+
 # ── Stats ─────────────────────────────────────────────────────────────────
 
 class StatsResponse(BaseModel):
@@ -361,3 +374,5 @@ class StatsResponse(BaseModel):
     price_min: Optional[float]
     price_max: Optional[float]
     products_per_category: dict[str, int]
+
+    model_config = ConfigDict(from_attributes=True)
