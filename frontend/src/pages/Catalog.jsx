@@ -215,36 +215,38 @@ export default function Catalog() {
 
   return (
     <div className="space-y-7 sm:space-y-9 animate-fade-in">
-      {/* Photo hero: full-bleed image, Farsi copy overlaid on the right */}
+      {/* Desktop: photo + overlay copy · Mobile: stacked media + panel */}
             <section className="catalog-hero overflow-hidden rounded-[1.35rem]">
-              <img
-                src="/catalog-hero.jpg"
-                alt=""
-                className="catalog-hero-photo"
-                width={1024}
-                height={572}
-                decoding="async"
-                fetchPriority="high"
-              />
-              <div className="catalog-hero-scrim" aria-hidden="true" />
+              <div className="catalog-hero-media">
+                <img
+                  src="/catalog-hero.jpg"
+                  alt=""
+                  className="catalog-hero-photo"
+                  width={1024}
+                  height={572}
+                  decoding="async"
+                  fetchPriority="high"
+                />
+                <div className="catalog-hero-scrim" aria-hidden="true" />
+              </div>
 
               <div className="catalog-hero-copy">
                 <div className="catalog-fdm-badge">
-                                  <Sparkles size={12} />
-                                  Spaghetti · FDM
-                                </div>
-                                <h2
-                                  className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15] drop-shadow-sm"
-                                  style={{ color: 'var(--text-primary)' }}
-                                >
-                                  کاتالوگ محصولات
-                                </h2>
-                                <p
-                                  className="text-sm sm:text-[15px] leading-relaxed max-w-md"
-                                  style={{ color: 'var(--text-secondary)' }}
-                                >
-                                  طراحی، چاپ و قیمت شفاف — محصولات آماده و سفارشی را ببینید، فیلتر کنید و قیمت را مقایسه کنید.
-                                </p>
+                  <Sparkles size={12} />
+                  Spaghetti · FDM
+                </div>
+                <h2
+                  className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  کاتالوگ محصولات
+                </h2>
+                <p
+                  className="catalog-hero-lead text-sm sm:text-[15px] leading-relaxed max-w-md"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  طراحی، چاپ و قیمت شفاف — محصولات آماده و سفارشی را ببینید، فیلتر کنید و قیمت را مقایسه کنید.
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
                     {products.length} محصول

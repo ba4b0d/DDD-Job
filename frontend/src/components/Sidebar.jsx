@@ -46,10 +46,10 @@ export default function Sidebar({ onLinkClick }) {
         className="flex items-center gap-3 px-5 py-5 border-b"
         style={{ borderColor: 'var(--border-color)' }}
       >
-        <BrandLogo height={36}>
+        <BrandLogo height={60}>
           <div className="flex items-center gap-3">
             <div
-              className="flex items-center justify-center w-9 h-9 rounded-[10px] font-bold text-white text-sm shrink-0"
+              className="flex items-center justify-center w-[60px] h-[60px] rounded-full font-bold text-white text-lg shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #6366f1, #818cf8)',
                 boxShadow: '0 0 18px rgba(129, 140, 248, 0.45)',
