@@ -1,11 +1,5 @@
 FROM python:3.11-slim
 
-# su-exec is a tiny setuid binary that drops privileges. Used by entrypoint
-# to chown mounted volumes (created as root by an earlier container) and
-# then re-exec the CMD as appuser.
-RUN apt-get update && apt-get install -y --no-install-recommends su-exec \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 COPY requirements.txt .
@@ -19,13 +13,16 @@ RUN mkdir -p /app/data /app/uploads && \
     groupadd -r appgroup && useradd -r -g appgroup appuser && \
     chown -R appuser:appgroup /app
 
-# Entrypoint: chown mounted volumes (so appuser can write), then drop privs.
+# Entrypoint: chown mounted volumes (so appuser can write), then drop
+# privileges via a small Python one-liner (avoids su-exec/gosu dep).
 COPY --chown=root:root entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
-# Run as root so entrypoint can chown, then it su-execs to appuser.
+# Container starts as root so entrypoint can chown the mounted volumes
+# (which were created by an earlier root-running container), then drops
+# to appuser before exec'ing the CMD.
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 

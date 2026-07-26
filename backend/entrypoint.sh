@@ -1,18 +1,28 @@
 #!/bin/sh
 # Entrypoint: chown mounted volumes so appuser can write, then drop
-# privileges and exec the CMD.
+# privileges to appuser and exec the CMD.
 #
 # Background: when the container was first built to run as root, the
 # named volumes `db_data` and `uploads_data` were created with root
 # ownership. After we switched to non-root `appuser`, those volumes
 # remained root-owned and `appuser` could not open the SQLite file
 # -> "attempt to write a readonly database". This script fixes the
-# ownership once per container start.
+# ownership once per container start, then drops to appuser.
+#
+# We use Python's os.setuid for the privilege drop (no su-exec/gosu
+# dependency, which aren't in Debian Trixie main repo).
 set -e
 
 # Chown mounted volumes (silent failure if already owned by appuser)
 chown -R appuser:appgroup /app/data 2>/dev/null || true
 chown -R appuser:appgroup /app/uploads 2>/dev/null || true
 
-# Drop to appuser and exec the CMD
-exec su-exec appuser "$@"
+# Drop to appuser via Python, then exec the CMD
+exec python3 -c "
+import os, sys, pwd
+pw = pwd.getpwnam('appuser')
+os.setgid(pw.pw_gid)
+os.setuid(pw.pw_uid)
+os.environ['HOME'] = pw.pw_dir
+os.execvp(sys.argv[1], sys.argv[1:])
+" "$@"
