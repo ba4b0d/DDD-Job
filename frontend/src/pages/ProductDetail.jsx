@@ -95,7 +95,7 @@ export default function ProductDetail() {
     try {
       const res = await uploadProductImages(product.id, Array.from(files));
       if (res.data?.images) {
-        setProduct({ ...product, images: res.data.images, image_url: res.data.images[0]?.image_url });
+        setProduct((prev) => prev ? { ...prev, images: res.data.images, image_url: res.data.images[0]?.image_url } : prev);
       }
     } catch (err) {
       console.error('Image upload error:', err);
@@ -111,7 +111,7 @@ export default function ProductDetail() {
     try {
       const res = await deleteProductImage(product.id, imageId);
       if (res.data?.images) {
-        setProduct({ ...product, images: res.data.images, image_url: res.data.images[0]?.image_url || null });
+        setProduct((prev) => prev ? { ...prev, images: res.data.images, image_url: res.data.images[0]?.image_url || null } : prev);
         if (activeImageIndex >= res.data.images.length) {
           setActiveImageIndex(Math.max(0, res.data.images.length - 1));
         }
@@ -128,7 +128,8 @@ export default function ProductDetail() {
     try {
       const res = await setPrimaryImage(product.id, imageId);
       if (res.data?.images) {
-        setProduct({ ...product, images: res.data.images, image_url: res.data.images.find(i => i.is_primary)?.image_url });
+        const primaryUrl = res.data.images.find(i => i.is_primary)?.image_url;
+        setProduct((prev) => prev ? { ...prev, images: res.data.images, image_url: primaryUrl } : prev);
       }
     } catch (err) {
       console.error('Set primary error:', err);
@@ -141,12 +142,12 @@ export default function ProductDetail() {
     try {
       const res = await extractDimensions(product.id);
       if (res.data?.dimensions) {
-        setProduct({
-          ...product,
+        setProduct((prev) => prev ? {
+          ...prev,
           dimension_x: res.data.dimensions.dimension_x,
           dimension_y: res.data.dimensions.dimension_y,
           dimension_z: res.data.dimensions.dimension_z,
-        });
+        } : prev);
       }
     } catch (err) {
       console.error('Extract dimensions error:', err);

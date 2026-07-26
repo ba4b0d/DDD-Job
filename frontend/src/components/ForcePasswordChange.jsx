@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { changeMyPassword } from '../lib/api';
 import Modal from './Modal';
@@ -11,6 +11,15 @@ export default function ForcePasswordChange() {
   const [loading, setLoading] = useState(false);
 
   if (!mustChangePassword) return null;
+
+  // Block Escape key from logging the user out — password change is mandatory.
+  useEffect(() => {
+    const block = (e) => {
+      if (e.key === 'Escape') e.stopImmediatePropagation();
+    };
+    document.addEventListener('keydown', block, true);
+    return () => document.removeEventListener('keydown', block, true);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +46,7 @@ export default function ForcePasswordChange() {
   };
 
   return (
-    <Modal isOpen={mustChangePassword} onClose={logout} title="تغییر اجباری رمز عبور">
+    <Modal isOpen={mustChangePassword} onClose={() => {}} title="تغییر اجباری رمز عبور">
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           رمز عبور پیش‌فرض شما باید تغییر کند. لطفاً رمز عبور جدیدی وارد کنید.

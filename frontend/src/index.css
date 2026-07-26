@@ -10,6 +10,7 @@
   --bg-primary: #dfe4f2;
   --bg-secondary: #eef1f9;
   --bg-tertiary: #d0d7ea;
+  --bg-card: #ffffff;
   --bg-sidebar: #2a3148;
   --bg-sidebar-hover: #353d58;
   --bg-sidebar-active: rgba(99, 102, 241, 0.2);
@@ -19,11 +20,13 @@
   --text-sidebar: #c5cbe0;
   --text-sidebar-active: #c7d2fe;
   --border-color: #c0c8dc;
+  --border: var(--border-color);
+
   --accent: #6366f1;
   --accent-hover: #4f46e5;
   --accent-light: rgba(99, 102, 241, 0.12);
   --accent-2: #0891b2;
-  /* Spaghetti logo orange (filament / pasta pile) */
+
     --brand-orange: #ff9a3d;
     --brand-orange-deep: #e07b2c;
     --brand-orange-light: #ffc66e;
