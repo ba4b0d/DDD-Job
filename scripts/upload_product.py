@@ -432,6 +432,37 @@ def api_upload_images(api: str, token: str, pid: int, images: list) -> dict:
     return r.json()
 
 
+def extract_local_bbox(model_path) -> dict | None:
+    """Parse a 3MF or STL file locally to extract bounding-box dimensions in mm.
+    Returns {"dimension_x", "dimension_y", "dimension_z"} or None on failure."""
+    ext = model_path.suffix.lower()
+    if ext == ".3mf":
+        info = parse_3mf(str(model_path))
+    elif ext == ".stl":
+        info = parse_stl(str(model_path))
+    else:
+        return None
+    bbox = info.get("bbox")
+    if not bbox or len(bbox) < 6:
+        return None
+    # bbox = [min_x, min_y, min_z, max_x, max_y, max_z]
+    return {
+        "dimension_x": round(bbox[3] - bbox[0], 2),
+        "dimension_y": round(bbox[4] - bbox[1], 2),
+        "dimension_z": round(bbox[5] - bbox[2], 2),
+    }
+
+
+def api_update_dimensions(api: str, token: str, pid: int, bbox: dict) -> dict:
+    r = requests.put(
+        f"{api}/api/v1/products/{pid}",
+        json=bbox,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    r.raise_for_status()
+    return r.json()
+
+
 # ── Main ────────────────────────────────────────────────────────────
 
 def process_folder(folder_path: str, args, slicer_path: str, token: str = None) -> dict:
@@ -495,6 +526,17 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
             api_upload_images(args.api, token, pid, info["images"])
         except requests.HTTPError as e:
             print(f"     ✗ Images failed: {e.response.text}")
+
+    # Auto-set dimensions from the local 3MF/STL (no extra slicing).
+    # Re-uses parse_3mf/parse_stl which already return bbox in mm.
+    if info.get("model_file"):
+        try:
+            bbox = extract_local_bbox(info["model_file"])
+            if bbox:
+                api_update_dimensions(args.api, token, pid, bbox)
+                print(f"     📐 {bbox['dimension_x']:.1f} × {bbox['dimension_y']:.1f} × {bbox['dimension_z']:.1f} mm")
+        except requests.HTTPError as e:
+            print(f"     ⚠ Dimensions failed: {e.response.text}")
 
     print(f"     ✅ #{pid} {info['name']}")
     return {"ok": True, "id": pid, "name": info["name"]}
