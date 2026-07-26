@@ -1,14 +1,16 @@
 {
-  "name": "Spaghetti",
+  "name": "Spaghetti Print - مدیریت محصولات",
   "short_name": "Spaghetti",
   "description": "سیستم مدیریت محصولات و قیمت‌گذاری چاپ سه‌بعدی",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#6366f1",
+  "theme_color": "#0f172a",
   "orientation": "any",
   "lang": "fa",
   "dir": "rtl",
+  "categories": ["business", "utilities"],
   "icons": [
     {
       "src": "/icon-192.png",
