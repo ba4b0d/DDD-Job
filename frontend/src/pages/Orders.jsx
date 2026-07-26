@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardList, Plus, Archive, Edit2 } from 'lucide-react';
-import { getOrders, createOrder, updateOrder, deleteOrder, getOrderStatuses } from '../lib/api';
+import { ClipboardList, Plus, Archive, Edit2, Download } from 'lucide-react';
+import { getOrders, createOrder, updateOrder, deleteOrder, getOrderStatuses, exportOrdersCsv, getProductsAll } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import {
   formatShamsiDate,
@@ -52,6 +52,8 @@ const emptyForm = {
   customer_name: '',
   contact: '',
   product_label: '',
+  product_id: '',
+  qty: 1,
   quoted_price: '',
   paid_amount: '',
   status: 'new',
@@ -64,6 +66,8 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [filter, setFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -83,6 +87,7 @@ export default function Orders() {
     try {
       const params = {};
       if (filter) params.status = filter;
+      if (search.trim()) params.search = search.trim();
       const [oRes, sRes] = await Promise.all([
         getOrders(params, { signal }),
         getOrderStatuses({ signal }),
@@ -97,7 +102,7 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, search]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -105,6 +110,16 @@ export default function Orders() {
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  // Load products for the picker
+  useEffect(() => {
+    getProductsAll({ signal: new AbortController().signal })
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : res.data?.items ?? res.data?.products ?? [];
+        setProducts(list.filter((p) => p.is_active));
+      })
+      .catch(() => {});
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
@@ -119,6 +134,8 @@ export default function Orders() {
       customer_name: order.customer_name || '',
       contact: order.contact || '',
       product_label: order.product_label || '',
+      product_id: order.product_id ?? '',
+      qty: order.qty ?? 1,
       quoted_price: order.quoted_price ?? '',
       paid_amount: order.paid_amount ?? '',
       status: order.status || 'new',
@@ -158,6 +175,8 @@ export default function Orders() {
       customer_name: form.customer_name.trim(),
       contact: form.contact.trim(),
       product_label: form.product_label.trim(),
+      product_id: form.product_id ? Number(form.product_id) : null,
+      qty: Number(form.qty) || 1,
       quoted_price: Number(form.quoted_price) || 0,
       paid_amount: Number(form.paid_amount) || 0,
       status: form.status || 'new',
@@ -184,10 +203,13 @@ export default function Orders() {
 
   const handleStatusQuick = async (order, status) => {
     if (status === order.status) return;
+    // Optimistic update
+    setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status } : o));
     try {
       await updateOrder(order.id, { status });
-      await load();
     } catch (err) {
+      // Revert on error
+      setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: order.status } : o));
       alert(err.response?.data?.detail || 'خطا در تغییر وضعیت');
     }
   };
@@ -199,6 +221,38 @@ export default function Orders() {
       await load();
     } catch (err) {
       alert(err.response?.data?.detail || 'خطا');
+    }
+  };
+
+  const handleExportCsv = async () => {
+    try {
+      const res = await exportOrdersCsv();
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'orders.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('خطا در خروجی CSV');
+    }
+  };
+
+  const handleProductPick = (e) => {
+    const pid = e.target.value;
+    if (!pid) {
+      setForm((f) => ({ ...f, product_id: '', product_label: '', quoted_price: '' }));
+      return;
+    }
+    const p = products.find((x) => String(x.id) === pid);
+    if (p) {
+      setForm((f) => ({
+        ...f,
+        product_id: pid,
+        product_label: p.name || '',
+        quoted_price: p.suggested_price ?? p.final_price ?? '',
+      }));
     }
   };
 
@@ -229,22 +283,53 @@ export default function Orders() {
         { value: 'cancelled', label: 'لغو' },
       ];
 
-  const headers = ['مشتری', 'تماس', 'محصول', 'شروع', 'موعد ارسال', 'قیمت', 'پرداخت', 'مانده', 'وضعیت', ''];
+  const headers = ['مشتری', 'تماس', 'محصول', 'تعداد', 'شروع', 'موعد ارسال', 'قیمت کل', 'پرداخت', 'مانده', 'وضعیت', ''];
+
+  // Compute totals
+  const totals = orders.reduce(
+    (acc, o) => {
+      acc.quoted += (o.total_quoted ?? o.quoted_price ?? 0);
+      acc.paid += (o.paid_amount ?? 0);
+      acc.remaining += (o.remaining ?? 0);
+      return acc;
+    },
+    { quoted: 0, paid: 0, remaining: 0 }
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-white" style={{ color: '#fff' }}>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             سفارش‌ها
           </h2>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-            برد ساده کارگاه — نه حسابداری
+            برد سفارش‌ها و مدیریت پرداخت
           </p>
         </div>
-        <button type="button" onClick={openCreate} className="btn-primary">
-          <Plus size={16} /> سفارش جدید
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={handleExportCsv} className="btn-secondary text-xs">
+            <Download size={14} /> CSV
+          </button>
+          <button type="button" onClick={openCreate} className="btn-primary">
+            <Plus size={16} /> سفارش جدید
+          </button>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="جستجوی نام مشتری یا شماره تماس..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input-field w-full"
+          style={{ paddingLeft: '2.5rem' }}
+        />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+          🔍
+        </span>
       </div>
 
       <div
@@ -328,6 +413,9 @@ export default function Orders() {
                       >
                         {o.product_label || '—'}
                       </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-center" style={{ color: 'var(--text-primary)' }}>
+                        {o.qty || 1}
+                      </td>
                       <td
                         className="px-3 py-3 whitespace-nowrap text-xs text-right"
                         style={{ color: 'var(--text-secondary)' }}
@@ -353,7 +441,7 @@ export default function Orders() {
                         {urg === 'overdue' && <span className="mr-1">!</span>}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
-                        {formatPrice(o.quoted_price)}
+                        {formatPrice(o.total_quoted ?? o.quoted_price)}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                         {formatPrice(o.paid_amount)}
@@ -405,6 +493,25 @@ export default function Orders() {
                   );
                 })}
               </tbody>
+              {orders.length > 0 && (
+                <tfoot>
+                  <tr style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '2px solid var(--border-color)', fontWeight: 600 }}>
+                    <td colSpan={6} className="px-3 py-3 text-right" style={{ color: 'var(--text-primary)' }}>
+                      جمع ({orders.length} سفارش)
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                      {formatPrice(totals.quoted)}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap" style={{ color: '#16a34a' }}>
+                      {formatPrice(totals.paid)}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap" style={{ color: totals.remaining > 0 ? '#d97706' : '#16a34a' }}>
+                      {formatPrice(totals.remaining)}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
@@ -441,7 +548,24 @@ export default function Orders() {
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              محصول / شرح
+              انتخاب محصول (اختیاری)
+            </label>
+            <select
+              className="select-field w-full"
+              value={form.product_id}
+              onChange={handleProductPick}
+            >
+              <option value="">— بدون پیوند به محصول —</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.product_id ? `${p.product_id} — ` : ''}{p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              شرح سفارش
             </label>
             <input
               className="input-field"
@@ -449,10 +573,22 @@ export default function Orders() {
               onChange={(e) => setForm((f) => ({ ...f, product_label: e.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                قیمت توافقی
+                تعداد
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="input-field"
+                value={form.qty}
+                onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                قیمت واحد (تومان)
               </label>
               <input
                 type="number"
@@ -475,6 +611,17 @@ export default function Orders() {
               />
             </div>
           </div>
+          {/* Live total preview */}
+          {(Number(form.qty) > 1 || Number(form.quoted_price) > 0) && (
+            <p className="text-xs -mt-1" style={{ color: 'var(--text-muted)' }}>
+              کل: {formatPrice((Number(form.qty) || 1) * (Number(form.quoted_price) || 0))} تومان
+              {Number(form.paid_amount) > 0 && (
+                <span style={{ color: Number(form.paid_amount) >= (Number(form.qty) || 1) * (Number(form.quoted_price) || 0) ? '#16a34a' : '#d97706' }}>
+                  {' '}— مانده: {formatPrice(Math.max(0, (Number(form.qty) || 1) * (Number(form.quoted_price) || 0) - Number(form.paid_amount || 0)))}
+                </span>
+              )}
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>

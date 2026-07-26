@@ -296,6 +296,7 @@ class OrderCreate(BaseModel):
     contact: str = ""
     product_label: str = ""
     product_id: Optional[int] = None
+    qty: int = Field(default=1, ge=1)
     quoted_price: float = Field(default=0, ge=0)
     paid_amount: float = Field(default=0, ge=0)
     status: str = "new"
@@ -328,6 +329,7 @@ class OrderUpdate(BaseModel):
     contact: Optional[str] = None
     product_label: Optional[str] = None
     product_id: Optional[int] = None
+    qty: Optional[int] = Field(default=None, ge=1)
     quoted_price: Optional[float] = Field(default=None, ge=0)
     paid_amount: Optional[float] = Field(default=None, ge=0)
     status: Optional[str] = Field(default=None, exclude=True)

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, Store } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../lib/auth';
@@ -7,6 +7,8 @@ import { useAuth } from '../lib/auth';
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/dashboard';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -19,7 +21,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(username, password);
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err.response?.data?.detail || 'خطا در ورود');
     } finally {

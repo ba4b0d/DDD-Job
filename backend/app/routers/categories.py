@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import Category, Product
 from app.schemas import CategoryCreate, CategoryUpdate
 from app.routers.auth import require_any_role
+from app.routers.stats import invalidate_stats
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
@@ -85,4 +86,5 @@ def delete_category(cat_id: int, user=Depends(require_any_role), db: Session = D
     db.query(Product).filter(Product.category == cat.name).update({"category": ""})
     db.delete(cat)
     db.commit()
+    invalidate_stats()
     return {"message": "دسته‌بندی حذف شد"}

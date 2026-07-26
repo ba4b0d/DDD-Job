@@ -12,7 +12,7 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config.url.includes('/auth/')) {
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
       window.location.href = '/login';
     }
     const message = error.response?.data?.detail
@@ -123,5 +123,7 @@ export const getOrder = (id, config) => api.get(`/orders/${id}`, config);
 export const createOrder = (data) => api.post('/orders', data);
 export const updateOrder = (id, data) => api.put(`/orders/${id}`, data);
 export const deleteOrder = (id) => api.delete(`/orders/${id}`);
+export const getOrderSummary = (month, config) => api.get('/orders/summary/monthly', { params: { month }, ...config });
+export const exportOrdersCsv = (params, config) => api.get('/orders/export/csv', { params, responseType: 'blob', ...config });
 
 export default api;

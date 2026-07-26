@@ -183,7 +183,7 @@ export default function Products() {
       const res = await importProducts(file);
       const { created, updated, errors } = res.data;
       let msg = `ایجاد شده: ${created}\nبه‌روزرسانی شده: ${updated}`;
-      if (errors.length > 0) {
+      if (errors && errors.length > 0) {
         msg += `\n\nخطاها (${errors.length}):\n`;
         errors.forEach((e) => {
           msg += `  ردیف ${e.row}: ${e.error}\n`;

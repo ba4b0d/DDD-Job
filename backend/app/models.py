@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, Boolean, Date, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, Boolean, Date, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.database import Base
@@ -30,6 +30,9 @@ class Machine(Base):
 
 class Material(Base):
     __tablename__ = "materials"
+    __table_args__ = (
+        UniqueConstraint("name", "color", name="uq_material_name_color"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
@@ -124,18 +127,21 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    customer_name = Column(String, nullable=False, default="")
+    customer_name = Column(String, nullable=False, default="", index=True)
     contact = Column(String, default="")  # phone / Telegram / etc.
     product_label = Column(String, default="")  # free text what they ordered
     product_id = Column(Integer, ForeignKey("products.id"), nullable=True, index=True)
-    quoted_price = Column(Float, default=0)  # تومان
+    qty = Column(Integer, default=1)
+    quoted_price = Column(Float, default=0)  # تومان (per unit)
     paid_amount = Column(Float, default=0)   # تومان
+    unit_cost = Column(Float, nullable=True)  # snapshot of product base_price at creation
     status = Column(String, nullable=False, default="new", index=True)
     notes = Column(String, default="")
     # Shop schedule (optional) — not notifications yet
     started_at = Column(Date, nullable=True)   # تاریخ شروع کار
     ready_by = Column(Date, nullable=True)     # موعد آماده ارسال / تحویل
     is_active = Column(Boolean, default=True, index=True)
+    delivered_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
@@ -143,4 +149,4 @@ class Order(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    product = relationship("Product")
+    product = relationship("Product", lazy="joined")

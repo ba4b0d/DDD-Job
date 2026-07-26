@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
@@ -36,11 +36,12 @@ function PageLoader() {
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { isAuthenticated, user, loading } = useAuth();
+  const location = useLocation();
   if (loading) {
     return <PageLoader />;
   }
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   if (requireAdmin && user?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
