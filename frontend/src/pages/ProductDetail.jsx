@@ -195,7 +195,11 @@ export default function ProductDetail() {
     ...(product.dimension_x || product.dimension_y || product.dimension_z ? [{
       icon: Box,
       label: 'ابعاد',
-      value: `${product.dimension_x || '?'} × ${product.dimension_y || '?'} × ${product.dimension_z || '?'} میلیمتر`,
+      // Sort longest -> shortest for natural reading (L × W × H)
+      value: `${[product.dimension_x || 0, product.dimension_y || 0, product.dimension_z || 0]
+        .map((d) => Math.round(d))
+        .sort((a, b) => b - a)
+        .join(' × ')} میلیمتر`,
     }] : []),
     { icon: Weight, label: 'وزن خالص', value: product.weight_g ? `${product.weight_g} گرم` : '—' },
     {

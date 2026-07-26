@@ -407,12 +407,18 @@ export default function Catalog() {
                         {formatMinutes(product.print_time_hours * 60)}
                       </span>
                     )}
-                    {(product.dimension_x || product.dimension_y || product.dimension_z) ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Ruler size={11} className="opacity-70" />{' '}
-                        {Math.round(product.dimension_x || 0)} × {Math.round(product.dimension_y || 0)} × {Math.round(product.dimension_z || 0)} mm
-                      </span>
-                    ) : null}
+                    {(product.dimension_x || product.dimension_y || product.dimension_z) ? (() => {
+                      // Sort longest -> shortest for natural reading (L × W × H).
+                      const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
+                        .map((d) => Math.round(d || 0))
+                        .sort((a, b) => b - a);
+                      return (
+                        <span className="inline-flex items-center gap-1">
+                          <Ruler size={11} className="opacity-70" />{' '}
+                          {dims[0]} × {dims[1]} × {dims[2]} میلیمتر
+                        </span>
+                      );
+                    })() : null}
                   </div>
 
                   <div
