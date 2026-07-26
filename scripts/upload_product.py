@@ -32,7 +32,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from xml.etree.ElementTree import XMLParser, fromstring
+from xml.etree.ElementTree import fromstring
 from pathlib import Path
 
 try:
@@ -148,20 +148,37 @@ def parse_3mf(path: str) -> dict:
                     pass
 
         # ─ Parse mesh geometry ─
-        model_name = None
+        # Bambu/PrusaSlicer split multi-object 3MFs into 3D/Objects/*.model
+        # in addition to the main 3D/3dmodel.model. Aggregate ALL of them.
+        model_names = []
         for n in names:
-            if n.endswith("3dmodel.model"):
-                model_name = n
-                break
-        if not model_name:
-            for n in names:
-                if n.endswith(".model"):
-                    model_name = n
-                    break
+            if n.endswith("3dmodel.model") or n.endswith(".model"):
+                model_names.append(n)
+        # Dedup but keep main model first
+        seen = set()
+        ordered = []
+        for n in model_names:
+            if n not in seen:
+                ordered.append(n)
+                seen.add(n)
 
-        if model_name:
+        # Aggregate mesh across all model files
+        agg = {"volume_mm3": 0, "triangles": 0, "bbox": None, "_xs": [], "_ys": [], "_zs": []}
+        for model_name in ordered:
             xml_data = zf.read(model_name)
-            result.update(_parse_model_xml(xml_data))
+            sub = _parse_model_xml(xml_data)
+            agg["volume_mm3"] += sub.get("volume_mm3", 0) or 0
+            agg["triangles"] += sub.get("triangles", 0) or 0
+            agg["_xs"] += sub.get("_xs", []) or []
+            agg["_ys"] += sub.get("_ys", []) or []
+            agg["_zs"] += sub.get("_zs", []) or []
+        if agg["_xs"]:
+            agg["bbox"] = [min(agg["_xs"]), min(agg["_ys"]), min(agg["_zs"]),
+                           max(agg["_xs"]), max(agg["_ys"]), max(agg["_zs"])]
+        # Drop the per-axis lists to keep the result clean
+        for k in ("_xs", "_ys", "_zs"):
+            agg.pop(k, None)
+        result.update(agg)
 
     return result
 
@@ -195,11 +212,10 @@ def _extract_orca_slice_json(j: dict) -> dict:
 
 
 def _safe_xml_fromstring(xml_bytes: bytes):
-    """Parse XML with external entity expansion disabled."""
-    parser = XMLParser()
-    parser.parser.UseForeignDTD(False)
-    parser.entity["nbsp"] = " "
-    return fromstring(xml_bytes, parser=parser)
+    """Parse XML with external entity expansion disabled (XXE-safe)."""
+    # Python's stdlib ElementTree doesn't fetch external entities by default,
+    # so plain fromstring is already XXE-safe for untrusted XML.
+    return fromstring(xml_bytes)
 
 
 def _extract_orca_slice_xml(root) -> dict:
@@ -263,9 +279,16 @@ def _parse_model_xml(xml_bytes: bytes) -> dict:
 
     bbox = None
     if triangles > 0:
-        bbox = {k: round(max_xyz[i]-min_xyz[i], 2) for i, k in enumerate("xyz")}
+        bbox = [round(min_xyz[i], 2) for i in range(3)] + [round(max_xyz[i], 2) for i in range(3)]
 
-    return {"volume_mm3": abs(vol), "triangles": triangles, "bbox": bbox}
+    return {
+        "volume_mm3": abs(vol),
+        "triangles": triangles,
+        "bbox": bbox,  # [min_x, min_y, min_z, max_x, max_y, max_z]
+        "_xs": [v[0] for v in vlist],
+        "_ys": [v[1] for v in vlist],
+        "_zs": [v[2] for v in vlist],
+    }
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -497,6 +520,16 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
         print(f"     ⚖️  ~{weight}g (estimated)")
     print(f"     🖼️  {len(info['images'])} image(s)")
 
+    # Local bbox extraction (works in --dry too — no API needed)
+    if info.get("model_file"):
+        try:
+            bbox = extract_local_bbox(info["model_file"])
+            if bbox:
+                print(f"     📐 {bbox['dimension_x']:.1f} × {bbox['dimension_y']:.1f} × {bbox['dimension_z']:.1f} mm")
+                info["bbox"] = bbox
+        except Exception as e:
+            print(f"     ⚠ Local bbox parse failed: {e}")
+
     if args.dry:
         return {"ok": True, "name": info["name"]}
 
@@ -513,6 +546,8 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
             "machine_id": args.machine_id,
             "material_id": args.material_id,
         }
+        if info.get("bbox"):
+            data.update(info["bbox"])
         try:
             result = api_create(args.api, token, data)
             pid = result["id"]
@@ -526,17 +561,6 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
             api_upload_images(args.api, token, pid, info["images"])
         except requests.HTTPError as e:
             print(f"     ✗ Images failed: {e.response.text}")
-
-    # Auto-set dimensions from the local 3MF/STL (no extra slicing).
-    # Re-uses parse_3mf/parse_stl which already return bbox in mm.
-    if info.get("model_file"):
-        try:
-            bbox = extract_local_bbox(info["model_file"])
-            if bbox:
-                api_update_dimensions(args.api, token, pid, bbox)
-                print(f"     📐 {bbox['dimension_x']:.1f} × {bbox['dimension_y']:.1f} × {bbox['dimension_z']:.1f} mm")
-        except requests.HTTPError as e:
-            print(f"     ⚠ Dimensions failed: {e.response.text}")
 
     print(f"     ✅ #{pid} {info['name']}")
     return {"ok": True, "id": pid, "name": info["name"]}
