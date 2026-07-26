@@ -428,14 +428,29 @@ def parse_folder(folder_path: str) -> dict:
 
 # ── API ─────────────────────────────────────────────────────────────
 
+# Use a Session so the httpOnly access_token cookie set by /auth/login
+# is automatically attached to every subsequent request. The Bearer
+# header fallback is kept for older deployments.
+_session = requests.Session()
+
+
 def api_login(api: str, user: str, pw: str) -> str:
-    r = requests.post(f"{api}/api/v1/auth/login", json={"username": user, "password": pw})
+    r = _session.post(f"{api}/api/v1/auth/login", json={"username": user, "password": pw})
     r.raise_for_status()
-    return r.json().get("token") or r.json().get("access_token")
+    # New auth (Tier 1+): no token in body — cookie only. Use cookie.
+    # Return any token found in body for older deployments.
+    return r.json().get("token") or r.json().get("access_token") or "cookie"
+
+
+def _headers(token: str) -> dict:
+    """Bearer header only if a real token is provided; cookie auth otherwise."""
+    if token and token != "cookie":
+        return {"Authorization": f"Bearer {token}"}
+    return {}
 
 
 def api_create(api: str, token: str, data: dict) -> dict:
-    r = requests.post(f"{api}/api/v1/products", json=data, headers={"Authorization": f"Bearer {token}"})
+    r = _session.post(f"{api}/api/v1/products", json=data, headers=_headers(token))
     r.raise_for_status()
     return r.json()
 
@@ -445,12 +460,11 @@ MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
 
 
 def api_upload_images(api: str, token: str, pid: int, images: list) -> dict:
-    headers = {"Authorization": f"Bearer {token}"}
     files = []
     for img in images:
         ct = MIME.get(img.suffix.lower(), "application/octet-stream")
         files.append(("files", (img.name, img.read_bytes(), ct)))
-    r = requests.post(f"{api}/api/v1/products/{pid}/images", files=files, headers=headers)
+    r = _session.post(f"{api}/api/v1/products/{pid}/images", files=files, headers=_headers(token))
     r.raise_for_status()
     return r.json()
 
