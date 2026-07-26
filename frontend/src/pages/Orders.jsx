@@ -68,6 +68,8 @@ export default function Orders() {
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -124,12 +126,18 @@ export default function Orders() {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setProductSearch('');
+    setShowProductDropdown(false);
     setError('');
     setShowModal(true);
   };
 
   const openEdit = (order) => {
     setEditing(order);
+    // Find the selected product name for the search display
+    const selectedProduct = order.product_id ? products.find((p) => p.id === order.product_id) : null;
+    setProductSearch(selectedProduct ? `${selectedProduct.product_id ? selectedProduct.product_id + ' — ' : ''}${selectedProduct.name}` : '');
+    setShowProductDropdown(false);
     setForm({
       customer_name: order.customer_name || '',
       contact: order.contact || '',
@@ -239,21 +247,23 @@ export default function Orders() {
     }
   };
 
-  const handleProductPick = (e) => {
-    const pid = e.target.value;
-    if (!pid) {
-      setForm((f) => ({ ...f, product_id: '', product_label: '', quoted_price: '' }));
-      return;
-    }
-    const p = products.find((x) => String(x.id) === pid);
-    if (p) {
-      setForm((f) => ({
-        ...f,
-        product_id: pid,
-        product_label: p.name || '',
-        quoted_price: p.suggested_price ?? p.final_price ?? '',
-      }));
-    }
+  const handleProductPick = (product) => {
+    const pid = String(product.id);
+    const label = `${product.product_id ? product.product_id + ' — ' : ''}${product.name}`;
+    setProductSearch(label);
+    setShowProductDropdown(false);
+    setForm((f) => ({
+      ...f,
+      product_id: pid,
+      product_label: product.name || '',
+      quoted_price: product.suggested_price ?? product.final_price ?? '',
+    }));
+  };
+
+  const handleProductClear = () => {
+    setProductSearch('');
+    setShowProductDropdown(false);
+    setForm((f) => ({ ...f, product_id: '', product_label: '', quoted_price: '' }));
   };
 
   if (loading && orders.length === 0) {
@@ -546,22 +556,89 @@ export default function Orders() {
               onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
             />
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
               انتخاب محصول (اختیاری)
             </label>
-            <select
-              className="select-field w-full"
-              value={form.product_id}
-              onChange={handleProductPick}
-            >
-              <option value="">— بدون پیوند به محصول —</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.product_id ? `${p.product_id} — ` : ''}{p.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-1">
+              <input
+                type="text"
+                className="input-field flex-1"
+                placeholder="جستجوی نام یا کد محصول..."
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setShowProductDropdown(true);
+                  if (!e.target.value) setForm((f) => ({ ...f, product_id: '', quoted_price: '' }));
+                }}
+                onFocus={() => setShowProductDropdown(true)}
+                onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+              />
+              {form.product_id && (
+                <button
+                  type="button"
+                  onClick={handleProductClear}
+                  className="px-2 rounded-lg text-xs"
+                  style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
+                  title="حذف انتخاب"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {showProductDropdown && (
+              <div
+                className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg max-h-48 overflow-y-auto"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+              >
+                {products.length === 0 ? (
+                  <div className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    محصولی یافت نشد
+                  </div>
+                ) : (
+                  (() => {
+                    const term = productSearch.toLowerCase();
+                    const filtered = term
+                      ? products.filter((p) =>
+                          (p.name || '').toLowerCase().includes(term) ||
+                          (p.product_id || '').toLowerCase().includes(term)
+                        )
+                      : products;
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          نتیجه‌ای یافت نشد
+                        </div>
+                      );
+                    }
+                    return filtered.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="w-full text-right px-3 py-2 text-xs flex items-center justify-between hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] transition-colors"
+                        style={{ borderBottom: '1px solid var(--border-color)' }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleProductPick(p)}
+                      >
+                        <span style={{ color: 'var(--text-primary)' }}>
+                          {p.product_id && (
+                            <span className="font-mono ml-1" style={{ color: 'var(--accent)' }}>
+                              {p.product_id}
+                            </span>
+                          )}
+                          {p.name}
+                        </span>
+                        {(p.suggested_price > 0) && (
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {formatPrice(p.suggested_price)}
+                          </span>
+                        )}
+                      </button>
+                    ));
+                  })()
+                )}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
