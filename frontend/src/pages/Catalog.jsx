@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 
@@ -104,6 +105,22 @@ function CatalogImageCarousel({ images, name }) {
       </div>
     </div>
   );
+}
+
+function isWithinDays(isoDate, days = 14) {
+  if (!isoDate) return false;
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  return date >= cutoff;
+}
+
+function telegramShareUrl(product) {
+  const url = `${window.location.origin}/catalog/${product.id}`;
+  const text = `${displayName(product.name)}${product.product_id ? ` — کد: ${product.product_id}` : ''}`;
+  return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 }
 
 function displayName(name) {
@@ -330,120 +347,168 @@ export default function Catalog() {
           <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
             محصولی یافت نشد
           </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            فیلتر یا جستجو را تغییر دهید
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+            فیلترها یا عبارت جستجو را بررسی کنید. شاید دسته‌بندی یا نام دیگری مد نظرتان باشد.
           </p>
+          <Link
+            to="/contact"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+            style={{ background: 'var(--accent)', color: '#fff' }}
+          >
+            تماس با ما
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filtered.map((product, idx) => {
             const price = product.final_price || product.suggested_price;
+            const isNew = isWithinDays(product.created_at, 14);
+            const shareUrl = telegramShareUrl(product);
             return (
               <article
                 key={product.id}
-                className="catalog-product-card group flex flex-col"
+                className="catalog-product-card group flex flex-col relative"
                 style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}
               >
-                <div
-                  className="relative overflow-hidden"
-                  style={{ background: 'var(--bg-tertiary)' }}
+                <Link
+                  to={`/catalog/${product.id}`}
+                  className="flex-1 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+                  style={{ '--tw-ring-color': 'var(--accent)' }}
+                  aria-label={`مشاهده ${displayName(product.name)}`}
                 >
-                  {product.images?.length > 0 ? (
-                    <CatalogImageCarousel images={product.images} name={product.name} />
-                  ) : product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={displayName(product.name)}
-                      className="w-full h-48 sm:h-56 object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-48 sm:h-56 flex flex-col items-center justify-center gap-2 catalog-img-placeholder">
-                      <Package size={32} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>بدون تصویر</span>
-                    </div>
-                  )}
-
-                  {/* bottom gradient on image */}
-                  <div className="catalog-img-fade pointer-events-none" aria-hidden="true" />
-
-                  <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-2 pointer-events-none z-[1]">
-                    {product.product_id ? (
-                      <span className="catalog-code-badge">{product.product_id}</span>
+                  <div
+                    className="relative overflow-hidden"
+                    style={{ background: 'var(--bg-tertiary)' }}
+                  >
+                    {product.images?.length > 0 ? (
+                      <CatalogImageCarousel images={product.images} name={product.name} />
+                    ) : product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={displayName(product.name)}
+                        className="w-full h-48 sm:h-56 object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        loading="lazy"
+                      />
                     ) : (
-                      <span />
-                    )}
-                    {product.category && (
-                      <span className="catalog-cat-badge">{product.category}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-4 flex-1 flex flex-col gap-2.5">
-                  <h3
-                    className="font-bold text-[15px] leading-snug line-clamp-2 tracking-tight"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {displayName(product.name)}
-                  </h3>
-
-                  <div
-                    className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    {product.material_name && (
-                      <span className="inline-flex items-center gap-1">
-                        <Layers size={11} className="opacity-70" /> {product.material_name}
-                      </span>
-                    )}
-                    {product.weight_g > 0 && (
-                      <span className="inline-flex items-center gap-1">
-                        <Weight size={11} className="opacity-70" /> {product.weight_g}g
-                      </span>
-                    )}
-                    {product.print_time_hours > 0 && (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock size={11} className="opacity-70" />{' '}
-                        {formatMinutes(product.print_time_hours * 60)}
-                      </span>
-                    )}
-                    {(product.dimension_x || product.dimension_y || product.dimension_z) ? (() => {
-                      // Sort longest -> shortest for natural reading (L × W × H).
-                      const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
-                        .map((d) => Math.round(d || 0))
-                        .sort((a, b) => b - a);
-                      return (
-                        <span className="inline-flex items-center gap-1">
-                          <Ruler size={11} className="opacity-70" />{' '}
-                          {dims[0]} × {dims[1]} × {dims[2]} میلیمتر
-                        </span>
-                      );
-                    })() : null}
-                  </div>
-
-                  <div
-                    className="pt-3 mt-auto border-t flex items-end justify-between gap-2"
-                    style={{ borderColor: 'var(--border-color)' }}
-                  >
-                    {price ? (
-                      <div>
-                        <div
-                          className="text-[10px] uppercase tracking-wide mb-0.5"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {product.final_price ? 'قیمت نهایی' : 'قیمت'}
-                        </div>
-                        <span className="catalog-price text-lg font-bold tabular-nums">
-                          {formatPrice(price)}
-                        </span>
+                      <div className="w-full h-48 sm:h-56 flex flex-col items-center justify-center gap-2 catalog-img-placeholder">
+                        <Package size={32} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>بدون تصویر</span>
                       </div>
-                    ) : (
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        قیمت تماس بگیرید
-                      </span>
                     )}
+
+                    {/* bottom gradient on image */}
+                    <div className="catalog-img-fade pointer-events-none" aria-hidden="true" />
+
+                    <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-2 pointer-events-none z-[1]">
+                      {product.product_id ? (
+                        <span className="catalog-code-badge">{product.product_id}</span>
+                      ) : (
+                        <span />
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        {isNew && (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                            style={{ background: '#22c55e', color: '#fff' }}
+                          >
+                            جدید
+                          </span>
+                        )}
+                        {product.category && (
+                          <span className="catalog-cat-badge">{product.category}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="p-4 flex-1 flex flex-col gap-2.5">
+                    <h3
+                      className="font-bold text-[15px] leading-snug line-clamp-2 tracking-tight"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {displayName(product.name)}
+                    </h3>
+
+                    <div
+                      className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {product.material_name && (
+                        <span className="inline-flex items-center gap-1">
+                          <Layers size={11} className="opacity-70" />
+                          <span
+                            className="inline-block rounded-full"
+                            style={{
+                              width: 8,
+                              height: 8,
+                              backgroundColor: product.material_color || '#94a3b8',
+                            }}
+                            aria-hidden="true"
+                          />
+                          {product.material_name}
+                        </span>
+                      )}
+                      {product.weight_g > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <Weight size={11} className="opacity-70" /> {product.weight_g}g
+                        </span>
+                      )}
+                      {product.print_time_hours > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock size={11} className="opacity-70" />{' '}
+                          {formatMinutes(product.print_time_hours * 60)}
+                        </span>
+                      )}
+                      {(product.dimension_x || product.dimension_y || product.dimension_z) ? (() => {
+                        // Sort longest -> shortest for natural reading (L × W × H).
+                        const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
+                          .map((d) => Math.round(d || 0))
+                          .sort((a, b) => b - a);
+                        return (
+                          <span className="inline-flex items-center gap-1">
+                            <Ruler size={11} className="opacity-70" />{' '}
+                            {dims[0]} × {dims[1]} × {dims[2]} میلیمتر
+                          </span>
+                        );
+                      })() : null}
+                    </div>
+
+                    <div
+                      className="pt-3 mt-auto border-t flex items-end justify-between gap-2"
+                      style={{ borderColor: 'var(--border-color)' }}
+                    >
+                      {price ? (
+                        <div>
+                          <div
+                            className="text-[10px] uppercase tracking-wide mb-0.5"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            {product.final_price ? 'قیمت نهایی' : 'قیمت'}
+                          </div>
+                          <span className="catalog-price text-lg font-bold tabular-nums">
+                            {formatPrice(price)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          قیمت تماس بگیرید
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Telegram share — sits outside the Link so it can be clicked independently */}
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-2.5 left-2.5 z-[2] p-2 rounded-full bg-black/50 hover:bg-[#2AABEE] text-white backdrop-blur-sm transition-colors"
+                  aria-label="اشتراک در تلگرام"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Send size={15} />
+                </a>
               </article>
             );
           })}

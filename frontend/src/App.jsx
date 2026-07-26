@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
@@ -16,6 +16,7 @@ const Machines = lazy(() => import('./pages/Machines'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Calculator = lazy(() => import('./pages/Calculator'));
 const Catalog = lazy(() => import('./pages/Catalog'));
+const PublicProductDetail = lazy(() => import('./pages/PublicProductDetail'));
 const Contact = lazy(() => import('./pages/Contact'));
 const HowToOrder = lazy(() => import('./pages/HowToOrder'));
 const UsersPage = lazy(() => import('./pages/Users'));
@@ -36,12 +37,11 @@ function PageLoader() {
 
 function ProtectedRoute({ children, requireAdmin = false }) {
   const { isAuthenticated, user, loading } = useAuth();
-  const location = useLocation();
   if (loading) {
     return <PageLoader />;
   }
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" replace />;
   }
   if (requireAdmin && user?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
@@ -60,6 +60,7 @@ function AppRoutes() {
         {/* Public */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/catalog/:id" element={<CatalogLayout><PublicProductDetail /></CatalogLayout>} />
                 <Route path="/contact" element={<CatalogLayout><Contact /></CatalogLayout>} />
                 <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />
 

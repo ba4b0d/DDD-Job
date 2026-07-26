@@ -112,6 +112,15 @@ async def lifespan(app: FastAPI):
                 db.execute(text("ALTER TABLE orders ADD COLUMN ready_by DATE"))
                 print("Added orders.ready_by column.")
             db.commit()
+
+        # Migration: products.created_at
+        product_cols = {c["name"] for c in inspector.get_columns("products")}
+        if "created_at" not in product_cols:
+            print("Adding products.created_at column...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN created_at DATETIME"))
+            print("Added products.created_at column.")
+
     finally:
         db.close()
 
