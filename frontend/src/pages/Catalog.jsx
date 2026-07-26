@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler } from 'lucide-react';
 import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 
@@ -407,6 +407,12 @@ export default function Catalog() {
                         {formatMinutes(product.print_time_hours * 60)}
                       </span>
                     )}
+                    {(product.dimension_x || product.dimension_y || product.dimension_z) ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Ruler size={11} className="opacity-70" />{' '}
+                        {Math.round(product.dimension_x || 0)} × {Math.round(product.dimension_y || 0)} × {Math.round(product.dimension_z || 0)} mm
+                      </span>
+                    ) : null}
                   </div>
 
                   <div
