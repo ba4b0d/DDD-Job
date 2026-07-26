@@ -23,6 +23,12 @@ data/*.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# Screenshots (dev only — local docs)
+screenshots/
+
+# hermes artifacts
+.hermes/
+
 # IDE
 .vscode/
 .idea/
@@ -43,7 +49,3 @@ frontend/.vite/
 
 # Test artifacts
 backend/tests/*.db
-!.env.example
-
-# hermes
-.hermes/

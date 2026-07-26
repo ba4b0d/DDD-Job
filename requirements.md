@@ -1,7 +1,7 @@
 # 3DJAT Pricing App — Software Requirements Specification
 
-> **Document version:** 1.0 (retroactive, reverse-engineered from codebase)
-> **Date:** 2026-07-10
+> **Document version:** 1.1 (reflects Tier 1-5 security, dimension feature, role gating)
+> **Date:** 2026-07-26
 > **Status:** Implemented
 
 ---

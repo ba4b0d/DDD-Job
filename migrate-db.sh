@@ -10,7 +10,18 @@ docker compose down 2>/dev/null || true
 
 # Start backend briefly to create the named volume
 docker compose up -d backend
-sleep 3
+
+# Wait for backend healthcheck (up to 30s) instead of fixed sleep race.
+for i in {1..30}; do
+  STATUS=$(docker compose ps backend --format json 2>/dev/null | grep -o '"Health":"[^"]*"' | cut -d'"' -f4)
+  if [ "$STATUS" = "healthy" ]; then
+    break
+  fi
+  if [ $i -eq 30 ]; then
+    echo "⚠️  Backend healthcheck timeout — proceeding anyway"
+  fi
+  sleep 1
+done
 
 # Find the volume mountpoint
 VOL=$(docker compose exec backend sh -c "find /app/data -name '*.db' -exec dirname {} \;" 2>/dev/null | head -1)

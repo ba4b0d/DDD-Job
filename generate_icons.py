@@ -1,4 +1,4 @@
-import struct, zlib
+import os, struct, zlib
 
 def create_png(size, filepath):
     sig = b'\x89PNG\r\n\x1a\n'
@@ -49,6 +49,9 @@ def create_png(size, filepath):
         f.write(sig + ihdr + idat + iend)
     print(f'Created {filepath} ({size}x{size})')
 
-create_png(192, 'frontend/public/icon-192.png')
-create_png(512, 'frontend/public/icon-512.png')
+# Resolve output dir relative to this script so the script works from any cwd.
+BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'public')
+os.makedirs(BASE, exist_ok=True)
+create_png(192, os.path.join(BASE, 'icon-192.png'))
+create_png(512, os.path.join(BASE, 'icon-512.png'))
 print('Done!')

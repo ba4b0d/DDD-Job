@@ -14,33 +14,42 @@ Manages products, materials, and machines; computes costs using configurable for
 3djat-pricing/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py          # FastAPI app, CORS, startup seed
+│   │   ├── main.py          # FastAPI app, CORS, startup seed/migrations
 │   │   ├── models.py         # SQLAlchemy: Settings, Machine, Material, Product
 │   │   ├── schemas.py        # Pydantic request/response models
 │   │   ├── calculator.py     # Cost calculation engine (pure + DB-aware)
-│   │   ├── cache.py          # In-memory settings cache (60s TTL)
+│   │   ├── cache.py          # In-memory settings cache (60s TTL, deepcopied)
+│   │   ├── database.py       # SQLAlchemy engine + session (WAL mode)
 │   │   ├── seed.py           # DB seeding on first run
-│   │   ├── database.py       # SQLAlchemy engine + session
+│   │   ├── import_remaining.py # Legacy importer
+│   │   ├── repositories/     # Data access layer
 │   │   └── routers/
-│   │       ├── products.py   # CRUD + image upload + /calculate
-│   │       ├── materials.py  # CRUD
+│   │       ├── auth.py       # JWT (httpOnly cookie), role-based auth
+│   │       ├── products.py   # CRUD + image upload + dimension extract + /calculate
+│   │       ├── materials.py  # CRUD (uniqueness: name+color)
 │   │       ├── machines.py   # CRUD
-│   │       ├── settings.py   # Bulk update
-│   │       └── stats.py      # Aggregate dashboard stats
-│   └── uploads/              # Product images (UUID filenames)
+│   │       ├── settings.py   # Bulk update + branding upload (admin only)
+│   │       ├── catalog.py    # Public catalog (no auth, no cost breakdown)
+│   │       ├── categories.py # Authenticated list
+│   │       ├── stats.py      # Aggregate dashboard stats
+│   │       └── orders.py     # Shop order board
+│   └── uploads/              # Product images + 3MF/STL models
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx           # Routes
+│   │   ├── App.jsx           # Routes (AdminRoute wrapper for role gating)
 │   │   ├── main.jsx          # Entry point
-│   │   ├── index.css         # Themes (hybrid/dark), RTL, Vazirmatn
-│   │   ├── pages/            # Dashboard, Products, ProductDetail, Materials, Machines, Settings, Calculator
-│   │   ├── components/       # Layout, Sidebar, Modal, CostBreakdown, PriceDisplay, etc.
+│   │   ├── index.css         # Themes + CSS vars (--border, --bg-card, --accent)
+│   │   ├── pages/            # Dashboard, Products, ProductDetail, Materials, Machines, Settings, Calculator, Catalog, Orders, Categories
+│   │   ├── components/       # Layout, Sidebar, Modal, CostBreakdown, PriceDisplay, ForcePasswordChange, ShamsiDateField, etc.
 │   │   └── lib/
-│   │       ├── api.js        # Axios API client (/api/v1/*)
+│   │       ├── api.js        # Axios API client (/api/v1/*, withCredentials: true)
+│   │       ├── auth.jsx      # Cookie-based auth context
 │   │       ├── theme.jsx     # Theme context (dark/hybrid)
 │   │       └── utils.js      # formatPrice, formatMinutes, etc.
 │   └── public/manifest.json  # PWA manifest
-└── data/3djat.db             # SQLite database
+├── data/3djat.db             # SQLite database (WAL mode)
+├── scripts/                  # CLI tools (upload_product.py uses PrusaSlicer)
+└── docker-compose.yml        # Backend + frontend services (non-root, healthchecks)
 ```
 
 ## Cost Calculation Formula
@@ -62,9 +71,12 @@ All endpoints under `/api/v1/`. Products returned with computed cost fields via 
 - **Soft deletes**: `is_active = false` instead of row deletion
 - **Cache invalidation**: Settings and stats caches auto-invalidate on writes
 - **Validation errors** are in Persian (Farsi)
-- **Theme**: CSS custom properties via `data-theme` attribute (hybrid=light sidebar + dark content, dark=full dark)
+- **Theme**: CSS custom properties via `data-theme` attribute (single soft-blue theme; orange brand accents)
 - **RTL**: `dir="rtl"` on root `<html>` and layout `<div>`
 - All monetary values in Iranian Toman (IRR)
+- **Auth**: JWT in httpOnly cookie (`SameSite=Lax`); `require_admin` for role-gated routes
+- **Image uploads**: validated by magic bytes (JPEG/PNG/WebP/GIF); max 5 images per product, 10MB each
+- **Dimensions**: auto-extracted from 3MF/STL mesh vertex bounding box (no PrusaSlicer needed)
 
 ## Running
 ```bash
@@ -73,4 +85,7 @@ cd backend && pip install -r requirements.txt && uvicorn app.main:app --reload -
 
 # Frontend
 cd frontend && npm install && npm run dev
+
+# Docker (production-like, non-root)
+docker compose up -d --build
 ```
