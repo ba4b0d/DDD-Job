@@ -1412,7 +1412,7 @@ body {
   flex-wrap: wrap;
   gap: 0.65rem;
   justify-content: center;
-  padding-top: 0.25rem;
+  padding-top: 1rem;
 }
 
 .public-btn {
