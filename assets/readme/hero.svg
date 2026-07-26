@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="380" viewBox="0 0 1200 380"
+     role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">Spaghetti — 3D Printing Pricing &amp; Workshop</title>
+  <desc id="hero-desc">Hero showing the Spaghetti name, a filament-coil motif with dimension brackets, and project metadata.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dfe4f2"/>
+      <stop offset="1" stop-color="#eef1f9"/>
+    </linearGradient>
+    <linearGradient id="filament" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff9a3d"/>
+      <stop offset="0.5" stop-color="#ffc66e"/>
+      <stop offset="1" stop-color="#e07b2c"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background panel -->
+  <rect width="1200" height="380" rx="24" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="380" rx="24" fill="none" stroke="#c0c8dc" stroke-width="1"/>
+
+  <!-- Top bar: category + repo metadata -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#7a849e">
+    <text x="56" y="56" font-size="16">FDM · 3D PRINT WORKSHOP · بومی‌سازی شده</text>
+    <text x="1144" y="56" font-size="16" text-anchor="end">v1.1 · master</text>
+  </g>
+
+  <!-- LEFT: title block (≈ 58%) -->
+  <g transform="translate(56 96)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <!-- Logo glyph: stacked pasta pile + filament coil -->
+    <g transform="translate(0 0)">
+      <rect x="0" y="0" width="64" height="64" rx="14" fill="#2a3148"/>
+      <path d="M10 40 Q 32 8, 54 40 T 54 56 L 10 56 Z" fill="url(#filament)"/>
+      <circle cx="32" cy="22" r="3" fill="#1a1f32"/>
+    </g>
+    <text x="84" y="36" font-size="34" font-weight="700" fill="#1a1f32">Spaghetti</text>
+    <text x="84" y="58" font-size="16" fill="#4a5270">3D-printing pricing · catalog · orders</text>
+
+    <!-- One-sentence value (Farsi primary, English secondary) -->
+    <text x="0" y="116" font-size="40" font-weight="700" fill="#1a1f32">مدیریت قیمت‌گذاری چاپ سه‌بعدی</text>
+    <text x="0" y="150" font-size="22" font-weight="500" fill="#4a5270">Real-time cost engine · role-based admin · public Farsi storefront</text>
+
+    <!-- Mechanism strip (3 chips) -->
+    <g transform="translate(0 178)" font-size="16" font-weight="600">
+      <g transform="translate(0 0)">
+        <rect width="170" height="38" rx="19" fill="#ffffff" stroke="#c0c8dc"/>
+        <text x="85" y="25" text-anchor="middle" fill="#1a1f32">Cost engine (live)</text>
+      </g>
+      <g transform="translate(186 0)">
+        <rect width="200" height="38" rx="19" fill="#ffffff" stroke="#c0c8dc"/>
+        <text x="100" y="25" text-anchor="middle" fill="#1a1f32">Role-gated admin (RBAC)</text>
+      </g>
+      <g transform="translate(402 0)">
+        <rect width="190" height="38" rx="19" fill="#ffffff" stroke="#c0c8dc"/>
+        <text x="95" y="25" text-anchor="middle" fill="#1a1f32">Auto-dimensions (3MF/STL)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- RIGHT: proof — 3D bounding box with dimension brackets (≈ 42%) -->
+  <g transform="translate(800 80)">
+    <!-- The print object (stylized) -->
+    <g transform="translate(60 30)">
+      <!-- Bracket corners (bounding-box tick marks) -->
+      <g stroke="#6366f1" stroke-width="2.5" fill="none">
+        <path d="M-12 0 L 0 0 L 0 -12"/>
+        <path d="M180 0 L 192 0 L 192 -12"/>
+        <path d="M-12 220 L 0 220 L 0 232"/>
+        <path d="M180 220 L 192 220 L 192 232"/>
+      </g>
+      <!-- Print object (extruded rounded cube) -->
+      <g>
+        <rect x="0" y="0" width="180" height="220" rx="10" fill="#ffffff" stroke="#c0c8dc"/>
+        <!-- Top face (parallelogram) -->
+        <path d="M0 0 L 30 -20 L 210 -20 L 180 0 Z" fill="#dfe4f2" stroke="#c0c8dc"/>
+        <!-- Right face -->
+        <path d="M180 0 L 210 -20 L 210 200 L 180 220 Z" fill="#eef1f9" stroke="#c0c8dc"/>
+        <!-- Filled filament pattern (3 slicer layers) -->
+        <g fill="url(#filament)" opacity="0.85">
+          <rect x="14" y="40" width="152" height="10" rx="3"/>
+          <rect x="14" y="100" width="152" height="10" rx="3"/>
+          <rect x="14" y="160" width="152" height="10" rx="3"/>
+        </g>
+      </g>
+      <!-- Dimension labels -->
+      <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#1a1f32">
+        <text x="90" y="-32" text-anchor="middle">180 mm</text>
+        <text x="232" y="120" transform="rotate(90 232 120)" text-anchor="middle">220 mm</text>
+        <text x="100" y="252" text-anchor="middle">120 mm</text>
+      </g>
+    </g>
+
+    <!-- Caption under the object -->
+    <text x="170" y="290" text-anchor="middle"
+          font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="15" fill="#7a849e">auto-extracted from 3MF / STL</text>
+  </g>
+</svg>
