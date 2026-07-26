@@ -290,6 +290,27 @@ def _empty_date(v):
         return None
     return v
 
+# ── Order Items (must be before OrderCreate/OrderUpdate) ──────────────────
+
+class OrderItemCreate(BaseModel):
+    product_id: Optional[int] = None
+    product_label: str = ""
+    qty: int = Field(default=1, ge=1)
+    unit_price: float = Field(default=0, ge=0)
+
+
+class OrderItemResponse(BaseModel):
+    id: int
+    order_id: int
+    product_id: Optional[int] = None
+    product_label: str
+    qty: int
+    unit_price: float
+    unit_cost: Optional[float] = None
+    line_total: float = 0  # qty × unit_price
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class OrderCreate(BaseModel):
     customer_name: str
@@ -374,28 +395,6 @@ class OrderUpdate(BaseModel):
 
 class ImageReorderRequest(BaseModel):
     order: list[int]
-
-
-# ── Order Items ─────────────────────────────────────────────────────────
-
-class OrderItemCreate(BaseModel):
-    product_id: Optional[int] = None
-    product_label: str = ""
-    qty: int = Field(default=1, ge=1)
-    unit_price: float = Field(default=0, ge=0)
-
-
-class OrderItemResponse(BaseModel):
-    id: int
-    order_id: int
-    product_id: Optional[int] = None
-    product_label: str
-    qty: int
-    unit_price: float
-    unit_cost: Optional[float] = None
-    line_total: float = 0  # qty × unit_price
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────
