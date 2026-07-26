@@ -292,12 +292,14 @@ export default function Catalog() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="جستجو نام، کد، ماده یا دسته..."
               className="input-field catalog-search pr-10 text-sm"
+              aria-label="جستجوی محصولات"
             />
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="select-field w-full sm:w-auto min-w-[160px]"
+            aria-label="مرتب‌سازی محصولات"
           >
             <option value="name">مرتب‌سازی: نام</option>
             <option value="price_asc">قیمت ↑</option>
