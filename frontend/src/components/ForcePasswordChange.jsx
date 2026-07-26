@@ -10,16 +10,17 @@ export default function ForcePasswordChange() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (!mustChangePassword) return null;
-
   // Block Escape key from logging the user out — password change is mandatory.
   useEffect(() => {
+    if (!mustChangePassword) return;
     const block = (e) => {
       if (e.key === 'Escape') e.stopImmediatePropagation();
     };
     document.addEventListener('keydown', block, true);
     return () => document.removeEventListener('keydown', block, true);
-  }, []);
+  }, [mustChangePassword]);
+
+  if (!mustChangePassword) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
