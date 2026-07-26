@@ -14,8 +14,10 @@ import {
   Camera,
   Upload,
   Star,
+  Box,
+  Ruler,
 } from 'lucide-react';
-import { getProduct, deleteProduct, calculate, uploadProductImages, deleteProductImage, setPrimaryImage, updateProduct } from '../lib/api';
+import { getProduct, deleteProduct, calculate, uploadProductImages, deleteProductImage, setPrimaryImage, updateProduct, extractDimensions } from '../lib/api';
 import CostBreakdown from '../components/CostBreakdown';
 import PriceDisplay from '../components/PriceDisplay';
 import { formatPrice, formatMinutes } from '../lib/utils';
@@ -34,6 +36,7 @@ export default function ProductDetail() {
   const [deleting, setDeleting] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [extractingDimensions, setExtractingDimensions] = useState(false);
   const fileInputRef = useRef(null);
   const productImages = product?.images || [];
   const currentImage = productImages.length > 0 ? productImages[activeImageIndex] : null;
@@ -132,6 +135,26 @@ export default function ProductDetail() {
     }
   };
 
+  const handleExtractDimensions = async () => {
+    if (!product) return;
+    setExtractingDimensions(true);
+    try {
+      const res = await extractDimensions(product.id);
+      if (res.data?.dimensions) {
+        setProduct({
+          ...product,
+          dimension_x: res.data.dimensions.dimension_x,
+          dimension_y: res.data.dimensions.dimension_y,
+          dimension_z: res.data.dimensions.dimension_z,
+        });
+      }
+    } catch (err) {
+      console.error('Extract dimensions error:', err);
+    } finally {
+      setExtractingDimensions(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -168,6 +191,11 @@ export default function ProductDetail() {
     { icon: Tag, label: 'دسته‌بندی', value: product.category || '—' },
     { icon: Layers, label: 'ماده', value: product.material_name || product.material?.name || '—' },
     { icon: Cog, label: 'ماشین', value: product.machine_name || product.machine?.name || '—' },
+    ...(product.dimension_x || product.dimension_y || product.dimension_z ? [{
+      icon: Box,
+      label: 'ابعاد',
+      value: `${product.dimension_x || '?'} × ${product.dimension_y || '?'} × ${product.dimension_z || '?'} میلیمتر`,
+    }] : []),
     { icon: Weight, label: 'وزن خالص', value: product.weight_g ? `${product.weight_g} گرم` : '—' },
     {
       icon: Weight,
@@ -219,6 +247,10 @@ export default function ProductDetail() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button onClick={handleExtractDimensions} disabled={extractingDimensions || !product.model_file} className="btn-secondary" title={product.model_file ? "استخراج ابعاد از فایل مدل" : "فایل مدلی آپلود نشده"}>
+            {extractingDimensions ? <Loader2 size={16} className="animate-spin" /> : <Ruler size={16} />}
+            ابعاد
+          </button>
           <button onClick={() => navigate(`/products/${id}/edit`)} className="btn-secondary">
             <Edit size={16} />
             ویرایش

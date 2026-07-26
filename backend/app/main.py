@@ -75,6 +75,15 @@ async def lifespan(app: FastAPI):
                 db.commit()
                 print(f"Migrated {migrated} existing product images to product_images table.")
 
+        # Migration: add dimension columns if not exists
+        product_cols = {c["name"] for c in inspector.get_columns("products")}
+        if "dimension_x" not in product_cols:
+            print("Adding dimension columns to products table...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN dimension_x FLOAT"))
+                conn.execute(text("ALTER TABLE products ADD COLUMN dimension_y FLOAT"))
+                conn.execute(text("ALTER TABLE products ADD COLUMN dimension_z FLOAT"))
+
         # Sync: import existing product category strings into categories table
         existing_cat_names = {c.name for c in db.query(Category.name).all()}
         product_cats = (

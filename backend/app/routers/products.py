@@ -90,6 +90,9 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
         "weight_g": product.weight_g,
         "support_g": product.support_g,
         "flushed_g": product.flushed_g,
+        "dimension_x": getattr(product, 'dimension_x', None),
+        "dimension_y": getattr(product, 'dimension_y', None),
+        "dimension_z": getattr(product, 'dimension_z', None),
         "print_time_hours": product.print_time_hours,
         "post_pro_hours": product.post_pro_hours,
         "extras_cost": product.extras_cost,
@@ -565,6 +568,121 @@ def reorder_images(product_id: int, body: ImageReorderRequest, db: Session = Dep
             {"id": i.id, "image_url": i.image_url, "sort_order": i.sort_order, "is_primary": i.is_primary}
             for i in db.query(ProductImage).filter(ProductImage.product_id == product_id).order_by(ProductImage.sort_order).all()
         ],
+    }
+
+
+# ── Dimension extraction from 3MF/STL ────────────────────────────────────
+
+def _extract_dimensions_from_3mf(file_path: str) -> dict:
+    """Extract bounding box dimensions from a 3MF file."""
+    import zipfile
+    from xml.etree.ElementTree import fromstring
+    
+    try:
+        with zipfile.ZipFile(file_path, 'r') as zf:
+            for name in zf.namelist():
+                if name.endswith('.model'):
+                    data = zf.read(name)
+                    root = fromstring(data)
+                    # Find all vertices
+                    ns = {'': 'http://schemas.microsoft.com/3dmanufacturing/core/2015/02'}
+                    vertices = root.findall('.//{http://schemas.microsoft.com/3dmanufacturing/core/2015/02}vertex')
+                    if not vertices:
+                        vertices = root.findall('.//vertex')
+                    
+                    min_x = min_y = min_z = float('inf')
+                    max_x = max_y = max_z = float('-inf')
+                    
+                    for v in vertices:
+                        x = float(v.get('x', 0))
+                        y = float(v.get('y', 0))
+                        z = float(v.get('z', 0))
+                        min_x, max_x = min(min_x, x), max(max_x, x)
+                        min_y, max_y = min(min_y, y), max(max_y, y)
+                        min_z, max_z = min(min_z, z), max(max_z, z)
+                    
+                    if min_x != float('inf'):
+                        return {
+                            "dimension_x": round(max_x - min_x, 2),
+                            "dimension_y": round(max_y - min_y, 2),
+                            "dimension_z": round(max_z - min_z, 2),
+                        }
+    except Exception:
+        pass
+    return {}
+
+
+def _extract_dimensions_from_stl(file_path: str) -> dict:
+    """Extract bounding box dimensions from an STL file (binary or ASCII)."""
+    import struct
+    
+    try:
+        with open(file_path, 'rb') as f:
+            header = f.read(80)
+            # Binary STL
+            if header[:5] == b'solid' and b'facet' not in header[:100]:
+                num_triangles = struct.unpack('<I', f.read(4))[0]
+                min_x = min_y = min_z = float('inf')
+                max_x = max_y = max_z = float('-inf')
+                
+                for _ in range(num_triangles):
+                    f.read(12)  # normal
+                    for _ in range(3):
+                        x, y, z = struct.unpack('<fff', f.read(12))
+                        min_x, max_x = min(min_x, x), max(max_x, x)
+                        min_y, max_y = min(min_y, y), max(max_y, y)
+                        min_z, max_z = min(min_z, z), max(max_z, z)
+                    f.read(2)  # attribute
+                
+                if min_x != float('inf'):
+                    return {
+                        "dimension_x": round(max_x - min_x, 2),
+                        "dimension_y": round(max_y - min_y, 2),
+                        "dimension_z": round(max_z - min_z, 2),
+                    }
+    except Exception:
+        pass
+    return {}
+
+
+@router.post("/products/{product_id}/dimensions")
+def extract_dimensions(product_id: int, db: Session = Depends(get_db)):
+    """Extract dimensions from product's 3MF/STL model file."""
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    if not product.model_file:
+        raise HTTPException(status_code=400, detail="فایل مدلی برای این محصول وجود ندارد")
+    
+    # Resolve file path
+    uploads_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
+    model_path = os.path.join(uploads_dir, product.model_file)
+    
+    if not os.path.isfile(model_path):
+        raise HTTPException(status_code=404, detail="فایل مدل یافت نشد")
+    
+    # Extract dimensions based on file type
+    ext = os.path.splitext(model_path)[1].lower()
+    dims = {}
+    if ext == '.3mf':
+        dims = _extract_dimensions_from_3mf(model_path)
+    elif ext == '.stl':
+        dims = _extract_dimensions_from_stl(model_path)
+    
+    if not dims:
+        raise HTTPException(status_code=400, detail="خطا در استخراج ابعاد از فایل مدل")
+    
+    # Update product with dimensions
+    product.dimension_x = dims.get('dimension_x')
+    product.dimension_y = dims.get('dimension_y')
+    product.dimension_z = dims.get('dimension_z')
+    db.commit()
+    db.refresh(product)
+    
+    return {
+        "message": "ابعاد با موفقیت استخراج شد",
+        "dimensions": dims,
     }
 
 

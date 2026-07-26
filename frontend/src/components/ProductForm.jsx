@@ -41,6 +41,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [form, setForm] = useState({
     name: '', product_id: '', category: '', material_id: '', machine_id: '',
     weight_g: '', support_g: '', flushed_g: '', post_pro_hours: '',
+    dimension_x: '', dimension_y: '', dimension_z: '',
     extras_cost: '', final_price: '', notes: '',
     ...initialData,
     print_time_minutes: initialData?.print_time_hours
@@ -120,6 +121,9 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         weight_g: parseFloat(form.weight_g) || 0,
         support_g: parseFloat(form.support_g) || 0,
         flushed_g: parseFloat(form.flushed_g) || 0,
+        dimension_x: form.dimension_x ? parseFloat(form.dimension_x) : null,
+        dimension_y: form.dimension_y ? parseFloat(form.dimension_y) : null,
+        dimension_z: form.dimension_z ? parseFloat(form.dimension_z) : null,
         print_time_hours: parseFloat(form.print_time_minutes) / 60 || 0,
         post_pro_hours: parseFloat(form.post_pro_hours) || 0,
         extras_cost: parseFloat(form.extras_cost) || 0,
@@ -173,6 +177,9 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <FormField label="وزن خالص (گرم)" name="weight_g" type="number" value={form.weight_g} onChange={handleChange} onBlur={handleBlur} touched={touched} errors={errors} required placeholder="0" min="0" step="0.1" />
         <FormField label="وزن ساپورت (گرم)" name="support_g" type="number" value={form.support_g} onChange={handleChange} placeholder="0" min="0" step="0.1" />
         <FormField label="وزن شستشو (گرم)" name="flushed_g" type="number" value={form.flushed_g} onChange={handleChange} placeholder="0" min="0" step="0.1" />
+        <FormField label="طول (میلیمتر)" name="dimension_x" type="number" value={form.dimension_x} onChange={handleChange} placeholder="خودکار از فایل مدل" min="0" step="0.1" />
+        <FormField label="عرض (میلیمتر)" name="dimension_y" type="number" value={form.dimension_y} onChange={handleChange} placeholder="خودکار از فایل مدل" min="0" step="0.1" />
+        <FormField label="ارتفاع (میلیمتر)" name="dimension_z" type="number" value={form.dimension_z} onChange={handleChange} placeholder="خودکار از فایل مدل" min="0" step="0.1" />
         <FormField label="زمان چاپ (دقیقه)" name="print_time_minutes" type="number" value={form.print_time_minutes} onChange={handleChange} onBlur={handleBlur} touched={touched} errors={errors} required placeholder="0" min="0" step="1" />
         <FormField label="زمان پس‌پردازش (ساعت)" name="post_pro_hours" type="number" value={form.post_pro_hours} onChange={handleChange} placeholder="0" min="0" step="0.25" />
         <FormField label="هزینه اضافی (تومان)" name="extras_cost" type="number" value={form.extras_cost} onChange={handleChange} placeholder="0" min="0" />

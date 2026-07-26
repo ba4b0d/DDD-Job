@@ -67,6 +67,9 @@ class Product(Base):
     weight_g = Column(Float, default=0)
     support_g = Column(Float, default=0)
     flushed_g = Column(Float, default=0)
+    dimension_x = Column(Float, nullable=True)  # mm
+    dimension_y = Column(Float, nullable=True)  # mm
+    dimension_z = Column(Float, nullable=True)  # mm
     print_time_hours = Column(Float, default=0)
     post_pro_hours = Column(Float, default=0)
     extras_cost = Column(Float, default=0)

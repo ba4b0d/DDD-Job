@@ -122,23 +122,26 @@ class ProductImageResponse(BaseModel):
 
 
 class ProductCreate(BaseModel):
-    product_id: str = ""
     name: str
+    product_id: Optional[str] = ""
     qty: int = 1
     machine_id: Optional[int] = None
     material_id: Optional[int] = None
     weight_g: float = 0
     support_g: float = 0
     flushed_g: float = 0
+    dimension_x: Optional[float] = None
+    dimension_y: Optional[float] = None
+    dimension_z: Optional[float] = None
     print_time_hours: float = 0
     post_pro_hours: float = 0
     extras_cost: float = 0
     final_price: Optional[float] = None
-    image_url: Optional[str] = None
-    model_file: Optional[str] = None
     category: str = ""
     notes: str = ""
+    image_url: Optional[str] = None
     is_active: bool = True
+
 
     @field_validator('name')
     @classmethod
@@ -163,23 +166,26 @@ class ProductCreate(BaseModel):
 
 
 class ProductUpdate(BaseModel):
-    product_id: Optional[str] = None
     name: Optional[str] = None
+    product_id: Optional[str] = None
     qty: Optional[int] = None
     machine_id: Optional[int] = None
     material_id: Optional[int] = None
     weight_g: Optional[float] = None
     support_g: Optional[float] = None
     flushed_g: Optional[float] = None
+    dimension_x: Optional[float] = None
+    dimension_y: Optional[float] = None
+    dimension_z: Optional[float] = None
     print_time_hours: Optional[float] = None
     post_pro_hours: Optional[float] = None
     extras_cost: Optional[float] = None
     final_price: Optional[float] = None
-    image_url: Optional[str] = None
-    model_file: Optional[str] = None
     category: Optional[str] = None
     notes: Optional[str] = None
+    image_url: Optional[str] = None
     is_active: Optional[bool] = None
+
 
 
 class ProductResponse(BaseModel):
@@ -195,27 +201,30 @@ class ProductResponse(BaseModel):
     weight_g: float
     support_g: float
     flushed_g: float
+    dimension_x: Optional[float] = None
+    dimension_y: Optional[float] = None
+    dimension_z: Optional[float] = None
     print_time_hours: float
     post_pro_hours: float
     extras_cost: float
+    image_url: Optional[str]
+    images: list[ProductImageResponse] = []
     final_price: Optional[float]
-    image_url: Optional[str] = None
-    model_file: Optional[str] = None
     category: str
     notes: str
     is_active: bool
-
     # Computed cost fields
     material_cost: float = 0
     power_cost: float = 0
     downtime_cost: float = 0
     maintenance_cost: float = 0
     coloring_cost: float = 0
-    overhead_cost: float = 0
+    overhead: float = 0
     base_price: float = 0
     suggested_price: float = 0
-    gross_margin: float = 0
+    profit: float = 0
     margin_pct: float = 0
+
     images: list[ProductImageResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
