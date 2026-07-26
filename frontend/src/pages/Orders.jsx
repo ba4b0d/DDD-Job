@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardList, Plus, Archive, Edit2, Download } from 'lucide-react';
+import { ClipboardList, Plus, Archive, Edit2, Download, Trash2 } from 'lucide-react';
 import { getOrders, createOrder, updateOrder, deleteOrder, getOrderStatuses, exportOrdersCsv, getProductsAll } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import {
@@ -23,10 +23,6 @@ const STATUS_COLORS = {
 
 const DONE_STATUSES = new Set(['delivered', 'cancelled']);
 
-/**
- * ready_by urgency for open orders only (compares Gregorian ISO from API).
- * overdue | today | soon (≤2d) | ok | none
- */
 function readyUrgency(order, todayIso) {
   if (!order?.ready_by || DONE_STATUSES.has(order.status)) return 'none';
   const due = toGregorianIso(order.ready_by);
@@ -51,10 +47,6 @@ const READY_STYLES = {
 const emptyForm = {
   customer_name: '',
   contact: '',
-  product_label: '',
-  product_id: '',
-  qty: 1,
-  quoted_price: '',
   paid_amount: '',
   status: 'new',
   notes: '',
@@ -62,19 +54,97 @@ const emptyForm = {
   ready_by: '',
 };
 
+const emptyItem = () => ({
+  product_id: null,
+  product_label: '',
+  qty: 1,
+  unit_price: '',
+  search: '',
+  showDropdown: false,
+});
+
+/** Product search combobox for a line item. */
+function ProductCombobox({ products, item, onSelect }) {
+  return (
+    <div className="relative flex-1">
+      <input
+        type="text"
+        className="input-field w-full text-xs"
+        placeholder="جستجوی نام یا کد محصول..."
+        value={item.search}
+        onChange={(e) => onSelect({ search: e.target.value, showDropdown: true })}
+        onFocus={() => onSelect({ showDropdown: true })}
+        onBlur={() => setTimeout(() => onSelect({ showDropdown: false }), 200)}
+      />
+      {item.showDropdown && (
+        <div
+          className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg max-h-40 overflow-y-auto"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+        >
+          {(() => {
+            const term = item.search.toLowerCase();
+            const filtered = term
+              ? products.filter((p) =>
+                  (p.name || '').toLowerCase().includes(term) ||
+                  (p.product_id || '').toLowerCase().includes(term)
+                )
+              : products;
+            if (filtered.length === 0) {
+              return (
+                <div className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  نتیجه‌ای یافت نشد
+                </div>
+              );
+            }
+            return filtered.slice(0, 15).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="w-full text-right px-3 py-1.5 text-xs flex items-center justify-between transition-colors"
+                style={{ borderBottom: '1px solid var(--border-color)' }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onSelect({
+                  product_id: p.id,
+                  product_label: p.name || '',
+                  unit_price: p.suggested_price ?? p.final_price ?? '',
+                  search: `${p.product_id ? p.product_id + ' — ' : ''}${p.name}`,
+                  showDropdown: false,
+                })}
+              >
+                <span style={{ color: 'var(--text-primary)' }}>
+                  {p.product_id && (
+                    <span className="font-mono ml-1" style={{ color: 'var(--accent)' }}>
+                      {p.product_id}
+                    </span>
+                  )}
+                  {p.name}
+                </span>
+                {p.suggested_price > 0 && (
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {formatPrice(p.suggested_price)}
+                  </span>
+                )}
+              </button>
+            ));
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState([]);
-  const [productSearch, setProductSearch] = useState('');
-  const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [items, setItems] = useState([emptyItem()]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -113,7 +183,6 @@ export default function Orders() {
     return () => controller.abort();
   }, [load]);
 
-  // Load products for the picker
   useEffect(() => {
     getProductsAll({ signal: new AbortController().signal })
       .then((res) => {
@@ -126,25 +195,38 @@ export default function Orders() {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
-    setProductSearch('');
-    setShowProductDropdown(false);
+    setItems([emptyItem()]);
     setError('');
     setShowModal(true);
   };
 
   const openEdit = (order) => {
     setEditing(order);
-    // Find the selected product name for the search display
-    const selectedProduct = order.product_id ? products.find((p) => p.id === order.product_id) : null;
-    setProductSearch(selectedProduct ? `${selectedProduct.product_id ? selectedProduct.product_id + ' — ' : ''}${selectedProduct.name}` : '');
-    setShowProductDropdown(false);
+    // Convert order.items to form items, or create one from legacy fields
+    const orderItems = order.items && order.items.length > 0
+      ? order.items.map((oi) => {
+          const p = oi.product_id ? products.find((x) => x.id === oi.product_id) : null;
+          return {
+            product_id: oi.product_id,
+            product_label: oi.product_label || '',
+            qty: oi.qty || 1,
+            unit_price: oi.unit_price || '',
+            search: p ? `${p.product_id ? p.product_id + ' — ' : ''}${p.name}` : (oi.product_label || ''),
+            showDropdown: false,
+          };
+        })
+      : [{
+          product_id: order.product_id,
+          product_label: order.product_label || '',
+          qty: order.qty || 1,
+          unit_price: order.quoted_price || '',
+          search: order.product_label || '',
+          showDropdown: false,
+        }];
+    setItems(orderItems.length > 0 ? orderItems : [emptyItem()]);
     setForm({
       customer_name: order.customer_name || '',
       contact: order.contact || '',
-      product_label: order.product_label || '',
-      product_id: order.product_id ?? '',
-      qty: order.qty ?? 1,
-      quoted_price: order.quoted_price ?? '',
       paid_amount: order.paid_amount ?? '',
       status: order.status || 'new',
       notes: order.notes || '',
@@ -155,6 +237,17 @@ export default function Orders() {
     setShowModal(true);
   };
 
+  // Line item handlers
+  const addItem = () => setItems((prev) => [...prev, emptyItem()]);
+  const removeItem = (idx) => setItems((prev) => prev.filter((_, i) => i !== idx));
+  const updateItem = (idx, patch) =>
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+
+  // Compute totals from items
+  const itemsTotal = items.reduce((sum, it) => sum + (Number(it.qty) || 1) * (Number(it.unit_price) || 0), 0);
+  const paidAmount = Number(form.paid_amount) || 0;
+  const remaining = Math.max(0, itemsTotal - paidAmount);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -162,35 +255,48 @@ export default function Orders() {
       setError('نام مشتری الزامی است');
       return;
     }
+    if (items.length === 0 || items.every((it) => !it.product_label && !it.product_id)) {
+      setError('حداقل یک آیتم سفارش اضافه کنید');
+      return;
+    }
     let startedIso = null;
     let readyIso = null;
     if (form.started_at.trim()) {
       startedIso = shamsiToGregorianIso(form.started_at);
       if (!startedIso) {
-        setError('تاریخ شروع شمسی نامعتبر است (مثال: 1405/04/28)');
+        setError('تاریخ شروع شمسی نامعتبر است (مثال: ۱۴۰۵/۰۴/۲۸)');
         return;
       }
     }
     if (form.ready_by.trim()) {
       readyIso = shamsiToGregorianIso(form.ready_by);
       if (!readyIso) {
-        setError('موعد آماده ارسال شمسی نامعتبر است (مثال: 1405/04/28)');
+        setError('موعد آماده ارسال شمسی نامعتبر است (مثال: ۱۴۰۵/۰۴/۲۸)');
         return;
       }
+    }
+    // Validate paid ≤ total
+    if (paidAmount > itemsTotal && itemsTotal > 0) {
+      setError(`مبلغ پرداختی (${formatPrice(paidAmount)}) از کل سفارش (${formatPrice(itemsTotal)}) بیشتر است`);
+      return;
     }
     setSaving(true);
     const payload = {
       customer_name: form.customer_name.trim(),
       contact: form.contact.trim(),
-      product_label: form.product_label.trim(),
-      product_id: form.product_id ? Number(form.product_id) : null,
-      qty: Number(form.qty) || 1,
-      quoted_price: Number(form.quoted_price) || 0,
-      paid_amount: Number(form.paid_amount) || 0,
+      paid_amount: paidAmount,
       status: form.status || 'new',
       notes: form.notes.trim(),
       started_at: startedIso,
       ready_by: readyIso,
+      items: items
+        .filter((it) => it.product_label || it.product_id)
+        .map((it) => ({
+          product_id: it.product_id || null,
+          product_label: it.product_label || '',
+          qty: Number(it.qty) || 1,
+          unit_price: Number(it.unit_price) || 0,
+        })),
     };
     try {
       if (editing) {
@@ -211,12 +317,10 @@ export default function Orders() {
 
   const handleStatusQuick = async (order, status) => {
     if (status === order.status) return;
-    // Optimistic update
     setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status } : o));
     try {
       await updateOrder(order.id, { status });
     } catch (err) {
-      // Revert on error
       setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: order.status } : o));
       alert(err.response?.data?.detail || 'خطا در تغییر وضعیت');
     }
@@ -247,25 +351,6 @@ export default function Orders() {
     }
   };
 
-  const handleProductPick = (product) => {
-    const pid = String(product.id);
-    const label = `${product.product_id ? product.product_id + ' — ' : ''}${product.name}`;
-    setProductSearch(label);
-    setShowProductDropdown(false);
-    setForm((f) => ({
-      ...f,
-      product_id: pid,
-      product_label: product.name || '',
-      quoted_price: product.suggested_price ?? product.final_price ?? '',
-    }));
-  };
-
-  const handleProductClear = () => {
-    setProductSearch('');
-    setShowProductDropdown(false);
-    setForm((f) => ({ ...f, product_id: '', product_label: '', quoted_price: '' }));
-  };
-
   if (loading && orders.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -293,9 +378,8 @@ export default function Orders() {
         { value: 'cancelled', label: 'لغو' },
       ];
 
-  const headers = ['مشتری', 'تماس', 'محصول', 'تعداد', 'شروع', 'موعد ارسال', 'قیمت کل', 'پرداخت', 'مانده', 'وضعیت', ''];
+  const headers = ['مشتری', 'تماس', 'آیتم‌ها', 'شروع', 'موعد ارسال', 'قیمت کل', 'پرداخت', 'مانده', 'وضعیت', ''];
 
-  // Compute totals
   const totals = orders.reduce(
     (acc, o) => {
       acc.quoted += (o.total_quoted ?? o.quoted_price ?? 0);
@@ -404,6 +488,9 @@ export default function Orders() {
                   const sc = STATUS_COLORS[o.status] || STATUS_COLORS.new;
                   const urg = readyUrgency(o, todayIso);
                   const readyStyle = READY_STYLES[urg] || READY_STYLES.none;
+                  const itemNames = o.items?.length
+                    ? o.items.map((i) => i.product_label || '—').join(', ')
+                    : (o.product_label || '—');
                   return (
                     <tr
                       key={o.id}
@@ -417,14 +504,16 @@ export default function Orders() {
                         {o.contact || '—'}
                       </td>
                       <td
-                        className="px-3 py-3 max-w-[10rem] truncate"
+                        className="px-3 py-3 max-w-[12rem] truncate"
                         style={{ color: 'var(--text-secondary)' }}
-                        title={o.product_label}
+                        title={itemNames}
                       >
-                        {o.product_label || '—'}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-center" style={{ color: 'var(--text-primary)' }}>
-                        {o.qty || 1}
+                        {itemNames}
+                        {o.items?.length > 1 && (
+                          <span className="text-xs ml-1" style={{ color: 'var(--text-muted)' }}>
+                            ({o.items.length})
+                          </span>
+                        )}
                       </td>
                       <td
                         className="px-3 py-3 whitespace-nowrap text-xs text-right"
@@ -506,7 +595,7 @@ export default function Orders() {
               {orders.length > 0 && (
                 <tfoot>
                   <tr style={{ backgroundColor: 'var(--bg-tertiary)', borderTop: '2px solid var(--border-color)', fontWeight: 600 }}>
-                    <td colSpan={6} className="px-3 py-3 text-right" style={{ color: 'var(--text-primary)' }}>
+                    <td colSpan={5} className="px-3 py-3 text-right" style={{ color: 'var(--text-primary)' }}>
                       جمع ({orders.length} سفارش)
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
@@ -531,153 +620,112 @@ export default function Orders() {
         isOpen={showModal}
         onClose={handleCloseModal}
         title={editing ? 'ویرایش سفارش' : 'سفارش جدید'}
-        size="md"
+        size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              نام مشتری *
-            </label>
-            <input
-              className="input-field"
-              value={form.customer_name}
-              onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
-              required
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              تماس (تلفن / تلگرام)
-            </label>
-            <input
-              className="input-field"
-              value={form.contact}
-              onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
-            />
-          </div>
-          <div className="relative">
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              انتخاب محصول (اختیاری)
-            </label>
-            <div className="flex gap-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                نام مشتری *
+              </label>
               <input
-                type="text"
-                className="input-field flex-1"
-                placeholder="جستجوی نام یا کد محصول..."
-                value={productSearch}
-                onChange={(e) => {
-                  setProductSearch(e.target.value);
-                  setShowProductDropdown(true);
-                  if (!e.target.value) setForm((f) => ({ ...f, product_id: '', quoted_price: '' }));
-                }}
-                onFocus={() => setShowProductDropdown(true)}
-                onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)}
+                className="input-field"
+                value={form.customer_name}
+                onChange={(e) => setForm((f) => ({ ...f, customer_name: e.target.value }))}
+                required
+                autoFocus
               />
-              {form.product_id && (
-                <button
-                  type="button"
-                  onClick={handleProductClear}
-                  className="px-2 rounded-lg text-xs"
-                  style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
-                  title="حذف انتخاب"
-                >
-                  ✕
-                </button>
-              )}
             </div>
-            {showProductDropdown && (
-              <div
-                className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg max-h-48 overflow-y-auto"
-                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                تماس (تلفن / تلگرام)
+              </label>
+              <input
+                className="input-field"
+                value={form.contact}
+                onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* ── Line items ── */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                آیتم‌های سفارش
+              </label>
+              <button
+                type="button"
+                onClick={addItem}
+                className="text-xs font-medium flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+                style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-light)' }}
               >
-                {products.length === 0 ? (
-                  <div className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    محصولی یافت نشد
-                  </div>
-                ) : (
-                  (() => {
-                    const term = productSearch.toLowerCase();
-                    const filtered = term
-                      ? products.filter((p) =>
-                          (p.name || '').toLowerCase().includes(term) ||
-                          (p.product_id || '').toLowerCase().includes(term)
-                        )
-                      : products;
-                    if (filtered.length === 0) {
-                      return (
-                        <div className="px-3 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                          نتیجه‌ای یافت نشد
-                        </div>
-                      );
-                    }
-                    return filtered.map((p) => (
+                <Plus size={12} /> افزودن آیتم
+              </button>
+            </div>
+            <div className="space-y-2">
+              {items.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-lg border p-2"
+                  style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}
+                >
+                  <div className="flex gap-2 items-start">
+                    <ProductCombobox
+                      products={products}
+                      item={it}
+                      onSelect={(patch) => updateItem(idx, patch)}
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      className="input-field w-16 text-xs text-center"
+                      placeholder="تعداد"
+                      value={it.qty}
+                      onChange={(e) => updateItem(idx, { qty: e.target.value })}
+                      title="تعداد"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      className="input-field w-28 text-xs"
+                      placeholder="قیمت واحد"
+                      value={it.unit_price}
+                      onChange={(e) => updateItem(idx, { unit_price: e.target.value })}
+                      title="قیمت واحد (تومان)"
+                    />
+                    {items.length > 1 && (
                       <button
-                        key={p.id}
                         type="button"
-                        className="w-full text-right px-3 py-2 text-xs flex items-center justify-between hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] transition-colors"
-                        style={{ borderBottom: '1px solid var(--border-color)' }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => handleProductPick(p)}
+                        onClick={() => removeItem(idx)}
+                        className="p-1.5 rounded-lg flex-shrink-0"
+                        style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
+                        title="حذف آیتم"
                       >
-                        <span style={{ color: 'var(--text-primary)' }}>
-                          {p.product_id && (
-                            <span className="font-mono ml-1" style={{ color: 'var(--accent)' }}>
-                              {p.product_id}
-                            </span>
-                          )}
-                          {p.name}
-                        </span>
-                        {(p.suggested_price > 0) && (
-                          <span style={{ color: 'var(--text-muted)' }}>
-                            {formatPrice(p.suggested_price)}
-                          </span>
-                        )}
+                        <Trash2 size={14} />
                       </button>
-                    ));
-                  })()
-                )}
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              شرح سفارش
-            </label>
-            <input
-              className="input-field"
-              value={form.product_label}
-              onChange={(e) => setForm((f) => ({ ...f, product_label: e.target.value }))}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                تعداد
-              </label>
-              <input
-                type="number"
-                min="1"
-                className="input-field"
-                value={form.qty}
-                onChange={(e) => setForm((f) => ({ ...f, qty: e.target.value }))}
-              />
+                    )}
+                  </div>
+                  {(it.product_label || it.unit_price) && (
+                    <div className="flex items-center justify-between mt-1 px-1">
+                      <span className="text-xs truncate max-w-[60%]" style={{ color: 'var(--text-muted)' }}>
+                        {it.product_label}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {formatPrice((Number(it.qty) || 1) * (Number(it.unit_price) || 0))}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
+          </div>
+
+          {/* ── Totals + paid ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                قیمت واحد (تومان)
-              </label>
-              <input
-                type="number"
-                min="0"
-                className="input-field"
-                value={form.quoted_price}
-                onChange={(e) => setForm((f) => ({ ...f, quoted_price: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                پرداخت‌شده
+                پرداخت‌شده (تومان)
               </label>
               <input
                 type="number"
@@ -687,18 +735,23 @@ export default function Orders() {
                 onChange={(e) => setForm((f) => ({ ...f, paid_amount: e.target.value }))}
               />
             </div>
+            <div className="flex flex-col justify-center">
+              <div className="rounded-lg px-3 py-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span style={{ color: 'var(--text-muted)' }}>جمع کل:</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPrice(itemsTotal)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: 'var(--text-muted)' }}>مانده:</span>
+                  <span className="font-medium" style={{ color: remaining > 0 ? '#d97706' : '#16a34a' }}>
+                    {formatPrice(remaining)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          {/* Live total preview */}
-          {(Number(form.qty) > 1 || Number(form.quoted_price) > 0) && (
-            <p className="text-xs -mt-1" style={{ color: 'var(--text-muted)' }}>
-              کل: {formatPrice((Number(form.qty) || 1) * (Number(form.quoted_price) || 0))} تومان
-              {Number(form.paid_amount) > 0 && (
-                <span style={{ color: Number(form.paid_amount) >= (Number(form.qty) || 1) * (Number(form.quoted_price) || 0) ? '#16a34a' : '#d97706' }}>
-                  {' '}— مانده: {formatPrice(Math.max(0, (Number(form.qty) || 1) * (Number(form.quoted_price) || 0) - Number(form.paid_amount || 0)))}
-                </span>
-              )}
-            </p>
-          )}
+
+          {/* ── Dates ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
@@ -726,33 +779,36 @@ export default function Orders() {
           <p className="text-[11px] -mt-2" style={{ color: 'var(--text-muted)' }}>
             تقویم شمسی — خالی = بدون تاریخ
           </p>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              وضعیت
-            </label>
-            <select
-              className="select-field w-full"
-              value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            >
-              {statusOptions.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                وضعیت
+              </label>
+              <select
+                className="select-field w-full"
+                value={form.status}
+                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+              >
+                {statusOptions.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                یادداشت
+              </label>
+              <input
+                className="input-field"
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              یادداشت
-            </label>
-            <textarea
-              className="input-field"
-              rows={3}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </div>
+
           {error && (
             <p className="text-xs" style={{ color: '#ef4444' }}>
               {error}

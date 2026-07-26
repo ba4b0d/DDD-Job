@@ -150,3 +150,21 @@ class Order(Base):
     )
 
     product = relationship("Product", lazy="joined")
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan", order_by="OrderItem.id")
+
+
+class OrderItem(Base):
+    """Line item within an order — supports multi-product orders."""
+    __tablename__ = "order_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=True, index=True)
+    product_label = Column(String, default="")  # free text fallback
+    qty = Column(Integer, default=1)
+    unit_price = Column(Float, default=0)  # quoted price per unit
+    unit_cost = Column(Float, nullable=True)  # snapshot of base_price
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    order = relationship("Order", back_populates="items")
+    product = relationship("Product", lazy="joined")

@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 
 from app.database import get_db
-from app.models import Order, ORDER_STATUSES, Product, Material, Machine
+from app.models import Order, OrderItem, ORDER_STATUSES, Product, Material, Machine
 from app.schemas import OrderCreate, OrderUpdate
 from app.routers.auth import require_any_role
 from app.routers.stats import invalidate_stats
@@ -55,11 +55,28 @@ def _snapshot_product_cost(db: Session, product: Product) -> float:
     return costs.get("base_price", 0.0)
 
 
+def _serialize_item(item: OrderItem) -> dict:
+    return {
+        "id": item.id,
+        "order_id": item.order_id,
+        "product_id": item.product_id,
+        "product_label": item.product_label or "",
+        "qty": int(item.qty or 1),
+        "unit_price": float(item.unit_price or 0),
+        "unit_cost": item.unit_cost,
+        "line_total": round(float(item.unit_price or 0) * int(item.qty or 1), 2),
+    }
+
+
 def _serialize(order: Order) -> dict:
+    items = [_serialize_item(i) for i in order.items] if hasattr(order, 'items') and order.items else []
     quoted = float(order.quoted_price or 0)
     paid = float(order.paid_amount or 0)
     qty = int(order.qty or 1)
     total_quoted = round(quoted * qty, 2)
+    # If items exist, total_quoted = sum of line totals
+    if items:
+        total_quoted = round(sum(i["line_total"] for i in items), 2)
     remaining = max(0.0, total_quoted - paid)
     return {
         "id": order.id,
@@ -82,6 +99,7 @@ def _serialize(order: Order) -> dict:
         "delivered_at": _date_iso(getattr(order, "delivered_at", None)),
         "created_at": order.created_at.isoformat() if order.created_at else None,
         "updated_at": order.updated_at.isoformat() if order.updated_at else None,
+        "items": items,
     }
 
 
@@ -156,40 +174,77 @@ def get_order(order_id: int, user=Depends(require_any_role), db: Session = Depen
     return _serialize(order)
 
 
+def _sync_order_items(db: Session, order: Order, items_data: list) -> list[OrderItem]:
+    """Replace order items with new list. Returns created items."""
+    # Delete existing items
+    db.query(OrderItem).filter(OrderItem.order_id == order.id).delete()
+    db.flush()
+
+    created = []
+    for item_data in items_data:
+        product = None
+        if item_data.product_id:
+            product = db.query(Product).filter(
+                Product.id == item_data.product_id, Product.is_active == True
+            ).first()
+
+        unit_price = item_data.unit_price or 0
+        unit_cost = None
+        product_label = item_data.product_label or ""
+
+        if product:
+            unit_cost = _snapshot_product_cost(db, product)
+            if unit_price == 0:
+                settings = get_settings_dict(db)
+                markup = settings.get("default_markup_pct", 3.0)
+                unit_price = round(unit_cost * markup, 2)
+            if not product_label:
+                product_label = product.name
+
+        oi = OrderItem(
+            order_id=order.id,
+            product_id=item_data.product_id,
+            product_label=product_label,
+            qty=item_data.qty or 1,
+            unit_price=unit_price,
+            unit_cost=unit_cost,
+        )
+        db.add(oi)
+        created.append(oi)
+
+    db.flush()
+    return created
+
+
 # ── Create ──────────────────────────────────────────────────────────────
 
 @router.post("")
 def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
-    # Validate product exists if linked
+    # If items provided, use them; otherwise fall back to legacy single-product fields
+    has_items = len(body.items) > 0
+
+    # Legacy single-product fallback
     product = None
-    if body.product_id:
+    if not has_items and body.product_id:
         product = db.query(Product).filter(Product.id == body.product_id, Product.is_active == True).first()
         if not product:
             raise HTTPException(status_code=400, detail="محصول یافت نشد")
 
-    # Auto-fill quoted_price from product if not provided
     quoted_price = body.quoted_price or 0
     unit_cost = None
     if product and quoted_price == 0:
-        # Use product's suggested_price (with markup)
         unit_cost = _snapshot_product_cost(db, product)
         settings = get_settings_dict(db)
         markup = settings.get("default_markup_pct", 3.0)
         quoted_price = round(unit_cost * markup, 2)
     elif product:
-        # Price was provided — still snapshot the cost
         unit_cost = _snapshot_product_cost(db, product)
 
-    # Auto-fill product_label from product if empty
     product_label = body.product_label or ""
     if product and not product_label:
         product_label = product.name
 
-    # Validate paid_amount ≤ total (qty × quoted_price)
     qty = body.qty or 1
-    total = round(quoted_price * qty, 2)
-    if body.paid_amount and body.paid_amount > total:
-        raise HTTPException(status_code=400, detail=f"مبلغ پرداختی ({body.paid_amount}) از کل سفارش ({total}) بیشتر است")
 
     order = Order(
         customer_name=body.customer_name,
@@ -207,6 +262,27 @@ def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session 
         is_active=True,
     )
     db.add(order)
+    db.flush()  # get order.id
+
+    # Sync items if provided
+    if has_items:
+        _sync_order_items(db, order, body.items)
+        # Compute total from items for paid_amount validation
+        db.flush()
+        total = sum(i.unit_price * i.qty for i in order.items)
+        total = round(total, 2)
+        # Update order-level quoted_price for backward compat
+        order.quoted_price = total / max(order.qty, 1)
+    else:
+        total = round(quoted_price * qty, 2)
+
+    # Validate paid_amount ≤ total
+    if body.paid_amount and body.paid_amount > total:
+        raise HTTPException(
+            status_code=400,
+            detail=f"مبلغ پرداختی ({body.paid_amount}) از کل سفارش ({total}) بیشتر است"
+        )
+
     db.commit()
     db.refresh(order)
     invalidate_stats()
@@ -259,7 +335,30 @@ def update_order(
             data["delivered_at"] = None  # un-deliver → clear timestamp
 
     for key, val in data.items():
-        setattr(order, key, val)
+        if key != "items":
+            setattr(order, key, val)
+
+    # Sync items if provided
+    if "items" in data and data["items"] is not None:
+        _sync_order_items(db, order, data["items"])
+        db.flush()
+        # Recompute total from items
+        if order.items:
+            total = sum(i.unit_price * i.qty for i in order.items)
+            total = round(total, 2)
+            order.quoted_price = total / max(order.qty or 1, 1)
+
+    # Re-validate paid_amount ≤ total
+    qty = order.qty or 1
+    quoted = order.quoted_price or 0
+    total = round(quoted * qty, 2)
+    # If items exist, use their sum
+    if order.items:
+        total = sum(i.unit_price * i.qty for i in order.items)
+        total = round(total, 2)
+    paid = order.paid_amount or 0
+    if paid > total:
+        raise HTTPException(status_code=400, detail=f"مبلغ پرداختی ({paid}) از کل سفارش ({total}) بیشتر است")
     order.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(order)

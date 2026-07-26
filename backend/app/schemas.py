@@ -303,6 +303,7 @@ class OrderCreate(BaseModel):
     notes: str = ""
     started_at: Optional[date] = None
     ready_by: Optional[date] = None
+    items: list["OrderItemCreate"] = []
 
     @field_validator("customer_name")
     @classmethod
@@ -337,6 +338,7 @@ class OrderUpdate(BaseModel):
     started_at: Optional[date] = None
     ready_by: Optional[date] = None
     is_active: Optional[bool] = None
+    items: Optional[list["OrderItemCreate"]] = None
 
     @field_validator("customer_name")
     @classmethod
@@ -372,6 +374,28 @@ class OrderUpdate(BaseModel):
 
 class ImageReorderRequest(BaseModel):
     order: list[int]
+
+
+# ── Order Items ─────────────────────────────────────────────────────────
+
+class OrderItemCreate(BaseModel):
+    product_id: Optional[int] = None
+    product_label: str = ""
+    qty: int = Field(default=1, ge=1)
+    unit_price: float = Field(default=0, ge=0)
+
+
+class OrderItemResponse(BaseModel):
+    id: int
+    order_id: int
+    product_id: Optional[int] = None
+    product_label: str
+    qty: int
+    unit_price: float
+    unit_cost: Optional[float] = None
+    line_total: float = 0  # qty × unit_price
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────
