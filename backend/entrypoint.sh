@@ -19,10 +19,22 @@ chown -R appuser:appgroup /app/uploads 2>/dev/null || true
 
 # Drop to appuser via Python, then exec the CMD
 exec python3 -c "
-import os, sys, pwd
-pw = pwd.getpwnam('appuser')
-os.setgid(pw.pw_gid)
-os.setuid(pw.pw_uid)
-os.environ['HOME'] = pw.pw_dir
+import os, sys
+
+# Look up appuser UID/GID from /etc/passwd (no pwd/spwd on slim).
+uid, gid, home = None, None, None
+with open('/etc/passwd') as f:
+    for line in f:
+        parts = line.split(':')
+        if parts and parts[0] == 'appuser':
+            uid, gid, home = int(parts[2]), int(parts[3]), parts[5]
+            break
+if uid is None:
+    print('[entrypoint] appuser not found in /etc/passwd', file=sys.stderr)
+    sys.exit(1)
+
+os.setgid(gid)
+os.setuid(uid)
+os.environ['HOME'] = home
 os.execvp(sys.argv[1], sys.argv[1:])
 " "$@"
