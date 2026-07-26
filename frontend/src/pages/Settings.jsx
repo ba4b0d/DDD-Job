@@ -94,6 +94,17 @@ export default function Settings() {
     { key: 'logo_url', label: 'لوگو', icon: '🖼️', type: 'url', stringField: true, accept: '.png,.jpg,.jpeg,.svg,.webp', hint: 'لوگوی اصلی برند' },
   ]
 
+  const contactFields = [
+    { key: 'contact_brand', label: 'نام برند', icon: '🏷️', stringField: true },
+    { key: 'contact_telegram', label: 'تلگرام', icon: '✈️', stringField: true, hint: 'نام کاربری مثل @username' },
+    { key: 'contact_whatsapp', label: 'واتساپ', icon: '📱', stringField: true, hint: 'شماره تلفن' },
+    { key: 'contact_instagram', label: 'اینستاگرام', icon: '📷', stringField: true, hint: 'نام کاربری مثل @username' },
+    { key: 'contact_bale', label: 'بله', icon: '💬', stringField: true, hint: 'نام کاربری مثل @username' },
+    { key: 'contact_hours', label: 'ساعات کاری', icon: '🕐', stringField: true, hint: 'مثلاً ۹ تا ۲۱' },
+    { key: 'contact_city', label: 'شهر', icon: '📍', stringField: true },
+    { key: 'contact_note', label: 'توضیحات', icon: '📝', stringField: true, hint: 'توضیح کوتاه برای صفحه تماس' },
+  ]
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
@@ -168,6 +179,31 @@ export default function Settings() {
             {settings[f.key]?.description && (
               <p className="text-xs mt-2 settings-field-hint">{settings[f.key].description}</p>
             )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Contact Info Section ── */}
+      <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">اطلاعات تماس</h2>
+      <div className="settings-fields-grid max-w-6xl">
+        {contactFields.map(f => (
+          <div
+            key={f.key}
+            className="settings-field-card rounded-xl p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">{f.icon}</span>
+              <div className="flex-1">
+                <label className="font-semibold text-white">{f.label}</label>
+                {f.hint && <p className="text-sm mt-0.5 settings-field-hint">{f.hint}</p>}
+              </div>
+            </div>
+            <input
+              type="text"
+              value={settings[f.key]?.string_value ?? ''}
+              onChange={e => handleChange(f.key, e.target.value, true)}
+              className="w-full px-4 py-3 rounded-lg border text-base outline-none transition-colors settings-field-input"
+            />
           </div>
         ))}
       </div>

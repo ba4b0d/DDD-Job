@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MessageCircle, Send, Phone, Camera, ExternalLink, ClipboardList } from 'lucide-react';
-import { CONTACT, displayChannels } from '../lib/contact';
+import { CONTACT, CHANNELS, displayChannels } from '../lib/contact';
+import { getContact } from '../lib/api';
 
 const ICONS = {
   telegram: Send,
@@ -9,18 +11,71 @@ const ICONS = {
   bale: MessageCircle,
 };
 
+/** Merge API contact settings into the static CHANNELS array. */
+function mergeChannels(api) {
+  return CHANNELS.map((ch) => {
+    const apiKey = `contact_${ch.id}`;
+    const value = api[apiKey] || '';
+    if (!value) return ch; // keep static default
+
+    // Build href and handle based on channel type
+    let href = ch.href;
+    let handle = ch.handle;
+    if (ch.id === 'telegram') {
+      const clean = value.replace(/^@/, '');
+      handle = `@${clean}`;
+      href = `https://t.me/${clean}`;
+    } else if (ch.id === 'whatsapp') {
+      const digits = value.replace(/[^0-9]/g, '');
+      const phone = digits.startsWith('98') ? digits : `98${digits.replace(/^0/, '')}`;
+      handle = value;
+      href = `https://wa.me/${phone}`;
+    } else if (ch.id === 'instagram') {
+      const clean = value.replace(/^@/, '');
+      handle = `@${clean}`;
+      href = `https://instagram.com/${clean}`;
+    } else if (ch.id === 'bale') {
+      const clean = value.replace(/^@/, '');
+      handle = `@${clean}`;
+      href = `https://ble.ir/${clean}`;
+    }
+    return { ...ch, handle, href };
+  });
+}
+
 export default function Contact() {
-  const channels = displayChannels();
+  const [channels, setChannels] = useState(displayChannels());
+  const [contact, setContact] = useState(CONTACT);
+
+  useEffect(() => {
+    getContact()
+      .then((res) => {
+        const api = res.data || {};
+        // Merge channel data
+        setChannels(mergeChannels(api));
+        // Merge top-level contact info (brand, hours, city, note)
+        setContact({
+          ...CONTACT,
+          brand: api.contact_brand || CONTACT.brand,
+          hours: api.contact_hours || CONTACT.hours,
+          city: api.contact_city || CONTACT.city,
+          note: api.contact_note || CONTACT.note,
+        });
+      })
+      .catch((err) => {
+        console.warn('Failed to load contact info from API, using static defaults:', err);
+      });
+  }, []);
 
   return (
     <div className="public-page" dir="rtl">
       <header className="public-page-hero public-page-hero--dark">
         <p className="public-page-kicker">ارتباط با ما</p>
-        <h1 className="public-page-title public-page-title--white">تماس با {CONTACT.brand}</h1>
-        <p className="public-page-lead">{CONTACT.note}</p>
+        <h1 className="public-page-title public-page-title--white">تماس با {contact.brand}</h1>
+        <p className="public-page-lead">{contact.note}</p>
         <p className="public-page-meta">
-          {CONTACT.hours}
-          {CONTACT.city ? ` · ${CONTACT.city}` : ''}
+          {contact.hours}
+          {contact.city ? ` · ${contact.city}` : ''}
         </p>
       </header>
 

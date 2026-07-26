@@ -11,7 +11,20 @@ from app.routers.auth import require_admin
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
 
-ALLOWED_PUBLIC_KEYS = {"favicon_url", "logo_url", "site_name", "site_title"}
+ALLOWED_PUBLIC_KEYS = {
+    "favicon_url",
+    "logo_url",
+    "site_name",
+    "site_title",
+    "contact_brand",
+    "contact_telegram",
+    "contact_whatsapp",
+    "contact_instagram",
+    "contact_bale",
+    "contact_hours",
+    "contact_city",
+    "contact_note",
+}
 
 
 @router.get("")
@@ -94,3 +107,25 @@ async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Dep
     db.commit()
     invalidate_settings_cache()
     return {"url": url, "key": key}
+
+
+CONTACT_KEYS = [
+    "contact_brand",
+    "contact_telegram",
+    "contact_whatsapp",
+    "contact_instagram",
+    "contact_bale",
+    "contact_hours",
+    "contact_city",
+    "contact_note",
+]
+
+
+def get_contact_info(db: Session = Depends(get_db)):
+    """Return public contact info as a flat JSON dict (no auth required)."""
+    settings = db.query(Settings).filter(Settings.key.in_(CONTACT_KEYS)).all()
+    result = {s.key: s.string_value or "" for s in settings}
+    # Fill missing keys with empty strings so every key is always present
+    for key in CONTACT_KEYS:
+        result.setdefault(key, "")
+    return result

@@ -97,6 +97,9 @@ export const getCatalogCategories = () => publicApi.get('/catalog/categories');
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);
 
+// ===== Contact =====
+export const getContact = () => api.get('/contact');
+
 // ===== Auth =====
 export const login = (username, password) => api.post('/auth/login', { username, password });
 export const logout = () => api.post('/auth/logout');

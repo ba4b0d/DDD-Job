@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from app.routers.auth import require_any_role, limiter, _ensure_default_admin
 
-from app.routers.settings import router as settings_router, get_public_settings
+from app.routers.settings import router as settings_router, get_public_settings, get_contact_info
 from app.routers.materials import router as materials_router
 from app.routers.machines import router as machines_router
 from app.routers.products import router as products_router
@@ -147,6 +147,7 @@ app.include_router(settings_router, dependencies=[Depends(require_any_role)])
 # Public branding endpoint (favicon/logo) — no auth required, different path to avoid auth collision
 public_settings_router = APIRouter(prefix="/api/v1", tags=["public-settings"])
 public_settings_router.add_api_route("/brand", get_public_settings, methods=["GET"])
+public_settings_router.add_api_route("/contact", get_contact_info, methods=["GET"])
 app.include_router(public_settings_router)
 app.include_router(materials_router, dependencies=[Depends(require_any_role)])
 app.include_router(machines_router, dependencies=[Depends(require_any_role)])
