@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 # Database path: app/data/ inside container
@@ -15,17 +15,20 @@ engine = create_engine(
     execution_options={"isolation_level": "AUTOCOMMIT"},
 )
 
-# Enable WAL mode for better concurrent write performance.
+# Enable WAL mode for better concurrent reads + writes.
+# Tolerate permission errors (e.g. mounted volume owned by a different
+# user) so the app still boots — WAL is an optimization, not a hard
+# requirement.
 def _enable_wal():
-    """One-time setup: enable SQLite WAL mode."""
-    from sqlalchemy import text
-    with engine.connect() as conn:
-        conn.execute(text("PRAGMA journal_mode=WAL"))
-        conn.execute(text("PRAGMA synchronous=NORMAL"))
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("PRAGMA journal_mode=WAL"))
+            conn.execute(text("PRAGMA synchronous=NORMAL"))
+    except Exception as exc:
+        print(f"[WARN] Could not enable SQLite WAL mode: {exc}")
 
-
-# Run on import so tests/dev/Docker all get WAL mode.
 _enable_wal()
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
