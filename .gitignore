@@ -23,8 +23,10 @@ data/*.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 
-# Screenshots (dev only — local docs)
-screenshots/
+# Screenshots (README uses these — keep tracked)
+# Add new ones with: git add -f screenshots/new.png
+screenshots/*.tmp
+screenshots/draft/
 
 # hermes artifacts
 .hermes/
