@@ -800,17 +800,53 @@ body {
 /* Hero: photo at 75% width (no crop), Farsi copy overlaid on the right */
 .catalog-hero {
   position: relative;
-  min-height: clamp(240px, 38vw, 360px);
-  border: 1px solid color-mix(in srgb, var(--border-color) 70%, var(--accent));
-  background: var(--hero-void, var(--bg-primary));
-  box-shadow: var(--card-shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  min-height: clamp(260px, 42vw, 380px);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--bg-secondary) 92%, var(--accent)) 0%,
+      color-mix(in srgb, var(--bg-secondary) 85%, var(--accent)) 60%,
+      color-mix(in srgb, var(--bg-primary) 88%, var(--accent)) 100%
+    );
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--accent) 18%, transparent) inset,
+    0 8px 32px -8px color-mix(in srgb, var(--accent) 25%, transparent),
+    var(--card-shadow);
   overflow: hidden;
+  isolation: isolate;
+}
+
+.catalog-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 50%,
+      color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+      transparent 70%
+    );
+  pointer-events: none;
+}
+
+.catalog-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 4%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 80%);
+  pointer-events: none;
+  opacity: 0.6;
 }
 
 .catalog-hero-media {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
@@ -818,41 +854,39 @@ body {
   position: absolute;
   top: 50%;
   left: 0;
-  /* 75% of hero width — full image, no crop */
-  width: 75%;
+  width: 70%;
   height: auto;
   max-height: 100%;
   transform: translateY(-50%);
-  object-fit: contain; /* show whole photo (was cover = crop) */
+  object-fit: contain;
   object-position: left center;
   pointer-events: none;
   user-select: none;
+  filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--bg-primary) 60%, transparent));
 }
 
 .catalog-hero-scrim {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
-  /* mid-tone veil on the right for readable copy on the photo */
+  z-index: 2;
   background:
     linear-gradient(
       to left,
-      var(--hero-scrim) 0%,
-      color-mix(in srgb, var(--hero-scrim) 70%, transparent) 28%,
-      color-mix(in srgb, var(--hero-scrim) 25%, transparent) 52%,
-      transparent 72%
+      var(--bg-secondary) 0%,
+      color-mix(in srgb, var(--bg-secondary) 75%, transparent) 35%,
+      transparent 65%
     );
 }
 
 .catalog-hero-copy {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   top: 0;
   bottom: 0;
   right: 0;
   left: auto;
-  width: min(28rem, 38%);
+  width: min(30rem, 42%);
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -860,12 +894,13 @@ body {
   align-items: flex-start;
   direction: rtl;
   text-align: right;
-  padding: 1.75rem 1.75rem 1.75rem 1.25rem;
+  padding: 2rem 2rem 2rem 1.5rem;
   box-sizing: border-box;
 }
 
 .catalog-hero-title {
-  text-shadow: 0 1px 10px color-mix(in srgb, var(--hero-scrim, #0f172a) 35%, transparent);
+  text-shadow: 0 1px 12px color-mix(in srgb, var(--bg-primary) 45%, transparent);
+  letter-spacing: -0.01em;
 }
 
 /* Mobile hero: stacked image band + solid copy panel (no overlay fight) */
