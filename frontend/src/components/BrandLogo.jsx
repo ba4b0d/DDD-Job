@@ -1,28 +1,32 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 /**
- * BrandLogo — renders the uploaded logo URL from window.__APP_LOGO_URL,
- * or falls back to provided children (e.g., text + icon).
- *
- * Polls every 5s (not 1s) to detect logo uploads made after app start.
- * Uses a ref to avoid re-creating the interval on every URL change.
+ * BrandLogo — fetches the uploaded logo URL from /api/v1/brand on mount.
+ * Shows uploaded logo or falls back to children (text + icon).
  */
 export default function BrandLogo({ children, height = 32, className = '', width }) {
-  const [logoUrl, setLogoUrl] = useState(window.__APP_LOGO_URL || null);
+  const [logoUrl, setLogoUrl] = useState(null);
   const box = width ?? height;
-  const urlRef = useRef(logoUrl);
 
   useEffect(() => {
-    // Poll for updates (uploaded after app start)
-    const interval = setInterval(() => {
-      const url = window.__APP_LOGO_URL || null;
-      if (url !== urlRef.current) {
-        urlRef.current = url;
+    // Check global first (set by applyDynamicBranding at startup)
+    if (window.__APP_LOGO_URL) {
+      setLogoUrl(window.__APP_LOGO_URL);
+      return;
+    }
+    // If global not set yet, fetch it directly
+    let cancelled = false;
+    axios.get('/api/v1/brand').then((res) => {
+      if (cancelled) return;
+      const url = res.data?.logo_url;
+      if (url) {
         setLogoUrl(url);
+        window.__APP_LOGO_URL = url; // update global for other consumers
       }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []); // Empty deps — interval is stable, ref tracks current URL
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   if (logoUrl) {
     return (
