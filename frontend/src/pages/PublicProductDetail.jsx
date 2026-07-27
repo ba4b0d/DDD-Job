@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Ruler,
   ArrowRight,
-  Phone,
   Send,
   MessageCircle,
 } from 'lucide-react';
@@ -337,7 +336,7 @@ export default function PublicProductDetail() {
 
           {/* Price */}
           <div
-            className="p-4 rounded-xl flex items-center justify-between gap-4"
+            className="p-4 rounded-xl"
             style={{ backgroundColor: 'var(--accent-light)' }}
           >
             <div>
@@ -348,7 +347,6 @@ export default function PublicProductDetail() {
                 {price ? formatPrice(price) : 'تماس بگیرید'}
               </div>
             </div>
-            <Phone size={28} style={{ color: 'var(--accent)', opacity: 0.5 }} />
           </div>
 
           {/* Specs grid */}
