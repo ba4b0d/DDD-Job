@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, Shield, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
@@ -70,15 +70,6 @@ export default function CatalogLayout({ children }) {
           </nav>
 
           <div className="catalog-topbar-actions">
-            <Link
-              to="/login"
-              className="catalog-admin-link catalog-admin-link--desktop inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm sm:text-base font-semibold"
-            >
-              <Shield size={18} />
-              <span className="hidden sm:inline">ورود ادمین</span>
-              <span className="sm:hidden">ورود</span>
-            </Link>
-
             <button
               type="button"
               className="catalog-menu-btn"
@@ -133,13 +124,6 @@ export default function CatalogLayout({ children }) {
             تماس
           </NavLink>
         </nav>
-
-        <div className="catalog-drawer-foot">
-          <Link to="/login" className="catalog-drawer-admin" onClick={closeMenu}>
-            <Shield size={18} />
-            ورود ادمین
-          </Link>
-        </div>
       </aside>
 
       <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
