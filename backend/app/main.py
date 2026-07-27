@@ -121,6 +121,53 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("ALTER TABLE products ADD COLUMN created_at DATETIME"))
             print("Added products.created_at column.")
 
+        # Migration: products.slug + products.tags (SEO URLs / catalog tags)
+        product_cols = {c["name"] for c in inspector.get_columns("products")}
+        if "slug" not in product_cols:
+            print("Adding products.slug column...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN slug VARCHAR"))
+                # unique index — SQLite allows multiple NULLs
+                conn.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_products_slug ON products (slug)"
+                ))
+            print("Added products.slug column.")
+        if "tags" not in product_cols:
+            print("Adding products.tags column...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN tags VARCHAR DEFAULT ''"))
+            print("Added products.tags column.")
+
+        # Backfill empty slugs from product names (Persian names → "product", "product-1", …)
+        try:
+            missing = (
+                db.query(Product)
+                .filter((Product.slug == None) | (Product.slug == ""))  # noqa: E711
+                .all()
+            )
+            if missing:
+                used = {
+                    s for (s,) in db.query(Product.slug).filter(
+                        Product.slug != None, Product.slug != ""  # noqa: E711
+                    ).all()
+                }
+                filled = 0
+                for p in missing:
+                    base = Product.generate_slug(p.name) or "product"
+                    candidate = base
+                    n = 1
+                    while candidate in used:
+                        candidate = f"{base}-{n}"
+                        n += 1
+                    p.slug = candidate
+                    used.add(candidate)
+                    filled += 1
+                db.commit()
+                print(f"Backfilled slug for {filled} product(s).")
+        except Exception as e:
+            db.rollback()
+            print(f"Slug backfill skipped: {e}")
+
     finally:
         db.close()
 

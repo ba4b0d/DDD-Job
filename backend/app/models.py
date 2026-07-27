@@ -100,7 +100,6 @@ class Product(Base):
         slug = re.sub(r"[^a-z0-9]+", "-", slug)
         slug = re.sub(r"-+", "-", slug).strip("-")
         return slug or "product"
-    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
 
 
 class User(Base):
