@@ -62,10 +62,10 @@ export default function CatalogLayout({ children }) {
               کاتالوگ
             </NavLink>
             <NavLink to="/how-to-order" className={navLinkClass}>
-              نحوه سفارش
+              شیوه ثبت سفارش
             </NavLink>
             <NavLink to="/contact" className={navLinkClass}>
-              تماس
+              تماس با ما
             </NavLink>
           </nav>
 
@@ -118,10 +118,10 @@ export default function CatalogLayout({ children }) {
             کاتالوگ
           </NavLink>
           <NavLink to="/how-to-order" className={drawerLinkClass} onClick={closeMenu}>
-            نحوه سفارش
+            شیوه ثبت سفارش
           </NavLink>
           <NavLink to="/contact" className={drawerLinkClass} onClick={closeMenu}>
-            تماس
+            تماس با ما
           </NavLink>
         </nav>
       </aside>
@@ -149,7 +149,7 @@ export default function CatalogLayout({ children }) {
               کاتالوگ
             </Link>
             <Link to="/how-to-order" className="catalog-footer-link">
-              نحوه سفارش
+              شیوه ثبت سفارش
             </Link>
             <Link to="/contact" className="catalog-footer-link">
               تماس با ما
