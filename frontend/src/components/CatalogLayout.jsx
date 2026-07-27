@@ -166,6 +166,12 @@ export default function CatalogLayout({ children }) {
             <Link to="/contact" className="catalog-footer-link">
               تماس با ما
             </Link>
+            <Link to="/privacy" className="catalog-footer-link">
+              حریم خصوصی
+            </Link>
+            <Link to="/terms" className="catalog-footer-link">
+              قوانین
+            </Link>
           </nav>
         </div>
       </footer>
