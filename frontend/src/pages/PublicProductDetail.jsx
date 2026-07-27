@@ -55,7 +55,7 @@ function ProductImageGallery({ images, name }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="w-full aspect-[4/3] flex flex-col items-center justify-center gap-3 catalog-img-placeholder rounded-[1.25rem]">
+      <div className="w-full aspect-square flex flex-col items-center justify-center gap-3 catalog-img-placeholder rounded-[1.25rem]">
         <Package size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
           بدون تصویر
@@ -66,11 +66,11 @@ function ProductImageGallery({ images, name }) {
 
   if (sorted.length === 1) {
     return (
-      <div className="w-full aspect-[4/3] overflow-hidden rounded-[1.25rem]">
+      <div className="w-full aspect-square overflow-hidden rounded-[1.25rem]">
         <img
           src={sorted[0].image_url}
           alt={name || ''}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           loading="eager"
         />
       </div>
@@ -80,7 +80,7 @@ function ProductImageGallery({ images, name }) {
   return (
     <div className="space-y-3">
       <div
-        className="relative w-full aspect-[4/3] overflow-hidden rounded-[1.25rem]"
+        className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-[var(--bg-secondary)]"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -88,7 +88,7 @@ function ProductImageGallery({ images, name }) {
         <img
           src={sorted[current].image_url}
           alt={name || ''}
-          className="w-full h-full object-cover transition-transform duration-700"
+          className="w-full h-full object-contain transition-transform duration-700"
           loading={current === 0 ? 'eager' : 'lazy'}
         />
         <button
@@ -141,7 +141,7 @@ function ProductImageGallery({ images, name }) {
             <img
               src={img.image_url}
               alt={`${name || ''} ${i + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               loading="lazy"
             />
           </button>
@@ -258,7 +258,7 @@ export default function PublicProductDetail() {
       <div className="max-w-5xl mx-auto animate-fade-in">
         <div className="skeleton-pulse h-5 w-32 rounded mb-6" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="skeleton-pulse aspect-[4/3] rounded-[1.25rem]" />
+          <div className="skeleton-pulse aspect-square rounded-[1.25rem]" />
           <div className="space-y-4">
             <div className="skeleton-pulse h-8 w-3/4 rounded" />
             <div className="skeleton-pulse h-4 w-1/3 rounded" />

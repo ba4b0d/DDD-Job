@@ -41,18 +41,20 @@ function CatalogImageCarousel({ images, name }) {
 
   if (sorted.length === 1) {
     return (
-      <img
-        src={sorted[0].image_url}
-        alt={name || ''}
-        className="w-full h-48 sm:h-56 object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-        loading="lazy"
-      />
+      <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
+        <img
+          src={sorted[0].image_url}
+          alt={name || ''}
+          className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
+          loading="lazy"
+        />
+      </div>
     );
   }
 
   return (
     <div
-      className="relative w-full h-48 sm:h-56"
+      className="relative w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -60,7 +62,7 @@ function CatalogImageCarousel({ images, name }) {
       <img
         src={sorted[current].image_url}
         alt={name || ''}
-        className="w-full h-48 sm:h-56 object-cover transition-transform duration-700"
+        className="w-full h-full object-contain transition-transform duration-700"
         loading="lazy"
       />
       <button
@@ -386,14 +388,16 @@ export default function Catalog() {
                     {product.images?.length > 0 ? (
                       <CatalogImageCarousel images={product.images} name={product.name} />
                     ) : product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={displayName(product.name)}
-                        className="w-full h-48 sm:h-56 object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                        loading="lazy"
-                      />
+                      <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
+                        <img
+                          src={product.image_url}
+                          alt={displayName(product.name)}
+                          className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      </div>
                     ) : (
-                      <div className="w-full h-48 sm:h-56 flex flex-col items-center justify-center gap-2 catalog-img-placeholder">
+                      <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 catalog-img-placeholder">
                         <Package size={32} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>بدون تصویر</span>
                       </div>
