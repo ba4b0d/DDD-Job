@@ -131,17 +131,17 @@ export default function CatalogLayout({ children }) {
       </main>
 
       <footer
-        className="relative border-t py-7"
-        style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+        className="relative border-t py-7 catalog-footer"
+        style={{ borderColor: 'var(--border-color)' }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="text-center sm:text-right">
-            <span className="opacity-90">© Spaghettiprints · اسپاگتی پرینت</span>
-            <span className="mx-2 opacity-40">·</span>
+          <div className="text-center sm:text-right catalog-footer-copy">
+            <span className="opacity-95">© Spaghettiprints · اسپاگتی پرینت</span>
+            <span className="mx-2 opacity-50">·</span>
             <span>کاتالوگ محصولات چاپ سه‌بعدی</span>
-            <span className="mx-2 opacity-40">·</span>
+            <span className="mx-2 opacity-50">·</span>
             <span aria-hidden="true">✨</span>
-            <span className="mx-1 opacity-40">·</span>
+            <span className="mx-1 opacity-50">·</span>
             <span>قدرت گرفته از ایده و خیال ما</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-3" aria-label="پاورقی">

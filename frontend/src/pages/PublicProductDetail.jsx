@@ -80,7 +80,7 @@ function ProductImageGallery({ images, name }) {
   return (
     <div className="space-y-3">
       <div
-        className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-[var(--bg-secondary)]"
+        className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-transparent"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -316,20 +316,20 @@ export default function PublicProductDetail() {
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
-          style={{ color: 'var(--text-secondary)' }}
+          style={{ color: '#ffffff' }}
         >
           <ArrowRight size={16} />
           بازگشت به کاتالوگ
         </Link>
-        <span style={{ color: 'var(--text-muted)' }}>/</span>
-        <Link to="/" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
+        <span style={{ color: 'rgba(255,255,255,0.55)' }}>/</span>
+        <Link to="/" className="text-sm font-medium hover:underline" style={{ color: '#ffffff' }}>
           کاتالوگ
         </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-        {/* Gallery card — matches details card height */}
-        <div className="card p-3 sm:p-4 h-full flex flex-col justify-center min-h-0">
+        {/* Gallery — no card background; image sits on page surface */}
+        <div className="h-full flex flex-col justify-center min-h-0">
           <ProductImageGallery images={product.images} name={product.name} />
         </div>
 
