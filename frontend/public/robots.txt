@@ -13,5 +13,5 @@ Disallow: /users
 Disallow: /categories
 Disallow: /calculator
 
-# Dynamic sitemap (served by backend via nginx)
-Sitemap: https://spaghettiprint.com/sitemap.xml
+# Dynamic sitemap (served by backend via nginx / Vite proxy)
+Sitemap: https://spaghettiprints.ir/sitemap.xml

@@ -18,7 +18,22 @@ export default defineConfig({
       '/uploads': {
         target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true
-      }
+      },
+      // Dynamic product sitemap (same as nginx production proxy)
+      '/sitemap.xml': {
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: () => '/api/v1/sitemap.xml',
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            // Keep browser host so sitemap <loc> is http://localhost:5173/... not :8000
+            const host = req.headers.host || 'localhost:5173'
+            proxyReq.setHeader('X-Forwarded-Host', host)
+            proxyReq.setHeader('X-Forwarded-Proto', 'http')
+            proxyReq.setHeader('Host', host)
+          })
+        },
+      },
     }
   }
 })
