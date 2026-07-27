@@ -14,9 +14,36 @@ router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
 
 def _public_base_url(request: Request) -> str:
-    """Build site origin from reverse-proxy headers (works with any domain on Pi5)."""
-    proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    """Build site origin from reverse-proxy headers (works with any domain on Pi5).
+
+    OpenResty/Caddy terminate TLS and often forward to Docker nginx on :80.
+    Inner nginx then sets X-Forwarded-Proto=$scheme → http, so sitemap would
+    emit http://… unless we correct for non-local public hosts.
+    """
+    # Prefer first value if a chain of proxies sent a comma list
+    raw_proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https")
+    proto = raw_proto.split(",")[0].strip().lower() or "https"
+
+    raw_host = (
+        request.headers.get("x-forwarded-host")
+        or request.headers.get("host")
+        or request.url.netloc
+        or ""
+    )
+    host = raw_host.split(",")[0].strip()
+    bare = host.split(":")[0].lower()
+
+    local = (
+        bare in ("localhost", "127.0.0.1", "0.0.0.0", "::1")
+        or bare.endswith(".local")
+        or bare.startswith("192.168.")
+        or bare.startswith("10.")
+        or bare.startswith("172.")
+    )
+    # Public domain behind TLS terminator → always https in sitemap/absolute URLs
+    if not local and proto == "http":
+        proto = "https"
+
     return f"{proto}://{host}".rstrip("/")
 
 
