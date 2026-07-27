@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
+import { useSEO } from '../lib/seo';
 
 function CatalogImageCarousel({ images, name }) {
   const [current, setCurrent] = useState(0);
@@ -129,6 +130,11 @@ function displayName(name) {
 }
 
 export default function Catalog() {
+  useSEO({
+    title: 'کاتالوگ محصولات',
+    description: 'مشاهده محصولات چاپ سه\u200cبعدی اسپاگتی پرینت — قیمت، مشخصات و سفارش',
+  });
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);

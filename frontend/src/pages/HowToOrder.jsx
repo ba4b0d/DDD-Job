@@ -8,6 +8,7 @@ import {
   PackageCheck,
   Phone,
 } from 'lucide-react';
+import { useSEO } from '../lib/seo';
 
 const STEPS = [
   {
@@ -56,6 +57,11 @@ const TIPS = [
 ];
 
 export default function HowToOrder() {
+  useSEO({
+    title: 'نحوه سفارش',
+    description: 'راهنمای سفارش محصولات چاپ سه\u200cبعدی از اسپاگتی پرینت',
+  });
+
   return (
     <div className="public-page" dir="rtl">
       <header className="public-page-hero public-page-hero--dark">

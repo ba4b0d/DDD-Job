@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MessageCircle, Send, Phone, Camera, ExternalLink, ClipboardList } from 'lucide-react';
 import { CONTACT, CHANNELS, displayChannels } from '../lib/contact';
 import { getContact } from '../lib/api';
+import { useSEO } from '../lib/seo';
 
 const ICONS = {
   telegram: Send,
@@ -44,6 +45,11 @@ function mergeChannels(api) {
 }
 
 export default function Contact() {
+  useSEO({
+    title: 'تماس با ما',
+    description: 'راه\u200cهای ارتباط با اسپاگتی پرینت — تلگرام، واتساپ، اینستاگرام',
+  });
+
   const [channels, setChannels] = useState(displayChannels());
   const [contact, setContact] = useState(CONTACT);
 

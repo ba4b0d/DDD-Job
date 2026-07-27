@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { Menu, Shield, X } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
+import { useSEO } from '../lib/seo';
 
 const navLinkClass = ({ isActive }) =>
   `catalog-nav-link${isActive ? ' catalog-nav-link--active' : ''}`;
@@ -11,6 +12,11 @@ const drawerLinkClass = ({ isActive }) =>
   `catalog-drawer-link${isActive ? ' catalog-drawer-link--active' : ''}`;
 
 export default function CatalogLayout({ children }) {
+  useSEO({
+    title: 'اسپاگتی پرینت — چاپ سه\u200cبعدی',
+    description: 'چاپ سه\u200cبعدی سفارشی با بهترین کیفیت و قیمت — اسپاگتی پرینت',
+  });
+
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {

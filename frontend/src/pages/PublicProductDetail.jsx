@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getCatalogProduct } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
+import { useSEO } from '../lib/seo';
 
 function displayName(name) {
   if (!name || /^[?\s]+$/.test(name)) return 'بدون نام';
@@ -180,6 +181,12 @@ export default function PublicProductDetail() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const productName = product?.name;
+  useSEO({
+    title: productName ? `${productName} | اسپاگتی پرینت` : undefined,
+    description: product?.description?.trim() || (productName ? `مشاهده مشخصات و قیمت ${productName}` : undefined),
+  });
 
   useEffect(() => {
     const controller = new AbortController();
