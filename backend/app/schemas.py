@@ -73,7 +73,6 @@ class MaterialCreate(BaseModel):
     color: str = ""
     notes: str = ""
     is_active: bool = True
-
     @field_validator('name')
     @classmethod
     def name_not_empty(cls, v):
@@ -141,7 +140,8 @@ class ProductCreate(BaseModel):
     notes: str = ""
     image_url: Optional[str] = None
     is_active: bool = True
-
+    slug: Optional[str] = None
+    tags: Optional[str] = None
 
     @field_validator('name')
     @classmethod
@@ -185,6 +185,8 @@ class ProductUpdate(BaseModel):
     notes: Optional[str] = None
     image_url: Optional[str] = None
     is_active: Optional[bool] = None
+    slug: Optional[str] = None
+    tags: Optional[str] = None
 
 
 
@@ -213,6 +215,8 @@ class ProductResponse(BaseModel):
     category: str
     notes: str
     is_active: bool
+    slug: Optional[str] = None
+    tags: Optional[str] = None
     # Computed cost fields
     material_cost: float = 0
     power_cost: float = 0

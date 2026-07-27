@@ -13,7 +13,7 @@ import {
   Send,
   MessageCircle,
 } from 'lucide-react';
-import { getCatalogProduct } from '../lib/api';
+import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 import { useSEO } from '../lib/seo';
 
@@ -176,7 +176,7 @@ function InfoItem({ icon: Icon, label, value, suffix }) {
 }
 
 export default function PublicProductDetail() {
-  const { id: productId } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -191,13 +191,13 @@ export default function PublicProductDetail() {
   useEffect(() => {
     const controller = new AbortController();
     const load = async () => {
-      if (!productId) {
+      if (!slug) {
         setError('کد محصول مشخص نشده است');
         setLoading(false);
         return;
       }
       try {
-        const res = await getCatalogProduct(productId);
+        const res = await getCatalogProduct(slug);
         setProduct(res.data);
         setError(null);
       } catch (err) {
@@ -215,7 +215,7 @@ export default function PublicProductDetail() {
     };
     load();
     return () => controller.abort();
-  }, [productId]);
+  }, [slug]);
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';

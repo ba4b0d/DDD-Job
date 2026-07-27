@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, Float, String, Boolean, Date, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
+import re
+import unicodedata
 from app.database import Base
 
 
@@ -82,9 +84,22 @@ class Product(Base):
     category = Column(String, default="", index=True)
     notes = Column(String, default="")
     is_active = Column(Boolean, default=True, index=True)
-
+    slug = Column(String, unique=True, nullable=True, index=True)
+    tags = Column(String, nullable=True, default="")  # comma-separated: 'keychain,gift,pet'
     machine = relationship("Machine", back_populates="products")
     material = relationship("Material", back_populates="products")
+    images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
+
+    @staticmethod
+    def generate_slug(name: str) -> str:
+        """Convert a product name (Persian/English) to a URL-safe slug."""
+        if not name:
+            return ""
+        slug = unicodedata.normalize("NFKD", name)
+        slug = slug.encode("ascii", "ignore").decode("ascii").lower()
+        slug = re.sub(r"[^a-z0-9]+", "-", slug)
+        slug = re.sub(r"-+", "-", slug).strip("-")
+        return slug or "product"
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
 
 

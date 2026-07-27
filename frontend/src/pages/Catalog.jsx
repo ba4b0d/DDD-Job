@@ -119,7 +119,7 @@ function isWithinDays(isoDate, days = 14) {
 }
 
 function telegramShareUrl(product) {
-  const url = `${window.location.origin}/catalog/${product.id}`;
+  const url = `${window.location.origin}/catalog/${product.slug}`;
   const text = `${displayName(product.name)}${product.product_id ? ` — کد: ${product.product_id}` : ''}`;
   return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 }
@@ -262,14 +262,8 @@ export default function Catalog() {
                   className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  کاتالوگ محصولات
-                </h2>
-                <p
-                  className="catalog-hero-lead text-sm sm:text-[15px] leading-relaxed max-w-md"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
                   طراحی، چاپ و قیمت شفاف — محصولات آماده و سفارشی را ببینید، فیلتر کنید و قیمت را مقایسه کنید.
-                </p>
+                </h2>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
                     {products.length} محصول
@@ -379,7 +373,7 @@ export default function Catalog() {
                 style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}
               >
                 <Link
-                  to={`/catalog/${product.id}`}
+                  to={`/catalog/${product.slug}`}
                   className="flex-1 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
                   style={{ '--tw-ring-color': 'var(--accent)' }}
                   aria-label={`مشاهده ${displayName(product.name)}`}

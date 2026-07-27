@@ -94,6 +94,7 @@ const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
 export const getCatalog = () => publicApi.get('/catalog');
 export const getCatalogCategories = () => publicApi.get('/catalog/categories');
 export const getCatalogProduct = (productId) => publicApi.get(`/catalog/${productId}`);
+export const getCatalogProductBySlug = (slug) => publicApi.get(`/catalog/by-slug/${slug}`);
 
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);

@@ -45,6 +45,8 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "final_price": product.final_price,
         "image_url": product.image_url,
         "created_at": getattr(product, "created_at", None),
+        "slug": getattr(product, "slug", None),
+        "tags": getattr(product, "tags", None),
         "images": [
             {"id": img.id, "image_url": img.image_url, "sort_order": img.sort_order, "is_primary": img.is_primary}
             for img in (product.images or [])
@@ -69,6 +71,22 @@ def get_catalog_categories(db: Session = Depends(get_db)):
     from app.models import Category
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
     return [{"id": c.id, "name": c.name, "description": c.description} for c in cats]
+
+
+@router.get("/catalog/by-slug/{slug}")
+def get_catalog_product_by_slug(slug: str, db: Session = Depends(get_db)):
+    """Public endpoint — return a single active product by slug."""
+    product = (
+        db.query(Product)
+        .options(selectinload(Product.images))
+        .filter(Product.slug == slug, Product.is_active == True)
+        .first()
+    )
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    machines_dict, materials_dict = _batch_load_related(db)
+    settings = get_settings_dict(db)
+    return _catalog_product(product, machines_dict, materials_dict, settings)
 
 
 @router.get("/catalog/{product_id}")
