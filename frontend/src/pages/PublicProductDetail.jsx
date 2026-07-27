@@ -327,25 +327,14 @@ export default function PublicProductDetail() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Gallery + disclaimer underneath */}
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+        {/* Gallery card — matches details card height */}
+        <div className="card p-3 sm:p-4 h-full flex flex-col justify-center min-h-0">
           <ProductImageGallery images={product.images} name={product.name} />
-          <div
-            className="catalog-disclaimer"
-            role="note"
-            aria-label="توضیح زمان آماده‌سازی"
-          >
-            <Clock size={16} className="flex-shrink-0" aria-hidden="true" />
-            <p>
-              زمان چاپ فقط مدت چاپ سه‌بعدی است؛ محصول از قبل آماده نیست و پس از ثبت
-              سفارش ساخته می‌شود. زمان تحویل نهایی پس از تأیید مشخصات اعلام می‌شود.
-            </p>
-          </div>
         </div>
 
-        {/* Details */}
-        <div className="card p-5 sm:p-6 flex flex-col gap-5">
+        {/* Details card */}
+        <div className="card p-5 sm:p-6 flex flex-col gap-5 h-full min-h-0">
           <div>
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <h1
@@ -438,6 +427,19 @@ export default function PublicProductDetail() {
               )}
             </div>
           )}
+
+          {/* Made-to-order note — on details card, above CTAs */}
+          <div
+            className="catalog-disclaimer"
+            role="note"
+            aria-label="توضیح زمان آماده‌سازی"
+          >
+            <Clock size={16} className="flex-shrink-0" aria-hidden="true" />
+            <p>
+              زمان چاپ فقط مدت چاپ سه‌بعدی است؛ محصول از قبل آماده نیست و پس از ثبت
+              سفارش ساخته می‌شود. زمان تحویل نهایی پس از تأیید مشخصات اعلام می‌شود.
+            </p>
+          </div>
 
           {/* CTAs */}
           <div className="pt-4 mt-auto border-t flex flex-col sm:flex-row gap-3" style={{ borderColor: 'var(--border-color)' }}>
