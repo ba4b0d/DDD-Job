@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
-import { useSEO } from '../lib/seo';
+import { useSEO, buildProductJsonLd, buildBreadcrumbJsonLd, absoluteUrl } from '../lib/seo';
 
 function displayName(name) {
   if (!name || /^[?\s]+$/.test(name)) return 'بدون نام';
@@ -182,9 +182,28 @@ export default function PublicProductDetail() {
   const [error, setError] = useState(null);
 
   const productName = product?.name;
+  const productImage =
+    product?.image_url ||
+    product?.images?.find((i) => i.is_primary)?.image_url ||
+    product?.images?.[0]?.image_url;
+  const jsonLd = useMemo(() => {
+    if (!product) return null;
+    const productSchema = buildProductJsonLd(product);
+    const crumbs = buildBreadcrumbJsonLd([
+      { name: 'کاتالوگ', path: '/' },
+      { name: product.name, path: product.slug ? `/catalog/${product.slug}` : `/catalog/${product.id}` },
+    ]);
+    return [productSchema, crumbs].filter(Boolean);
+  }, [product]);
+
   useSEO({
-    title: productName ? `${productName} | اسپاگتی پرینت` : undefined,
-    description: product?.description?.trim() || (productName ? `مشاهده مشخصات و قیمت ${productName}` : undefined),
+    title: productName || undefined,
+    description:
+      (product?.notes && String(product.notes).trim()) ||
+      (productName ? `مشاهده مشخصات و قیمت ${productName} — چاپ سه‌بعدی اسپاگتی پرینت` : undefined),
+    image: productImage ? absoluteUrl(productImage) : undefined,
+    url: product?.slug ? absoluteUrl(`/catalog/${product.slug}`) : undefined,
+    jsonLd,
   });
 
   useEffect(() => {

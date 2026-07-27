@@ -8,7 +8,7 @@ import {
   PackageCheck,
   Phone,
 } from 'lucide-react';
-import { useSEO } from '../lib/seo';
+import { useSEO, buildWebSiteJsonLd } from '../lib/seo';
 
 const STEPS = [
   {
@@ -59,7 +59,8 @@ const TIPS = [
 export default function HowToOrder() {
   useSEO({
     title: 'نحوه سفارش',
-    description: 'راهنمای سفارش محصولات چاپ سه\u200cبعدی از اسپاگتی پرینت',
+    description: 'راهنمای سفارش محصولات چاپ سه‌بعدی از اسپاگتی پرینت',
+    jsonLd: buildWebSiteJsonLd(),
   });
 
   return (

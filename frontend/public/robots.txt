@@ -1,4 +1,17 @@
 User-agent: *
 Allow: /
 
+# Disallow admin / app internals (SPA routes still load, but signal bots)
+Disallow: /login
+Disallow: /dashboard
+Disallow: /products
+Disallow: /orders
+Disallow: /materials
+Disallow: /machines
+Disallow: /settings
+Disallow: /users
+Disallow: /categories
+Disallow: /calculator
+
+# Dynamic sitemap (served by backend via nginx)
 Sitemap: https://spaghettiprint.com/sitemap.xml

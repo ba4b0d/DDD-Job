@@ -1,5 +1,8 @@
 """Public catalog — no auth required."""
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
@@ -8,6 +11,13 @@ from app.calculator import calculate_product_costs_from_dicts
 from app.cache import get_settings_dict
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
+
+
+def _public_base_url(request: Request) -> str:
+    """Build site origin from reverse-proxy headers (works with any domain on Pi5)."""
+    proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{proto}://{host}".rstrip("/")
 
 
 def _batch_load_related(db: Session):
@@ -44,6 +54,7 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "extras_cost": product.extras_cost,
         "final_price": product.final_price,
         "image_url": product.image_url,
+        "notes": getattr(product, "notes", None) or "",
         "created_at": getattr(product, "created_at", None),
         "slug": getattr(product, "slug", None),
         "tags": getattr(product, "tags", None),
@@ -71,6 +82,57 @@ def get_catalog_categories(db: Session = Depends(get_db)):
     from app.models import Category
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
     return [{"id": c.id, "name": c.name, "description": c.description} for c in cats]
+
+
+@router.get("/sitemap.xml", response_class=Response)
+def get_sitemap(request: Request, db: Session = Depends(get_db)):
+    """Dynamic sitemap: static public pages + every active product with a slug."""
+    base = _public_base_url(request)
+    now = datetime.now(timezone.utc).date().isoformat()
+
+    static_pages = [
+        ("/", "1.0", "weekly"),
+        ("/catalog", "0.9", "weekly"),
+        ("/contact", "0.7", "monthly"),
+        ("/how-to-order", "0.7", "monthly"),
+    ]
+
+    urls = []
+    for path, priority, freq in static_pages:
+        urls.append(
+            f"  <url>\n"
+            f"    <loc>{base}{path}</loc>\n"
+            f"    <lastmod>{now}</lastmod>\n"
+            f"    <changefreq>{freq}</changefreq>\n"
+            f"    <priority>{priority}</priority>\n"
+            f"  </url>"
+        )
+
+    products = (
+        db.query(Product)
+        .filter(Product.is_active == True, Product.slug.isnot(None), Product.slug != "")
+        .order_by(Product.id)
+        .all()
+    )
+    for p in products:
+        created = getattr(p, "created_at", None)
+        lastmod = created.date().isoformat() if created else now
+        urls.append(
+            f"  <url>\n"
+            f"    <loc>{base}/catalog/{p.slug}</loc>\n"
+            f"    <lastmod>{lastmod}</lastmod>\n"
+            f"    <changefreq>weekly</changefreq>\n"
+            f"    <priority>0.8</priority>\n"
+            f"  </url>"
+        )
+
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(urls)
+        + "\n</urlset>\n"
+    )
+    return Response(content=body, media_type="application/xml")
 
 
 @router.get("/catalog/by-slug/{slug}")
