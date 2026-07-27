@@ -155,6 +155,10 @@ export default function CatalogLayout({ children }) {
             <span className="opacity-90">© Spaghettiprints · اسپاگتی پرینت</span>
             <span className="mx-2 opacity-40">·</span>
             <span>کاتالوگ محصولات چاپ سه‌بعدی</span>
+            <span className="mx-2 opacity-40">·</span>
+            <span aria-hidden="true">✨</span>
+            <span className="mx-1 opacity-40">·</span>
+            <span>قدرت گرفته از ایده و خیال ما</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-3" aria-label="پاورقی">
             <Link to="/" className="catalog-footer-link">
