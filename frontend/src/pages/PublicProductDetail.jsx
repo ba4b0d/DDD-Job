@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   Package,
   Clock,
@@ -176,7 +176,6 @@ function InfoItem({ icon: Icon, label, value, suffix }) {
 
 export default function PublicProductDetail() {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -314,15 +313,14 @@ export default function PublicProductDetail() {
     <div className="max-w-5xl mx-auto animate-fade-in">
       {/* Breadcrumb / back */}
       <div className="flex items-center gap-2 mb-5">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
+        <Link
+          to="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
           style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowRight size={16} />
-          بازگشت
-        </button>
+          بازگشت به کاتالوگ
+        </Link>
         <span style={{ color: 'var(--text-muted)' }}>/</span>
         <Link to="/" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
           کاتالوگ
@@ -330,8 +328,21 @@ export default function PublicProductDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        {/* Gallery */}
-        <ProductImageGallery images={product.images} name={product.name} />
+        {/* Gallery + disclaimer underneath */}
+        <div className="flex flex-col gap-4">
+          <ProductImageGallery images={product.images} name={product.name} />
+          <div
+            className="catalog-disclaimer"
+            role="note"
+            aria-label="توضیح زمان آماده‌سازی"
+          >
+            <Clock size={16} className="flex-shrink-0" aria-hidden="true" />
+            <p>
+              زمان چاپ فقط مدت چاپ سه‌بعدی است؛ محصول از قبل آماده نیست و پس از ثبت
+              سفارش ساخته می‌شود. زمان تحویل نهایی پس از تأیید مشخصات اعلام می‌شود.
+            </p>
+          </div>
+        </div>
 
         {/* Details */}
         <div className="card p-5 sm:p-6 flex flex-col gap-5">
