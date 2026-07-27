@@ -152,7 +152,7 @@ export default function CatalogLayout({ children }) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="text-center sm:text-right">
-            <span className="opacity-90">© Spaghetti · اسپاگتی پرینت</span>
+            <span className="opacity-90">© Spaghettiprints · اسپاگتی پرینت</span>
             <span className="mx-2 opacity-40">·</span>
             <span>کاتالوگ محصولات چاپ سه‌بعدی</span>
           </div>
