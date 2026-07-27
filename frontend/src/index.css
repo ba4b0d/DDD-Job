@@ -997,6 +997,30 @@ body {
   padding: 0.15rem 0;
 }
 
+/* Catalog disclaimer (made-to-order) — sits between hero and toolbar */
+.catalog-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  margin: 0.85rem 0 0.5rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--brand-orange) 40%, var(--border-color));
+  background: color-mix(in srgb, var(--brand-orange) 12%, var(--bg-secondary));
+  color: color-mix(in srgb, var(--brand-orange-deep) 65%, var(--text-primary));
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.catalog-disclaimer p {
+  margin: 0;
+}
+
+.catalog-disclaimer svg {
+  color: var(--brand-orange-deep);
+  margin-top: 0.15rem;
+}
+
 .catalog-search {
   border-radius: 0.85rem !important;
   min-height: 2.75rem;

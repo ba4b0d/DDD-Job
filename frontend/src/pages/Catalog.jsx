@@ -278,6 +278,20 @@ export default function Catalog() {
               </div>
             </section>
 
+      {/* Disclaimer: products are made to order, not pre-stocked */}
+      <div
+        className="catalog-disclaimer"
+        role="note"
+        aria-label="توضیح زمان آماده‌سازی"
+      >
+        <Clock size={16} className="flex-shrink-0" aria-hidden="true" />
+        <p>
+          زمان چاپی که روی هر محصول می‌بینید، فقط مدت چاپ سه‌بعدی است؛ محصولات از قبل آماده
+          نیستند و پس از ثبت سفارش ساخته می‌شوند. زمان تحویل نهایی پس از تأیید مشخصات و زمان چاپ
+          به شما اعلام می‌شود.
+        </p>
+      </div>
+
       {/* Sticky-ish toolbar */}
       <div className="catalog-toolbar flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row gap-3">
