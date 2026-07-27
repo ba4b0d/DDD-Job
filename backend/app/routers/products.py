@@ -97,6 +97,8 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
         "post_pro_hours": product.post_pro_hours,
         "extras_cost": product.extras_cost,
         "image_url": product.image_url,
+        "slug": getattr(product, 'slug', None),
+        "tags": getattr(product, 'tags', None),
         "images": [
             {"id": img.id, "image_url": img.image_url, "sort_order": img.sort_order, "is_primary": img.is_primary}
             for img in (product.images if hasattr(product, 'images') and product.images else [])
@@ -345,12 +347,33 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     try:
-        new_prod = repo.create(product.model_dump())
+        data = product.model_dump()
+        # Auto-generate slug from name if not provided
+        if not data.get("slug") and data.get("name"):
+            data["slug"] = _slugify(data["name"])
+        # Ensure slug uniqueness
+        if data.get("slug"):
+            base = data["slug"]
+            i = 1
+            while db.query(Product).filter(Product.slug == data["slug"]).first():
+                data["slug"] = f"{base}-{i}"
+                i += 1
+        new_prod = repo.create(data)
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ایجاد محصول")
     invalidate_stats()
     return _enrich_product(new_prod, db)
+
+
+def _slugify(name: str) -> str:
+    """Convert a product name to a URL-safe slug."""
+    import re
+    import unicodedata
+    nfd = unicodedata.normalize("NFKD", name)
+    ascii_name = nfd.encode("ascii", "ignore").decode("ascii").lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")
+    return slug or "product"
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
