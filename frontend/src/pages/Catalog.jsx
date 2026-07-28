@@ -505,16 +505,16 @@ export default function Catalog() {
                   </div>
                 </Link>
 
-                {/* Telegram share — sits outside the Link so it can be clicked independently */}
+                {/* Telegram share — sits in the bottom-left corner next to the price, outside the Link to avoid nesting */}
                 <a
                   href={shareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute top-2.5 left-2.5 z-[2] p-2 rounded-full bg-black/50 hover:bg-[#2AABEE] text-white backdrop-blur-sm transition-colors"
+                  className="absolute bottom-4 left-4 z-[2] p-2 rounded-full bg-[var(--bg-secondary)] hover:bg-[#2AABEE] text-[var(--text-secondary)] hover:text-white transition-colors border border-[var(--border-color)] shadow-sm"
                   aria-label="اشتراک در تلگرام"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Send size={15} />
+                  <Send size={13} />
                 </a>
               </article>
             );
