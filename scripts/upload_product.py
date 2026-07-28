@@ -578,6 +578,7 @@ def main():
     ap.add_argument("--dry", action="store_true", help="Parse only — no API calls")
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
     ap.add_argument("--no-slice", action="store_true", help="Skip OrcaSlicer slicing")
+    ap.add_argument("--pattern", default=None, help="Filter folders by substring in folder name")
     args = ap.parse_args()
 
     folder = Path(args.folder)
@@ -590,6 +591,9 @@ def main():
         d for d in folder.iterdir()
         if d.is_dir() and any(f.suffix.lower() in MODEL_EXTS for f in d.iterdir())
     ])
+    if args.pattern:
+        import re
+        subfolders = [d for d in subfolders if re.search(args.pattern, d.name)]
 
     if subfolders:
         # ── Batch mode ──
