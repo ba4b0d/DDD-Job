@@ -314,6 +314,160 @@ def fmt_time(seconds: float) -> str:
 
 # ── OrcaSlicer CLI (headless accurate slicing) ─────────────────────
 
+
+def find_prusaslicer() -> str | None:
+    """Find prusa-slicer-console.exe on the system."""
+    candidates = [
+        r"C:\Program Files\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
+        r"C:\Program Files (x86)\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            return p
+    import shutil
+    return shutil.which("prusa-slicer-console") or shutil.which("prusa-slicer")
+
+
+def _parse_time_str(time_str: str) -> float:
+    """Parse Slic3r print time string (e.g. '31m 9s' or '2h 11m') to seconds."""
+    seconds = 0.0
+    # Match hours
+    m_h = re.search(r'(\d+)\s*h', time_str)
+    if m_h:
+        seconds += int(m_h.group(1)) * 3600
+    # Match minutes
+    m_m = re.search(r'(\d+)\s*m', time_str)
+    if m_m:
+        seconds += int(m_m.group(1)) * 60
+    # Match seconds
+    m_s = re.search(r'(\d+)\s*s', time_str)
+    if m_s:
+        seconds += int(m_s.group(1))
+    return seconds
+
+
+def extract_and_scale_stl(model_path: str, scale_factor: float) -> str | None:
+    """Extract and scale model to a temporary STL file."""
+    ext = model_path.lower()
+    
+    # Generate temp stl path
+    fd, temp_stl = tempfile.mkstemp(suffix=".stl")
+    os.close(fd)
+    
+    if ext.endswith(".3mf"):
+        all_verts = []
+        all_tris = []
+        with zipfile.ZipFile(model_path, "r") as zf:
+            models = [n for n in zf.namelist() if n.startswith("3D/Objects/") and n.endswith(".model")]
+            if not models:
+                models = [n for n in zf.namelist() if n.endswith("3dmodel.model")]
+            
+            v_offset = 0
+            for m_file in models:
+                xml = zf.read(m_file).decode("utf-8", errors="ignore")
+                verts = re.findall(r'<vertex\s+x="([^"]+)"\s+y="([^"]+)"\s+z="([^"]+)"', xml)
+                tris = re.findall(r'<triangle\s+v1="([^"]+)"\s+v2="([^"]+)"\s+v3="([^"]+)"', xml)
+                
+                for v in verts:
+                    all_verts.append((
+                        float(v[0]) * scale_factor,
+                        float(v[1]) * scale_factor,
+                        float(v[2]) * scale_factor
+                    ))
+                for t in tris:
+                    all_tris.append((
+                        int(t[0]) + v_offset,
+                        int(t[1]) + v_offset,
+                        int(t[2]) + v_offset
+                    ))
+                v_offset += len(verts)
+                
+        if not all_verts or not all_tris:
+            if os.path.exists(temp_stl): os.remove(temp_stl)
+            return None
+            
+        with open(temp_stl, "wb") as f:
+            f.write(b"\x00" * 80)
+            f.write(struct.pack("<I", len(all_tris)))
+            for t in all_tris:
+                f.write(struct.pack("<fff", 0.0, 0.0, 0.0))
+                for v_idx in t:
+                    f.write(struct.pack("<fff", *all_verts[v_idx]))
+                f.write(struct.pack("<H", 0))
+                
+        return temp_stl
+        
+    elif ext.endswith(".stl"):
+        # Scale binary STL directly
+        try:
+            with open(model_path, "rb") as f_in:
+                header = f_in.read(80)
+                num_tris_bytes = f_in.read(4)
+                if len(num_tris_bytes) < 4:
+                    if os.path.exists(temp_stl): os.remove(temp_stl)
+                    return None
+                num_tris = struct.unpack("<I", num_tris_bytes)[0]
+                
+                with open(temp_stl, "wb") as f_out:
+                    f_out.write(header)
+                    f_out.write(num_tris_bytes)
+                    for _ in range(num_tris):
+                        normal = f_in.read(12)
+                        v1 = struct.pack("<fff", *[x * scale_factor for x in struct.unpack("<fff", f_in.read(12))])
+                        v2 = struct.pack("<fff", *[x * scale_factor for x in struct.unpack("<fff", f_in.read(12))])
+                        v3 = struct.pack("<fff", *[x * scale_factor for x in struct.unpack("<fff", f_in.read(12))])
+                        attr = f_in.read(2)
+                        f_out.write(normal + v1 + v2 + v3 + attr)
+            return temp_stl
+        except Exception:
+            if os.path.exists(temp_stl): os.remove(temp_stl)
+            return None
+            
+    return None
+
+
+def slice_with_prusaslicer(model_path: str, slicer: str = None, profile: str = None) -> dict:
+    """Slice with PrusaSlicer CLI -> accurate time + weight from comments."""
+    if not slicer:
+        slicer = find_prusaslicer()
+    if not slicer:
+        return {"error": "PrusaSlicer not found", "time_seconds": None, "weight_g": None, "filament_mm": None}
+        
+    if not profile:
+        profile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kobra_s1_pla.ini")
+        
+    tmp_path = model_path.replace(".stl", "_sliced.gcode").replace(".3mf", "_sliced.gcode")
+    if tmp_path == model_path:
+        tmp_path += ".gcode"
+        
+    try:
+        cmd = [slicer, "--slice", "--export-gcode", "--output", tmp_path]
+        if os.path.isfile(profile):
+            cmd += ["--load", profile]
+        cmd += [model_path]
+        
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if not os.path.isfile(tmp_path) or os.path.getsize(tmp_path) < 100:
+            return {"error": f"Slice failed: {r.stderr.strip() or r.stdout.strip()}"}
+            
+        result = {"time_seconds": None, "weight_g": None, "filament_mm": None}
+        with open(tmp_path, "r", errors="ignore") as f:
+            for line in f:
+                if "estimated printing time" in line:
+                    t_str = line.split("=")[-1].strip()
+                    result["time_seconds"] = _parse_time_str(t_str)
+                elif "filament used [g]" in line:
+                    result["weight_g"] = float(line.split("=")[-1].strip())
+                elif "filament used [mm]" in line:
+                    result["filament_mm"] = float(line.split("=")[-1].strip())
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
 def find_orcaslicer() -> str | None:
     """Find orca-slicer.exe on the system."""
     candidates = [
@@ -489,44 +643,78 @@ def api_update_dimensions(api: str, token: str, pid: int, bbox: dict) -> dict:
 def process_folder(folder_path: str, args, slicer_path: str, token: str = None) -> dict:
     """Process one product folder. Returns {"id": ..., "name": ..., "ok": bool}."""
     info = parse_folder(folder_path)
-
-    # Slice
+    
     slice_data = {}
-    if slicer_path:
-        slice_data = slice_with_orcaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
-        if slice_data.get("error"):
-            print(f"   ⚠ {slice_data['error']}")
-            slice_data = {}
-
-    # Parse mesh
-    ext = info["model_file"].suffix.lower()
-    mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
+    mesh = {}
+    
+    # Check if we need to scale the model
+    if args.scale != 1.0:
+        print(f"     📐 Scaling model to {args.scale:.2f}x...")
+        temp_stl = extract_and_scale_stl(str(info["model_file"]), args.scale)
+        if temp_stl:
+            # Slice with PrusaSlicer (since OrcaSlicer has issues with raw multi-part STL/coordinates in CLI)
+            prusa_slicer = find_prusaslicer()
+            if prusa_slicer:
+                slice_data = slice_with_prusaslicer(temp_stl, prusa_slicer)
+                if slice_data.get("error"):
+                    print(f"   ⚠ PrusaSlicer slice failed: {slice_data['error']}")
+                    slice_data = {}
+            else:
+                print("   ⚠ PrusaSlicer not found for scaled slicing")
+                
+            # Parse mesh from scaled temp STL
+            mesh = parse_stl(temp_stl)
+            
+            # Remove temp stl file
+            if os.path.exists(temp_stl):
+                os.remove(temp_stl)
+        else:
+            print("   ⚠ Mesh extraction/scaling failed")
+            ext = info["model_file"].suffix.lower()
+            mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
+    else:
+        # Normal behavior (1.0 scale with OrcaSlicer)
+        if slicer_path:
+            slice_data = slice_with_orcaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
+            if slice_data.get("error"):
+                print(f"   ⚠ {slice_data['error']}")
+                slice_data = {}
+        ext = info["model_file"].suffix.lower()
+        mesh = parse_3mf(str(info["model_file"])) if ext == ".3mf" else parse_stl(str(info["model_file"]))
 
     # Weight + time
     weight = slice_data.get("weight_g") or mesh.get("slice", {}).get("weight_g")
     time_s = slice_data.get("time_seconds") or mesh.get("slice", {}).get("time_seconds")
-    if not weight and mesh["volume_mm3"] > 0:
+    if not weight and mesh.get("volume_mm3", 0) > 0:
         weight = estimate_weight(mesh["volume_mm3"], args.density)
 
     # Summary
     print(f"\n  📁 {info['folder'].name}")
     print(f"     🏷️  {info['product_id'] or '(auto)'}  📝 {info['name']}")
-    print(f"     📦 {info['model_file'].name}")
+    print(f"     📦 {info['model_file'].name} (Scale: {args.scale:.2f}x)")
     if slice_data.get("time_seconds"):
         print(f"     ⚖️  {weight}g  ⏱️  {fmt_time(time_s)}  🧵 {slice_data.get('filament_mm', 0):.0f}mm")
     elif weight:
         print(f"     ⚖️  ~{weight}g (estimated)")
     print(f"     🖼️  {len(info['images'])} image(s)")
 
-    # Local bbox extraction (works in --dry too — no API needed)
-    if info.get("model_file"):
-        try:
-            bbox = extract_local_bbox(info["model_file"])
-            if bbox:
-                print(f"     📐 {bbox['dimension_x']:.1f} × {bbox['dimension_y']:.1f} × {bbox['dimension_z']:.1f} mm")
-                info["bbox"] = bbox
-        except Exception as e:
-            print(f"     ⚠ Local bbox parse failed: {e}")
+    # Bbox extraction
+    bbox = mesh.get("bbox")
+    if bbox:
+        if isinstance(bbox, dict):
+            bbox_dict = {
+                "dimension_x": bbox.get("x", 0),
+                "dimension_y": bbox.get("y", 0),
+                "dimension_z": bbox.get("z", 0),
+            }
+        else:
+            bbox_dict = {
+                "dimension_x": round(bbox[3] - bbox[0], 2),
+                "dimension_y": round(bbox[4] - bbox[1], 2),
+                "dimension_z": round(bbox[5] - bbox[2], 2),
+            }
+        print(f"     📐 {bbox_dict['dimension_x']:.1f} × {bbox_dict['dimension_y']:.1f} × {bbox_dict['dimension_z']:.1f} mm")
+        info["bbox"] = bbox_dict
 
     if args.dry:
         return {"ok": True, "name": info["name"]}
@@ -579,6 +767,7 @@ def main():
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
     ap.add_argument("--no-slice", action="store_true", help="Skip OrcaSlicer slicing")
     ap.add_argument("--pattern", default=None, help="Filter folders by substring in folder name")
+    ap.add_argument("--scale", type=float, default=1.0, help="Scale factor for the model (e.g. 0.5 to scale by 50%)")
     args = ap.parse_args()
 
     folder = Path(args.folder)
