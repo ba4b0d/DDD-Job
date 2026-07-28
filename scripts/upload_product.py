@@ -245,37 +245,43 @@ def _extract_orca_slice_xml(root) -> dict:
 
 
 def _parse_model_xml(xml_bytes: bytes) -> dict:
-    """Extract mesh volume from 3MF model XML."""
+    """Extract mesh volume from 3MF model XML. Highly optimized using regex to avoid XML DOM overhead."""
     try:
-        root = _safe_xml_fromstring(xml_bytes)
+        xml_str = xml_bytes.decode('utf-8', errors='ignore')
     except Exception:
         return {"volume_mm3": 0, "triangles": 0}
 
+    # Fast regex match for vertices
+    v_matches = re.findall(r'<vertex\s+x=\"([^\"]+)\"\s+y=\"([^\"]+)\"\s+z=\"([^\"]+)\"', xml_str)
+    if not v_matches:
+        return {"volume_mm3": 0, "triangles": 0}
+
+    vlist = []
     min_xyz = [float("inf")] * 3
     max_xyz = [float("-inf")] * 3
-    vlist = []
+    for x_s, y_s, z_s in v_matches:
+        x, y, z = float(x_s), float(y_s), float(z_s)
+        vlist.append((x, y, z))
+        min_xyz[0] = min(min_xyz[0], x)
+        min_xyz[1] = min(min_xyz[1], y)
+        min_xyz[2] = min(min_xyz[2], z)
+        max_xyz[0] = max(max_xyz[0], x)
+        max_xyz[1] = max(max_xyz[1], y)
+        max_xyz[2] = max(max_xyz[2], z)
+
+    # Fast regex match for triangles
+    t_matches = re.findall(r'<triangle\s+v1=\"([^\"]+)\"\s+v2=\"([^\"]+)\"\s+v3=\"([^\"]+)\"', xml_str)
     vol = 0.0
     triangles = 0
 
-    # 3MF vertices are positional (no id attr), stored in order
-    for elem in root.iter():
-        tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
-        if tag == "vertex":
-            x, y, z = float(elem.get("x", 0)), float(elem.get("y", 0)), float(elem.get("z", 0))
-            vlist.append((x, y, z))
-            for i, val in enumerate((x, y, z)):
-                min_xyz[i] = min(min_xyz[i], val)
-                max_xyz[i] = max(max_xyz[i], val)
-
-    for elem in root.iter():
-        tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
-        if tag == "triangle":
-            try:
-                v1, v2, v3 = vlist[int(elem.get("v1", 0))], vlist[int(elem.get("v2", 0))], vlist[int(elem.get("v3", 0))]
-            except (ValueError, IndexError):
-                continue
-            vol += (v1[0]*(v2[1]*v3[2]-v3[1]*v2[2]) - v2[0]*(v1[1]*v3[2]-v3[1]*v1[2]) + v3[0]*(v1[1]*v2[2]-v2[1]*v1[2])) / 6.0
-            triangles += 1
+    for v1_s, v2_s, v3_s in t_matches:
+        try:
+            v1, v2, v3 = int(v1_s), int(v2_s), int(v3_s)
+            p1, p2, p3 = vlist[v1], vlist[v2], vlist[v3]
+        except (ValueError, IndexError):
+            continue
+        vol += (p1[0]*(p2[1]*p3[2] - p3[1]*p2[2]) - p2[0]*(p1[1]*p3[2] - p3[1]*p1[2]) + p3[0]*(p1[1]*p2[2] - p2[1]*p1[2])) / 6.0
+        triangles += 1
 
     bbox = None
     if triangles > 0:
@@ -593,6 +599,7 @@ def main():
     ap.add_argument("--profile", default=None, help="PrusaSlicer .ini profile (printer+print+filament)")
     ap.add_argument("--dry", action="store_true", help="Parse only — no API calls")
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
+    ap.add_argument("--no-slice", action="store_true", help="Skip PrusaSlicer slicing")
     args = ap.parse_args()
 
     folder = Path(args.folder)
@@ -608,14 +615,12 @@ def main():
 
     if subfolders:
         # ── Batch mode ──
+        slicer_path = None if args.no_slice else find_prusaslicer()
         print(f"\n📦 Batch mode: {len(subfolders)} product(s) in {folder.name}\n")
-        print(f"   🖨️  PrusaSlicer: {find_prusaslicer() or 'not found'}")
+        print(f"   🖨️  PrusaSlicer: {slicer_path or ('skipped' if args.no_slice else 'not found')}")
         if args.profile:
             print(f"   📄 Profile: {args.profile}")
         print()
-
-        # Find slicer once
-        slicer_path = find_prusaslicer()
 
         # Login once (unless dry)
         token = None
@@ -643,9 +648,9 @@ def main():
 
     else:
         # ── Single mode ──
-        slicer_path = find_prusaslicer()
+        slicer_path = None if args.no_slice else find_prusaslicer()
 
-        print(f"\n🔍 PrusaSlicer: {Path(slicer_path).name if slicer_path else 'not found'}")
+        print(f"\n🔍 PrusaSlicer: {Path(slicer_path).name if slicer_path else ('skipped' if args.no_slice else 'not found')}")
         if args.profile:
             print(f"📄 Profile: {args.profile}")
 
