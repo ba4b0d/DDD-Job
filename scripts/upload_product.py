@@ -148,7 +148,7 @@ def parse_3mf(path: str) -> dict:
                     pass
 
         # ─ Parse mesh geometry ─
-        # Bambu/PrusaSlicer split multi-object 3MFs into 3D/Objects/*.model
+        # Bambu/OrcaSlicer split multi-object 3MFs into 3D/Objects/*.model
         # in addition to the main 3D/3dmodel.model. Aggregate ALL of them.
         model_names = []
         for n in names:
@@ -312,169 +312,65 @@ def fmt_time(seconds: float) -> str:
     return f"{m} min"
 
 
-# ── PrusaSlicer CLI (headless accurate slicing) ─────────────────────
+# ── OrcaSlicer CLI (headless accurate slicing) ─────────────────────
 
-def find_prusaslicer() -> str | None:
-    """Find prusa-slicer-console.exe on the system."""
+def find_orcaslicer() -> str | None:
+    """Find orca-slicer.exe on the system."""
     candidates = [
-        r"C:\Program Files\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
-        r"C:\Program Files (x86)\Prusa3D\PrusaSlicer\prusa-slicer-console.exe",
+        r"C:\Program Files\OrcaSlicer\orca-slicer.exe",
+        r"C:\Program Files (x86)\OrcaSlicer\orca-slicer.exe",
     ]
     for p in candidates:
         if os.path.isfile(p):
             return p
-    # Try PATH
     import shutil
-    found = shutil.which("prusa-slicer-console") or shutil.which("prusa-slicer")
-    return found
+    return shutil.which("orca-slicer")
 
 
-def find_default_profile() -> str | None:
-    """Find the bundled Kobra S1 PLA profile."""
-    script_dir = Path(__file__).parent
-    p = script_dir / "kobra_s1_pla.ini"
-    return str(p) if p.is_file() else None
+def slice_with_orcaslicer(model_path: str, slicer: str = None, filament_density: float = 1.24, profile: str = None, **_kw) -> dict:
+    """Slice with OrcaSlicer CLI -> accurate time + weight from slice_info.config.
 
-
-def extract_stl_from_3mf(path_3mf: str) -> str | None:
-    """Extract mesh from OrcaSlicer 3MF → write temp binary STL.
-    Returns path to temp STL, or None on failure.
-
-    OrcaSlicer stores actual mesh data in 3D/Objects/*.model files.
-    The main 3D/3dmodel.model is just a reference wrapper (no vertices).
+    OrcaSlicer CLI: --slice 1 --export-3mf <output> <input.3mf>
+    Parses slice_info.config from the output 3MF for weight, prediction (time), filament length.
     """
-    all_verts = []
-    all_tris = []
-    with zipfile.ZipFile(path_3mf, "r") as zf:
-        model_files = [
-            n for n in zf.namelist()
-            if n.endswith(".model") and not n.endswith("3dmodel.model")
-        ]
-        for model_name in model_files:
-            xml_str = zf.read(model_name).decode("utf-8", errors="ignore")
-            v_matches = re.findall(r'<vertex\s+x="([^"]+)"\s+y="([^"]+)"\s+z="([^"]+)"', xml_str)
-            t_matches = re.findall(r'<triangle\s+v1="([^"]+)"\s+v2="([^"]+)"\s+v3="([^"]+)"', xml_str)
-            if v_matches and t_matches:
-                base = len(all_verts)
-                for x_s, y_s, z_s in v_matches:
-                    all_verts.append((float(x_s), float(y_s), float(z_s)))
-                for v1_s, v2_s, v3_s in t_matches:
-                    all_tris.append((int(v1_s) + base, int(v2_s) + base, int(v3_s) + base))
-
-    if not all_verts or not all_tris:
-        return None
-
-    fd, tmp_stl = tempfile.mkstemp(suffix=".stl")
-    with os.fdopen(fd, "wb") as f:
-        f.write(b"\0" * 80)
-        f.write(struct.pack("<I", len(all_tris)))
-        for v1_i, v2_i, v3_i in all_tris:
-            if v1_i >= len(all_verts) or v2_i >= len(all_verts) or v3_i >= len(all_verts):
-                f.write(struct.pack("<3f", 0, 0, 0))
-                f.write(struct.pack("<9f", 0, 0, 0, 0, 0, 0, 0, 0, 0))
-                f.write(struct.pack("<H", 0))
-                continue
-            p1, p2, p3 = all_verts[v1_i], all_verts[v2_i], all_verts[v3_i]
-            ex, ey, ez = p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]
-            fx, fy, fz = p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]
-            nx = ey * fz - ez * fy
-            ny = ez * fx - ex * fz
-            nz = ex * fy - ey * fx
-            nl = (nx * nx + ny * ny + nz * nz) ** 0.5
-            if nl > 0:
-                nx, ny, nz = nx / nl, ny / nl, nz / nl
-            f.write(struct.pack("<3f", nx, ny, nz))
-            f.write(struct.pack("<9f", p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2]))
-            f.write(struct.pack("<H", 0))
-
-    return tmp_stl
-
-
-def slice_with_prusaslicer(model_path: str, slicer: str = None, filament_density: float = 1.24, profile: str = None) -> dict:
-    """Slice with PrusaSlicer CLI → accurate time + filament stats from gcode.
-
-    Handles OrcaSlicer 3MF by extracting mesh → temp STL first (PrusaSlicer can't read OrcaSlicer 3MF)."""
     if not slicer:
-        slicer = find_prusaslicer()
+        slicer = find_orcaslicer()
     if not slicer:
-        return {"error": "PrusaSlicer not found", "time_seconds": None, "weight_g": None, "filament_mm": None}
+        return {"error": "OrcaSlicer not found", "time_seconds": None, "weight_g": None, "filament_mm": None}
 
-    # If it's a .3mf, extract to temp STL (PrusaSlicer can't read OrcaSlicer 3MF)
-    temp_stl = None
-    actual_model = model_path
-    if model_path.lower().endswith(".3mf"):
-        print("     \U0001f504 Extracting STL from 3MF...")
-        temp_stl = extract_stl_from_3mf(model_path)
-        if temp_stl:
-            actual_model = temp_stl
-            stl_size = os.path.getsize(temp_stl) / 1024 / 1024
-            print(f"     \u2705 STL extracted: {stl_size:.1f} MB")
-        else:
-            return {"error": "Failed to extract STL from 3MF", "time_seconds": None, "weight_g": None}
-
-    # Use default Kobra S1 profile if none specified
-    if not profile:
-        profile = find_default_profile()
-
-    # Create temp gcode output
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".gcode")
+    tmp_fd, tmp_3mf = tempfile.mkstemp(suffix=".3mf")
     os.close(tmp_fd)
     try:
-        cmd = [slicer, "--slice", "--export-gcode", "--output", tmp_path]
-        if profile and os.path.isfile(str(profile)):
-            cmd.extend(["--load", str(profile)])
-        cmd.append(actual_model)
-        r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=300,
-        )
-        if not os.path.isfile(tmp_path):
-            return {"error": f"Slice failed: {r.stderr[-200:]}" if r.stderr else "Slice failed"}
+        cmd = [slicer, "--slice", "1", "--export-3mf", tmp_3mf, model_path]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if not os.path.isfile(tmp_3mf) or os.path.getsize(tmp_3mf) < 100:
+            return {"error": f"Slice failed: {r.stdout.strip()[:200]}"}
 
-        result = {"time_seconds": None, "weight_g": None, "filament_mm": None, "filament_cm3": None}
+        result = {"time_seconds": None, "weight_g": None, "filament_mm": None}
+        with zipfile.ZipFile(tmp_3mf, "r") as zf:
+            si = zf.read("Metadata/slice_info.config").decode("utf-8", errors="ignore")
+            m = re.search(r'key="weight"\s+value="([\d.]+)"', si)
+            if m:
+                result["weight_g"] = float(m.group(1))
+            m = re.search(r'key="prediction"\s+value="([\d.]+)"', si)
+            if m:
+                result["time_seconds"] = int(float(m.group(1)))
+            m = re.search(r'used_m="([\d.]+)"', si)
+            if m:
+                result["filament_mm"] = round(float(m.group(1)) * 1000)
 
-        with open(tmp_path) as f:
-            for line in f:
-                if not line.startswith(";"):
-                    continue
-                line = line.strip()
-                m = re.match(r";\s*estimated printing time.*?=\s*(.+)", line, re.I)
-                if m:
-                    result["time_seconds"] = _parse_time_str(m.group(1))
-                m = re.match(r";\s*filament used \[mm\]\s*=\s*([\d.]+)", line, re.I)
-                if m:
-                    result["filament_mm"] = float(m.group(1))
-                m = re.match(r";\s*filament used \[cm3\]\s*=\s*([\d.]+)", line, re.I)
-                if m:
-                    result["filament_cm3"] = float(m.group(1))
-                    # Calculate weight from volume × density
-                    result["weight_g"] = round(float(m.group(1)) * filament_density, 1)
-                m = re.match(r";\s*total filament used \[g\]\s*=\s*([\d.]+)", line, re.I)
-                if m and float(m.group(1)) > 0:
-                    result["weight_g"] = float(m.group(1))
+        if result["weight_g"] is None and result["time_seconds"] is None:
+            return {"error": "No slice data in output 3MF"}
 
         return result
 
     except subprocess.TimeoutExpired:
-        return {"error": "Slice timed out (300s)"}
+        return {"error": "OrcaSlicer slice timed out (120s)"}
     except Exception as e:
         return {"error": str(e)}
     finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-        if temp_stl and os.path.exists(temp_stl):
-            os.remove(temp_stl)
-
-
-def _parse_time_str(s: str) -> float | None:
-    """Parse '2h 14m 25s' → seconds."""
-    total = 0.0
-    m = re.search(r"(\d+)\s*h", s)
-    if m: total += int(m.group(1)) * 3600
-    m = re.search(r"(\d+)\s*m", s)
-    if m: total += int(m.group(1)) * 60
-    m = re.search(r"(\d+)\s*s", s)
-    if m: total += int(m.group(1))
-    return total if total > 0 else None
+        if os.path.exists(tmp_3mf):
+            os.remove(tmp_3mf)
 
 
 MODEL_EXTS = {".3mf", ".stl"}
@@ -597,7 +493,7 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
     # Slice
     slice_data = {}
     if slicer_path:
-        slice_data = slice_with_prusaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
+        slice_data = slice_with_orcaslicer(str(info["model_file"]), slicer_path, args.density, args.profile)
         if slice_data.get("error"):
             print(f"   ⚠ {slice_data['error']}")
             slice_data = {}
@@ -678,10 +574,10 @@ def main():
     ap.add_argument("--material-id", type=int, default=1, help="Material ID (default: 1 = PLA Black)")
     ap.add_argument("--machine-id", type=int, default=2, help="Machine ID (default: 2 = Kobra S1 barbod)")
     ap.add_argument("--density", type=float, default=1.24, help="Material density g/cm3 (PLA=1.24, PETG=1.27, ABS=1.04)")
-    ap.add_argument("--profile", default=None, help="PrusaSlicer .ini profile (printer+print+filament)")
+    ap.add_argument("--profile", default=None, help="OrcaSlicer .ini profile (printer+print+filament)")
     ap.add_argument("--dry", action="store_true", help="Parse only — no API calls")
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
-    ap.add_argument("--no-slice", action="store_true", help="Skip PrusaSlicer slicing")
+    ap.add_argument("--no-slice", action="store_true", help="Skip OrcaSlicer slicing")
     args = ap.parse_args()
 
     folder = Path(args.folder)
@@ -697,9 +593,9 @@ def main():
 
     if subfolders:
         # ── Batch mode ──
-        slicer_path = None if args.no_slice else find_prusaslicer()
+        slicer_path = None if args.no_slice else find_orcaslicer()
         print(f"\n📦 Batch mode: {len(subfolders)} product(s) in {folder.name}\n")
-        print(f"   🖨️  PrusaSlicer: {slicer_path or ('skipped' if args.no_slice else 'not found')}")
+        print(f"   🖨️  OrcaSlicer: {slicer_path or ('skipped' if args.no_slice else 'not found')}")
         if args.profile:
             print(f"   📄 Profile: {args.profile}")
         print()
@@ -730,9 +626,9 @@ def main():
 
     else:
         # ── Single mode ──
-        slicer_path = None if args.no_slice else find_prusaslicer()
+        slicer_path = None if args.no_slice else find_orcaslicer()
 
-        print(f"\n🔍 PrusaSlicer: {Path(slicer_path).name if slicer_path else ('skipped' if args.no_slice else 'not found')}")
+        print(f"\n🔍 OrcaSlicer: {Path(slicer_path).name if slicer_path else ('skipped' if args.no_slice else 'not found')}")
         if args.profile:
             print(f"📄 Profile: {args.profile}")
 
