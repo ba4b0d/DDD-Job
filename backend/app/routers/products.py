@@ -349,6 +349,8 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     try:
         data = product.model_dump()
+        # Pop category_ids before passing to SQLAlchemy model (it has no such column)
+        category_ids = data.pop("category_ids", None)
         # Auto-generate slug from name if not provided
         if not data.get("slug") and data.get("name"):
             data["slug"] = _slugify(data["name"])
@@ -360,9 +362,9 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
                 data["slug"] = f"{base}-{i}"
                 i += 1
         new_prod = repo.create(data)
-        if hasattr(product, 'category_ids') and product.category_ids:
+        if category_ids:
             from app.models import Category, ProductCategory as PC
-            for cat_id in product.category_ids:
+            for cat_id in category_ids:
                 cat = db.query(Category).filter(Category.id == cat_id).first()
                 if cat:
                     db.add(PC(product_id=new_prod.id, category_id=cat_id))
