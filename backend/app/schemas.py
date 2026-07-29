@@ -142,6 +142,7 @@ class ProductCreate(BaseModel):
     is_active: bool = True
     slug: Optional[str] = None
     tags: Optional[str] = None
+    category_ids: Optional[list[int]] = None
 
     @field_validator('name')
     @classmethod
@@ -187,6 +188,7 @@ class ProductUpdate(BaseModel):
     is_active: Optional[bool] = None
     slug: Optional[str] = None
     tags: Optional[str] = None
+    category_ids: Optional[list[int]] = None
 
 
 
@@ -212,7 +214,8 @@ class ProductResponse(BaseModel):
     image_url: Optional[str]
     images: list[ProductImageResponse] = []
     final_price: Optional[float]
-    category: str
+    category: str = ""
+    categories: list[dict] = []
     notes: str
     is_active: bool
     slug: Optional[str] = None
@@ -266,6 +269,7 @@ class CalculateResponse(BaseModel):
 
 class CategoryCreate(BaseModel):
     name: str
+    description: Optional[str] = None
 
     @field_validator('name')
     @classmethod

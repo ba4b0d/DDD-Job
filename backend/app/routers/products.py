@@ -108,8 +108,9 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
         "notes": product.notes,
         "is_active": product.is_active,
     }
-    data.update(costs)
-    return data
+    enriched = {**data, **costs}
+    enriched["categories"] = [{"id": c.id, "name": c.name} for c in (product.categories or []) if hasattr(product, "categories")]
+    return enriched
 
 
 def _batch_load_related(db: Session):
@@ -359,6 +360,13 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
                 data["slug"] = f"{base}-{i}"
                 i += 1
         new_prod = repo.create(data)
+        if hasattr(product, 'category_ids') and product.category_ids:
+            from app.models import Category, ProductCategory as PC
+            for cat_id in product.category_ids:
+                cat = db.query(Category).filter(Category.id == cat_id).first()
+                if cat:
+                    db.add(PC(product_id=new_prod.id, category_id=cat_id))
+            db.commit()
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ایجاد محصول")
@@ -379,9 +387,20 @@ def _slugify(name: str) -> str:
 @router.put("/products/{product_id}", response_model=ProductResponse)
 def update_product(product_id: int, product: ProductUpdate, db: Session = Depends(get_db)):
     repo = ProductRepository(db)
-    updated = repo.update(product_id, product.model_dump(exclude_unset=True))
+    update_data = product.model_dump(exclude_unset=True)
+    category_ids = update_data.pop("category_ids", None)
+    updated = repo.update(product_id, update_data)
     if not updated:
         raise HTTPException(status_code=404, detail="Product not found")
+    if category_ids is not None:
+        from app.models import Category, ProductCategory as PC
+        db.query(PC).filter(PC.product_id == product_id).delete()
+        for cat_id in category_ids:
+            cat = db.query(Category).filter(Category.id == cat_id).first()
+            if cat:
+                db.add(PC(product_id=product_id, category_id=cat_id))
+        db.commit()
+        db.refresh(updated)
     invalidate_stats()
     return _enrich_product(updated, db)
 

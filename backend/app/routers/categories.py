@@ -18,14 +18,15 @@ router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 def list_categories(db: Session = Depends(get_db)):
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
 
-    # Batch-load product counts with a single GROUP BY query (fixes N+1)
+    from app.models import ProductCategory
     count_rows = (
-        db.query(Product.category, func.count(Product.id))
+        db.query(ProductCategory.category_id, func.count(ProductCategory.product_id))
+        .join(Product, Product.id == ProductCategory.product_id)
         .filter(Product.is_active == True)
-        .group_by(Product.category)
+        .group_by(ProductCategory.category_id)
         .all()
     )
-    cat_counts = {cat_name: count for cat_name, count in count_rows}
+    cat_counts = {cat_id: count for cat_id, count in count_rows}
 
     result = []
     for c in cats:
@@ -33,7 +34,7 @@ def list_categories(db: Session = Depends(get_db)):
             "id": c.id,
             "name": c.name,
             "description": c.description,
-            "product_count": cat_counts.get(c.name, 0),
+            "product_count": cat_counts.get(c.id, 0),
             "sort_order": c.sort_order,
         })
     return result
@@ -63,8 +64,6 @@ def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_any_
         if new_name != cat.name:
             if db.query(Category).filter(Category.name == new_name).first():
                 raise HTTPException(status_code=400, detail="این نام قبلاً استفاده شده")
-            # Rename in all products too
-            db.query(Product).filter(Product.category == cat.name).update({"category": new_name})
             cat.name = new_name
 
     if body.description is not None:
@@ -82,8 +81,9 @@ def delete_category(cat_id: int, user=Depends(require_any_role), db: Session = D
     if not cat:
         raise HTTPException(status_code=404, detail="دسته‌بندی یافت نشد")
 
-    # Clear category from products instead of deleting them
-    db.query(Product).filter(Product.category == cat.name).update({"category": ""})
+    from app.models import ProductCategory
+    # Clear category associations in junction table
+    db.query(ProductCategory).filter(ProductCategory.category_id == cat_id).delete()
     db.delete(cat)
     db.commit()
     invalidate_stats()

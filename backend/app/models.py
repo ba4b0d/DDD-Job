@@ -89,6 +89,7 @@ class Product(Base):
     machine = relationship("Machine", back_populates="products")
     material = relationship("Material", back_populates="products")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
+    categories = relationship("Category", secondary="product_categories", backref="products")
 
     @staticmethod
     def generate_slug(name: str) -> str:
@@ -123,6 +124,13 @@ class Category(Base):
     description = Column(String, default="")
     is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
+
+
+class ProductCategory(Base):
+    """Many-to-many junction: Product ↔ Category"""
+    __tablename__ = "product_categories"
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True, index=True)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True, index=True)
 
 
 # Fixed shop-ops statuses (B board) — keep list short for ADHD/OCD-friendly UI

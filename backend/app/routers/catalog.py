@@ -68,7 +68,8 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "id": product.id,
         "product_id": product.product_id,
         "name": product.name,
-        "category": product.category,
+        "category": product.category,  # Keep for backward compat
+        "categories": [{"id": c.id, "name": c.name} for c in (product.categories or [])],
         "machine_name": machine_name,
         "material_name": material_name,
         "material_color": material_color,
@@ -97,7 +98,7 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
 @router.get("/catalog")
 def get_catalog(db: Session = Depends(get_db)):
     """Public endpoint — return active products for the customer catalog."""
-    products = db.query(Product).options(selectinload(Product.images)).filter(Product.is_active == True).all()
+    products = db.query(Product).options(selectinload(Product.images), selectinload(Product.categories)).filter(Product.is_active == True).all()
     machines_dict, materials_dict = _batch_load_related(db)
     settings = get_settings_dict(db)
     return [_catalog_product(p, machines_dict, materials_dict, settings) for p in products]
