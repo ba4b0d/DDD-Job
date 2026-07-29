@@ -346,7 +346,6 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 @router.post("/products", response_model=ProductResponse, status_code=201)
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
-    repo = ProductRepository(db)
     try:
         data = product.model_dump()
         # Pop category_ids before passing to SQLAlchemy model (it has no such column)
@@ -361,15 +360,23 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
             while db.query(Product).filter(Product.slug == data["slug"]).first():
                 data["slug"] = f"{base}-{i}"
                 i += 1
-        new_prod = repo.create(data)
+        # Create product without committing yet
+        new_prod = Product(**data)
+        db.add(new_prod)
+        db.flush()  # Get the ID without committing
+        
+        # Add category associations
         if category_ids:
             from app.models import Category, ProductCategory as PC
             for cat_id in category_ids:
                 cat = db.query(Category).filter(Category.id == cat_id).first()
                 if cat:
                     db.add(PC(product_id=new_prod.id, category_id=cat_id))
-            db.commit()
-    except Exception:
+        
+        # Commit everything together
+        db.commit()
+        db.refresh(new_prod)
+    except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ایجاد محصول")
     invalidate_stats()
