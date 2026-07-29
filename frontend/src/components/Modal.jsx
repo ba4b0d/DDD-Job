@@ -63,6 +63,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
           position: 'relative',
           width: '100%',
           maxWidth: sizes[size] || sizes.lg,
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: 'var(--bg-secondary)',
@@ -105,7 +106,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
           {children}
         </div>
       </div>
