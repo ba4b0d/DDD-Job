@@ -353,7 +353,7 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
         category_ids = data.pop("category_ids", None)
         # Auto-generate slug from name if not provided
         if not data.get("slug") and data.get("name"):
-            data["slug"] = _slugify(data["name"])
+            data["slug"] = _slugify(data["name"], data.get("product_id", ""))
         # Ensure slug uniqueness
         if data.get("slug"):
             base = data["slug"]
@@ -376,10 +376,16 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     return _enrich_product(new_prod, db)
 
 
-def _slugify(name: str) -> str:
-    """Convert a product name to a URL-safe slug."""
+def _slugify(name: str, product_id: str = "") -> str:
+    """Convert a product name to a URL-safe slug.
+    Prefers product_id (e.g. KE015) over Persian name which becomes empty when stripped to ASCII.
+    """
     import re
     import unicodedata
+    # Prefer product_id if it looks like a valid code
+    if product_id and re.match(r"^[A-Za-z0-9_-]+$", product_id):
+        return product_id.lower()
+    # Fallback to name slugification
     nfd = unicodedata.normalize("NFKD", name)
     ascii_name = nfd.encode("ascii", "ignore").decode("ascii").lower()
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")
