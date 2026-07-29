@@ -52,11 +52,7 @@ export default function Products() {
           : pRes.data?.items || pRes.data?.products || [];
         // /categories returns [{id, name, description, product_count, sort_order}]
         const catsData = cRes.data || [];
-        const catsList = Array.isArray(catsData)
-          ? catsData.map((c) => c.name)
-          : typeof catsData === 'object' && catsData !== null
-            ? Object.keys(catsData)
-            : [];
+        const catsList = Array.isArray(catsData) ? catsData : [];
         setProducts(pList);
         setMaterials(mRes.data || []);
         setMachines(machRes.data || []);
@@ -83,14 +79,26 @@ export default function Products() {
         (p) =>
           p.name?.toLowerCase().includes(q) ||
           p.product_id?.toLowerCase().includes(q) ||
-          p.category?.toLowerCase().includes(q)
+          p.category?.toLowerCase().includes(q) ||
+          (p.categories || []).some((c) => c.name?.toLowerCase().includes(q))
       );
     }
     if (filterCategory) {
       if (filterCategory === 'uncategorized') {
-        list = list.filter((p) => !p.category || p.category === '');
+        list = list.filter(
+          (p) => (!p.categories || p.categories.length === 0) && (!p.category || p.category === '')
+        );
       } else {
-        list = list.filter((p) => p.category === filterCategory);
+        list = list.filter((p) => {
+          if (p.categories && p.categories.length > 0) {
+            return p.categories.some((c) => c.id === filterCategory);
+          }
+          if (p.category) {
+            const matchedCat = categories.find((c) => c.id === filterCategory);
+            return matchedCat ? p.category === matchedCat.name : false;
+          }
+          return false;
+        });
       }
     }
     if (filterMaterial) list = list.filter((p) => String(p.material_id) === String(filterMaterial));
@@ -315,9 +323,14 @@ export default function Products() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{product.name}</div>
-                      {product.category && (
-                        <span className="badge badge-accent text-[10px] mt-1 inline-block">{product.category}</span>
-                      )}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(product.categories || []).map((c) => (
+                          <span key={c.id} className="badge badge-accent text-[10px] inline-block">{c.name}</span>
+                        ))}
+                        {(!product.categories || product.categories.length === 0) && product.category && (
+                          <span className="badge badge-accent text-[10px] inline-block">{product.category}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {product.material_name || '—'}

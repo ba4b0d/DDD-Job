@@ -27,6 +27,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [materials, setMaterials] = useState([]);
   const [machines, setMachines] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState(initialData?.images || []);
   const [pendingFiles, setPendingFiles] = useState([]);
@@ -56,11 +57,20 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
       .then(([matRes, machRes, catRes]) => {
         setMaterials(matRes.data || []);
         setMachines(machRes.data || []);
-        const catsList = Array.isArray(catRes.data) ? catRes.data.map(c => c.name) : [];
-        setCategories(catsList);
+        const catsData = Array.isArray(catRes.data) ? catRes.data : [];
+        setCategories(catsData);
+
+        // Pre-select category IDs from initialData
+        if (initialData?.categories && Array.isArray(initialData.categories)) {
+          setSelectedCategoryIds(initialData.categories.map(c => c.id));
+        } else if (initialData?.category) {
+          // Backward compat: match string category name
+          const found = catsData.find(c => c.name === initialData.category);
+          if (found) setSelectedCategoryIds([found.id]);
+        }
       })
       .catch((err) => console.error('Failed to load form data:', err));
-  }, []);
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -128,6 +138,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         post_pro_hours: parseFloat(form.post_pro_hours) || 0,
         extras_cost: parseFloat(form.extras_cost) || 0,
         final_price: parseFloat(form.final_price) || 0,
+        category_ids: selectedCategoryIds,
       });
       const productId = result?.id || initialData?.id;
 
@@ -156,11 +167,35 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <FormField label="نام محصول" name="name" value={form.name} onChange={handleChange} onBlur={handleBlur} touched={touched} errors={errors} required placeholder="مثال: جعبه موبایل" />
         <FormField label="شناسه محصول" name="product_id" value={form.product_id} onChange={handleChange} placeholder="مثال: PROD-001" />
-        <FormField label="دسته‌بندی" name="category" value={form.category} onChange={handleChange} touched={touched} errors={errors}>
-          <select name="category" value={form.category} onChange={handleChange} className="select-field">
-            <option value="">انتخاب کنید</option>
-            {categories.map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
-          </select>
+        <FormField label="دسته‌بندی‌ها" name="category_ids">
+          <div className="flex flex-wrap gap-2 p-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}>
+            {categories.length === 0 ? (
+              <span className="text-xs text-muted p-1">هیچ دسته‌بندی وجود ندارد</span>
+            ) : (
+              categories.map((cat) => {
+                const isSelected = selectedCategoryIds.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategoryIds(prev =>
+                        isSelected ? prev.filter(id => id !== cat.id) : [...prev, cat.id]
+                      );
+                    }}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-surface text-secondary border-muted hover:border-primary'
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    {isSelected && <span className="text-[10px]">✓</span>}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </FormField>
         <FormField label="ماده" name="material_id" value={form.material_id} onChange={handleChange} onBlur={handleBlur} touched={touched} errors={errors} required>
           <select name="material_id" value={form.material_id} onChange={handleChange} onBlur={handleBlur} className="select-field" style={{ borderColor: touched.material_id ? (errors.material_id ? '#ef4444' : 'var(--border)') : 'var(--border)' }}>

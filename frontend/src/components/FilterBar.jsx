@@ -17,13 +17,17 @@ export default function FilterBar({
 
       <select
         value={selectedCategory || ''}
-        onChange={(e) => onCategoryChange(e.target.value || null)}
+        onChange={(e) => {
+          const v = e.target.value;
+          onCategoryChange(v === '' ? null : (v === 'uncategorized' ? 'uncategorized' : Number(v)));
+        }}
         className="select-field w-auto"
         style={{ minWidth: '140px' }}
       >
         <option value="">همه دسته‌ها</option>
+        <option value="uncategorized">بدون دسته‌بندی</option>
         {categories.map((cat) => (
-          <option key={cat} value={cat}>{cat === 'uncategorized' ? 'بدون دسته‌بندی' : cat}</option>
+          <option key={cat.id} value={cat.id}>{cat.name}</option>
         ))}
       </select>
 

@@ -155,8 +155,9 @@ export default function Catalog() {
       try {
         const [pRes, cRes] = await Promise.all([getCatalog(), getCatalogCategories()]);
         const pList = Array.isArray(pRes.data) ? pRes.data : [];
+        // /catalog/categories returns [{id, name, description}]
         const catsList = Array.isArray(cRes.data)
-          ? cRes.data.map((c) => ({ key: c.name, count: null }))
+          ? cRes.data.map((c) => ({ id: c.id, name: c.name, count: null }))
           : [];
         setProducts(pList);
         setCategories(catsList);
@@ -183,14 +184,28 @@ export default function Catalog() {
           p.name?.toLowerCase().includes(q) ||
           p.product_id?.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q) ||
+          (p.categories || []).some((c) => c.name?.toLowerCase().includes(q)) ||
           p.material_name?.toLowerCase().includes(q)
       );
     }
     if (activeCategory) {
       if (activeCategory === 'uncategorized') {
-        list = list.filter((p) => !p.category || p.category === '');
+        list = list.filter(
+          (p) => (!p.categories || p.categories.length === 0) && (!p.category || p.category === '')
+        );
       } else {
-        list = list.filter((p) => p.category === activeCategory);
+        list = list.filter((p) => {
+          // New multi-category: any of p.categories matches activeCategory (id)
+          if (p.categories && p.categories.length > 0) {
+            return p.categories.some((c) => c.id === activeCategory);
+          }
+          // Backward compat: fall back to string match on p.category vs category name
+          if (p.category) {
+            const matchedCat = categories.find((c) => c.id === activeCategory);
+            return matchedCat ? p.category === matchedCat.name : false;
+          }
+          return false;
+        });
       }
     }
     switch (sortBy) {
@@ -328,14 +343,21 @@ export default function Catalog() {
             </button>
             {categories.map((cat) => (
               <button
-                key={cat.key}
+                key={cat.id}
                 type="button"
-                onClick={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
-                className={`catalog-chip ${activeCategory === cat.key ? 'catalog-chip-active' : ''}`}
+                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                className={`catalog-chip ${activeCategory === cat.id ? 'catalog-chip-active' : ''}`}
               >
-                {cat.key}
+                {cat.name}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setActiveCategory(activeCategory === 'uncategorized' ? null : 'uncategorized')}
+              className={`catalog-chip ${activeCategory === 'uncategorized' ? 'catalog-chip-active' : ''}`}
+            >
+              بدون دسته
+            </button>
           </div>
         )}
 
@@ -415,7 +437,7 @@ export default function Catalog() {
                       ) : (
                         <span />
                       )}
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         {isNew && (
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
@@ -424,7 +446,11 @@ export default function Catalog() {
                             جدید
                           </span>
                         )}
-                        {product.category && (
+                        {(product.categories || []).map((c) => (
+                          <span key={c.id} className="catalog-cat-badge">{c.name}</span>
+                        ))}
+                        {/* Backward compat: show old string category if no multi-categories */}
+                        {(!product.categories || product.categories.length === 0) && product.category && (
                           <span className="catalog-cat-badge">{product.category}</span>
                         )}
                       </div>
