@@ -351,15 +351,15 @@ export default function Catalog() {
           </select>
         </div>
 
-        {categories.length > 0 && (
+        {(categories.length > 0 || allTags.length > 1) && (
           <div
-            className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1"
+            className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 catalog-filter-row"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <button
               type="button"
-              onClick={() => setActiveCategory(null)}
-              className={`catalog-chip ${!activeCategory ? 'catalog-chip-active' : ''}`}
+              onClick={() => { setActiveCategory(null); setActiveTag(null); }}
+              className={`catalog-chip ${!activeCategory && !activeTag ? 'catalog-chip-active' : ''}`}
             >
               همه ({products.length})
             </button>
@@ -373,34 +373,24 @@ export default function Catalog() {
                 {cat.name}
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => setActiveCategory(activeCategory === 'uncategorized' ? null : 'uncategorized')}
-              className={`catalog-chip ${activeCategory === 'uncategorized' ? 'catalog-chip-active' : ''}`}
-            >
-              بدون دسته
-            </button>
-          </div>
-        )}
-
-        {allTags.length > 0 && (
-          <div
-            className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1"
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
-            <button
-              type="button"
-              onClick={() => setActiveTag(null)}
-              className={`catalog-chip ${!activeTag ? 'catalog-chip-active' : ''}`}
-            >
-              همه برچسب‌ها
-            </button>
-            {allTags.map((tag) => (
+            {categories.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveCategory(activeCategory === 'uncategorized' ? null : 'uncategorized')}
+                className={`catalog-chip ${activeCategory === 'uncategorized' ? 'catalog-chip-active' : ''}`}
+              >
+                بدون دسته
+              </button>
+            )}
+            {allTags.length > 1 && categories.length > 0 && (
+              <span className="catalog-chip-divider" aria-hidden="true">•</span>
+            )}
+            {allTags.length > 1 && allTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={`catalog-chip ${activeTag === tag ? 'catalog-chip-active' : ''}`}
+                className={`catalog-chip catalog-chip-tag ${activeTag === tag ? 'catalog-chip-active' : ''}`}
               >
                 {tag}
               </button>

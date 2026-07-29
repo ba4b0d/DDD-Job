@@ -1050,6 +1050,23 @@ body {
   box-shadow: 0 2px 12px color-mix(in srgb, var(--brand-orange) 45%, transparent);
 }
 
+/* Divider between categories and tags in the merged filter row */
+.catalog-chip-divider {
+  flex-shrink: 0;
+  align-self: center;
+  color: var(--text-muted);
+  opacity: 0.4;
+  font-size: 0.7rem;
+  padding: 0 0.15rem;
+}
+
+/* Tag chips — slightly muted vs category chips */
+.catalog-chip-tag:not(.catalog-chip-active) {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.85;
+}
+
 /* Hero «Spaghetti · FDM» pill — logo orange */
 .catalog-fdm-badge {
   display: inline-flex;
