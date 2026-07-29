@@ -168,9 +168,9 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <FormField label="نام محصول" name="name" value={form.name} onChange={handleChange} onBlur={handleBlur} touched={touched} errors={errors} required placeholder="مثال: جعبه موبایل" />
         <FormField label="شناسه محصول" name="product_id" value={form.product_id} onChange={handleChange} placeholder="مثال: PROD-001" />
         <FormField label="دسته‌بندی‌ها" name="category_ids">
-          <div className="flex flex-wrap gap-2 p-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}>
+          <div className="flex flex-wrap gap-2 p-3 rounded-lg border min-h-[42px] items-center" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
             {categories.length === 0 ? (
-              <span className="text-xs text-muted p-1">هیچ دسته‌بندی وجود ندارد</span>
+              <span className="text-xs p-1" style={{ color: 'var(--text-muted)' }}>هیچ دسته‌بندی تعریف نشده است</span>
             ) : (
               categories.map((cat) => {
                 const isSelected = selectedCategoryIds.includes(cat.id);
@@ -183,14 +183,16 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
                         isSelected ? prev.filter(id => id !== cat.id) : [...prev, cat.id]
                       );
                     }}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-surface text-secondary border-muted hover:border-primary'
-                    }`}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 cursor-pointer select-none"
+                    style={{
+                      backgroundColor: isSelected ? 'var(--accent)' : 'var(--bg-secondary)',
+                      color: isSelected ? '#ffffff' : 'var(--text-primary)',
+                      borderColor: isSelected ? 'var(--accent)' : 'var(--border-color)',
+                      boxShadow: isSelected ? '0 2px 4px rgba(255, 154, 61, 0.25)' : 'none',
+                    }}
                   >
                     <span>{cat.name}</span>
-                    {isSelected && <span className="text-[10px]">✓</span>}
+                    {isSelected && <span className="text-[10px] font-bold">✓</span>}
                   </button>
                 );
               })
