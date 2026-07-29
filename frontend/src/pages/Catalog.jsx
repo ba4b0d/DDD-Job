@@ -66,46 +66,49 @@ function CatalogImageCarousel({ images, name }) {
         loading="lazy"
       />
       <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          prev();
-        }}
-        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="قبلی"
-      >
-        <ChevronLeft size={16} />
-      </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          next();
-        }}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="بعدی"
-      >
-        <ChevronRight size={16} />
-      </button>
-      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {sorted.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrent(i);
-            }}
-            className="rounded-full transition-all"
-            style={{
-              width: i === current ? 14 : 6,
-              height: 6,
-              backgroundColor: i === current ? '#fff' : 'rgba(255,255,255,0.4)',
-            }}
-            aria-label={`تصویر ${i + 1}`}
-          />
-        ))}
-      </div>
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                prev();
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-[2]"
+              aria-label="قبلی"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                next();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity z-[2]"
+              aria-label="بعدی"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-[2]">
+              {sorted.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setCurrent(i);
+                  }}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: i === current ? 14 : 6,
+                    height: 6,
+                    backgroundColor: i === current ? '#475569' : 'rgba(100,116,139,0.5)',
+                  }}
+                  aria-label={`تصویر ${i + 1}`}
+                />
+              ))}
+            </div>
     </div>
   );
 }
