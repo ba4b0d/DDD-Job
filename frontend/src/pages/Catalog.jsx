@@ -147,6 +147,7 @@ export default function Catalog() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
+  const [activeTag, setActiveTag] = useState(null);
   const [sortBy, setSortBy] = useState('name');
 
   useEffect(() => {
@@ -175,6 +176,19 @@ export default function Catalog() {
     return () => controller.abort();
   }, []);
 
+  // Collect all unique tags from products (tags is comma-separated string)
+  const allTags = useMemo(() => {
+    const tagSet = new Set();
+    for (const p of products) {
+      const raw = (p.tags || '').trim();
+      if (!raw) continue;
+      for (const t of raw.split(',').map((s) => s.trim()).filter(Boolean)) {
+        tagSet.add(t);
+      }
+    }
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, 'fa'));
+  }, [products]);
+
   const filtered = useMemo(() => {
     let list = [...products];
     if (search) {
@@ -185,7 +199,8 @@ export default function Catalog() {
           p.product_id?.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q) ||
           (p.categories || []).some((c) => c.name?.toLowerCase().includes(q)) ||
-          p.material_name?.toLowerCase().includes(q)
+          p.material_name?.toLowerCase().includes(q) ||
+          (p.tags || '').toLowerCase().split(',').map((s) => s.trim()).some((t) => t.includes(q))
       );
     }
     if (activeCategory) {
@@ -208,6 +223,13 @@ export default function Catalog() {
         });
       }
     }
+    if (activeTag) {
+      list = list.filter((p) => {
+        const raw = (p.tags || '').trim();
+        if (!raw) return false;
+        return raw.split(',').map((s) => s.trim()).includes(activeTag);
+      });
+    }
     switch (sortBy) {
       case 'price_asc':
         list.sort(
@@ -228,7 +250,7 @@ export default function Catalog() {
         list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fa'));
     }
     return list;
-  }, [products, search, activeCategory, sortBy]);
+  }, [products, search, activeCategory, activeTag, sortBy]);
 
   if (loading) {
     return (
@@ -358,6 +380,31 @@ export default function Catalog() {
             >
               بدون دسته
             </button>
+          </div>
+        )}
+
+        {allTags.length > 0 && (
+          <div
+            className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <button
+              type="button"
+              onClick={() => setActiveTag(null)}
+              className={`catalog-chip ${!activeTag ? 'catalog-chip-active' : ''}`}
+            >
+              همه برچسب‌ها
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={`catalog-chip ${activeTag === tag ? 'catalog-chip-active' : ''}`}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         )}
 
