@@ -299,7 +299,6 @@ export default function PublicProductDetail() {
   }
 
   const price = product.final_price || product.suggested_price;
-  const hasDescription = product.description?.trim?.();
   const hasNotes = product.notes?.trim?.();
 
   const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
@@ -406,25 +405,15 @@ export default function PublicProductDetail() {
             )}
           </div>
 
-          {/* Description / Notes */}
-          {(hasDescription || hasNotes) && (
+          {/* Notes */}
+          {hasNotes && (
             <div className="space-y-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {hasDescription && (
-                <div>
-                  <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                    توضیحات
-                  </div>
-                  <p style={{ whiteSpace: 'pre-line' }}>{product.description}</p>
+              <div>
+                <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+                  توضیحات
                 </div>
-              )}
-              {hasNotes && (
-                <div>
-                  <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
-                    یادداشت
-                  </div>
-                  <p style={{ whiteSpace: 'pre-line' }}>{product.notes}</p>
-                </div>
-              )}
+                <p style={{ whiteSpace: 'pre-line' }}>{product.notes}</p>
+              </div>
             </div>
           )}
 
