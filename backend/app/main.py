@@ -106,17 +106,26 @@ async def lifespan(app: FastAPI):
         if "product_categories" not in inspector.get_table_names():
             print("Creating product_categories junction table...")
             ProductCategory.__table__.create(bind=engine)
-            # Migrate existing string categories to junction table
-            products = db.query(Product).filter(Product.category != None, Product.category != "").all()
-            migrated = 0
-            for p in products:
+
+        # Always sync: move any products with old category string but no m2m association
+        from app.models import ProductCategory
+        products_needing_sync = (
+            db.query(Product)
+            .filter(Product.category != None, Product.category != "")
+            .all()
+        )
+        migrated = 0
+        for p in products_needing_sync:
+            # Check if product already has m2m associations
+            existing = db.query(ProductCategory).filter(ProductCategory.product_id == p.id).first()
+            if not existing:
                 cat = db.query(Category).filter(Category.name == p.category).first()
                 if cat:
-                    db.execute(text(f"INSERT OR IGNORE INTO product_categories (product_id, category_id) VALUES ({p.id}, {cat.id})"))
+                    db.add(ProductCategory(product_id=p.id, category_id=cat.id))
                     migrated += 1
-            if migrated:
-                db.commit()
-                print(f"Migrated {migrated} product-category associations to junction table.")
+        if migrated:
+            db.commit()
+            print(f"Migrated {migrated} product-category associations to junction table.")
 
         # Migration: order schedule dates (start + ready-to-send)
         if "orders" in inspector.get_table_names():
