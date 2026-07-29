@@ -119,6 +119,7 @@ export default function Products() {
       name: data.name,
       product_id: data.product_id || '',
       category: data.category || '',
+      category_ids: data.category_ids || [],
       material_id: parseInt(data.material_id),
       machine_id: parseInt(data.machine_id),
       weight_g: data.weight_g || 0,
