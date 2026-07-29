@@ -1060,17 +1060,19 @@ body {
   padding: 0 0.15rem;
 }
 
-/* Tag chips — subtle solid border, white text on hover */
+/* Tag chips — no background by default, thin solid border, light background + white text on hover */
 .catalog-chip-tag:not(.catalog-chip-active) {
-  background: var(--bg-secondary);
+  background: transparent;
   border-style: solid;
-  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
-  opacity: 0.85;
+  border-color: color-mix(in srgb, var(--border-color) 80%, transparent);
+  color: var(--text-secondary);
+  opacity: 0.9;
 }
 
 .catalog-chip-tag:not(.catalog-chip-active):hover {
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--brand-orange) 45%, var(--border-color));
+  border-color: color-mix(in srgb, var(--brand-orange) 50%, var(--border-color));
   opacity: 1;
 }
 
