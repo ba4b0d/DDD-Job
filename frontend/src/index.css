@@ -1060,11 +1060,18 @@ body {
   padding: 0 0.15rem;
 }
 
-/* Tag chips — slightly muted vs category chips */
+/* Tag chips — subtle solid border, white text on hover */
 .catalog-chip-tag:not(.catalog-chip-active) {
-  background: transparent;
-  border-style: dashed;
+  background: var(--bg-secondary);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
   opacity: 0.85;
+}
+
+.catalog-chip-tag:not(.catalog-chip-active):hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--brand-orange) 45%, var(--border-color));
+  opacity: 1;
 }
 
 /* Hero «Spaghetti · FDM» pill — logo orange */
