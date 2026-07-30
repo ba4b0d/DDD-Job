@@ -4,21 +4,28 @@
 
 set -e
 
-BACKUP_DIR="${BACKUP_DIR:-/app/data/backups}"
+# Detect if running inside container or on host
+if [ -d "/app/data" ] && [ -w "/app/data" ]; then
+    DEFAULT_BACKUP_DIR="/app/data/backups"
+    DB_PATH="/app/data/3djat.db"
+elif [ -f "backend/data/3djat.db" ]; then
+    DEFAULT_BACKUP_DIR="backups"
+    DB_PATH="backend/data/3djat.db"
+elif [ -f "data/3djat.db" ]; then
+    DEFAULT_BACKUP_DIR="backups"
+    DB_PATH="data/3djat.db"
+else
+    DEFAULT_BACKUP_DIR="backups"
+    DB_PATH="./3djat.db"
+fi
+
+BACKUP_DIR="${BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 mkdir -p "$BACKUP_DIR"
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/3djat_${TIMESTAMP}.db"
 
-echo "Creating WAL-safe backup at ${BACKUP_FILE}..."
-
-if [ -f "/app/data/3djat.db" ]; then
-    DB_PATH="/app/data/3djat.db"
-elif [ -f "backend/data/3djat.db" ]; then
-    DB_PATH="backend/data/3djat.db"
-else
-    DB_PATH="./3djat.db"
-fi
+echo "Creating WAL-safe backup from ${DB_PATH} to ${BACKUP_FILE}..."
 
 python3 -c "
 import sqlite3
