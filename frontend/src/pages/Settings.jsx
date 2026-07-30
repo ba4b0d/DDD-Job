@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Save, Check, Upload } from 'lucide-react'
-import { getSettings, updateSettings, uploadBranding } from '../lib/api'
+import { Save, Check, Upload, Download, Database, RotateCcw, AlertTriangle } from 'lucide-react'
+import { getSettings, updateSettings, uploadBranding, exportBackup, importBackup } from '../lib/api'
 import { SAVED_FEEDBACK_DELAY } from '../lib/constants'
 
 export default function Settings() {
@@ -10,6 +10,9 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState({})
+  const [exportingBackup, setExportingBackup] = useState(false)
+  const [importingBackup, setImportingBackup] = useState(false)
+  const [backupMessage, setBackupMessage] = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -23,6 +26,45 @@ export default function Settings() {
       setError('خطا در بارگذاری تنظیمات')
     }
     setLoading(false)
+  }
+
+  async function handleExportBackup() {
+    try {
+      setExportingBackup(true);
+      setBackupMessage(null);
+      const res = await exportBackup();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      link.setAttribute('download', `3djat_backup_${timestamp}.db`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setBackupMessage({ type: 'success', text: 'پشتیبان با موفقیت دانلود شد' });
+    } catch (e) {
+      console.error(e);
+      setBackupMessage({ type: 'error', text: 'خطا در دانلود پشتیبان' });
+    } finally {
+      setExportingBackup(false);
+    }
+  }
+
+  async function handleImportBackup(file) {
+    if (!file) return;
+    if (!confirm('آیا از بازگردانی این فایل پشتیبان اطمینان دارید؟ تمام اطلاعات فعلی جایگزین خواهند شد!')) return;
+    try {
+      setImportingBackup(true);
+      setBackupMessage(null);
+      const res = await importBackup(file);
+      setBackupMessage({ type: 'success', text: res.data.message || 'پشتیبان با موفقیت بازگردانی شد' });
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+      console.error(e);
+      setBackupMessage({ type: 'error', text: e.response?.data?.detail || 'خطا در بازگردانی پشتیبان' });
+    } finally {
+      setImportingBackup(false);
+    }
   }
 
   function handleChange(key, value, isString = false) {
@@ -241,6 +283,63 @@ export default function Settings() {
             />
           </div>
         ))}
+      </div>
+
+      {/* ── Backup & Restore Section ── */}
+      <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">پشتیبان‌گیری و بازگردانی دیتابیس</h2>
+      <div className="settings-fields-grid max-w-6xl">
+        <div className="settings-field-card rounded-xl p-6 col-span-full">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400">
+                <Database size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">مدیریت فایل‌های پشتیبان (Backup / Restore)</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  دریافت نسخه پشتیبان WAL-safe دیتابیس SQLite یا بازگردانی دیتابیس از فایل .db پشتیبان
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                disabled={exportingBackup}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition-colors disabled:opacity-50"
+              >
+                <Download size={16} />
+                <span>{exportingBackup ? 'در حال دریافت...' : 'دانلود فایل پشتیبان'}</span>
+              </button>
+
+              <label className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm cursor-pointer transition-colors">
+                <RotateCcw size={16} />
+                <span>{importingBackup ? 'در حال بازگردانی...' : 'بازگردانی دیتابیس'}</span>
+                <input
+                  type="file"
+                  accept=".db"
+                  className="hidden"
+                  onChange={e => handleImportBackup(e.target.files?.[0])}
+                  disabled={importingBackup}
+                />
+              </label>
+            </div>
+          </div>
+
+          {backupMessage && (
+            <div
+              className={`mt-4 p-3 rounded-lg text-xs font-medium flex items-center gap-2 ${
+                backupMessage.type === 'success'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'bg-red-500/10 text-red-400 border border-red-500/20'
+              }`}
+            >
+              <Check size={14} />
+              <span>{backupMessage.text}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

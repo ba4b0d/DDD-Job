@@ -30,6 +30,7 @@ from app.routers.categories import router as categories_router
 from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
 from app.routers.blog import router as blog_router
+from app.routers.backup import router as backup_router
 
 from sqlalchemy import inspect, text
 
@@ -257,6 +258,7 @@ app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(orders_router)  # Shop ops board B — auth via route Depends
 app.include_router(blog_router)
+app.include_router(backup_router)
 app.include_router(catalog_router)  # No auth — public catalog
 
 # ── Static files for uploads ────────────────────────────────────────

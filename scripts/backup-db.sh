@@ -48,4 +48,13 @@ print(f'Backup complete: {backup_path}')
 # Keep last 14 daily backups, delete older ones
 find "$BACKUP_DIR" -name "3djat_*.db" -type f -mtime +14 -delete 2>/dev/null || true
 
+# Optional: Google Drive sync via rclone if configured
+RCLONE_REMOTE="${RCLONE_REMOTE:-gdrive:3djat_backups}"
+if command -v rclone &> /dev/null; then
+    if rclone listremotes | grep -q "^gdrive:"; then
+        echo "Syncing backup to Google Drive (${RCLONE_REMOTE})..."
+        rclone copy "$BACKUP_FILE" "$RCLONE_REMOTE" || echo "Google Drive sync warning: copy failed"
+    fi
+fi
+
 echo "Backup finished successfully."

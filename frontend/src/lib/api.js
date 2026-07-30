@@ -122,6 +122,17 @@ export const getContact = () => api.get('/contact');
 // ===== Auth =====
 export const login = (username, password) => api.post('/auth/login', { username, password });
 export const logout = () => api.post('/auth/logout');
+
+// ===== Admin Backup & Restore =====
+export const exportBackup = () => api.get('/admin/backup/export', { responseType: 'blob' });
+export const importBackup = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/admin/backup/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+export const getLocalBackups = () => api.get('/admin/backup/list');
 export const verifyToken = () => api.get('/auth/verify');
 
 // ===== Users (admin only) =====
