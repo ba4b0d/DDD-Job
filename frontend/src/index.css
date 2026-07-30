@@ -1076,6 +1076,111 @@ body {
   opacity: 1;
 }
 
+/* ─── Mega-menu category dropdown ─── */
+.mega-menu-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 100%;
+  background: #fff;
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  animation: megaSlideDown 0.2s ease;
+}
+.mega-menu-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+.mega-menu-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  background: var(--bg-secondary);
+}
+.mega-menu-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.mega-menu-search input::placeholder {
+  color: var(--text-muted);
+}
+.mega-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.mega-menu-col {
+  padding: 8px 0;
+}
+.mega-menu-parent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: right;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  background: none;
+  border: none;
+}
+.mega-menu-parent:hover {
+  background: #fff5ed;
+  color: #FF9A3D;
+}
+.mega-menu-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding-right: 12px;
+}
+.mega-menu-child {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: right;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  background: none;
+  border: none;
+}
+.mega-menu-child:hover {
+  background: #fff5ed;
+  color: #FF9A3D;
+}
+.mega-menu-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+@keyframes megaSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  .mega-menu-panel { display: none; }
+  .mega-menu-grid { grid-template-columns: 1fr; }
+  .mega-menu-inner { padding: 16px; }
+}
+
 /* Hero «Spaghetti · FDM» pill — logo orange */
 .catalog-fdm-badge {
   display: inline-flex;

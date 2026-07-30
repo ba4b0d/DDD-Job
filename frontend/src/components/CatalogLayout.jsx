@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronLeft, Search } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
@@ -21,9 +21,10 @@ export default function CatalogLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
   const [catTree, setCatTree] = useState([]);
-  const [catOpen, setCatOpen] = useState(false);
-  const [hoveredCat, setHoveredCat] = useState(null);
-  const catDropdownRef = useRef(null);
+  const [megaOpen, setMegaOpen] = useState(false);
+  const [megaSearch, setMegaSearch] = useState('');
+  const megaRef = useRef(null);
+  const megaTimer = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,19 +50,28 @@ export default function CatalogLayout({ children }) {
     };
   }, [menuOpen]);
 
-  // Close category dropdown on outside click
-  useEffect(() => {
-    if (!catOpen) return;
-    const handleClick = (e) => {
-      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target)) {
-        setCatOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [catOpen]);
-
   const closeMenu = () => setMenuOpen(false);
+
+  // Hover handlers for mega menu (with delay to prevent flicker)
+  const megaEnter = () => {
+    clearTimeout(megaTimer.current);
+    setMegaOpen(true);
+  };
+  const megaLeave = () => {
+    megaTimer.current = setTimeout(() => setMegaOpen(false), 200);
+  };
+
+  // Filter categories by search
+  const filteredTree = megaSearch.trim()
+    ? catTree.filter((cat) => {
+        const q = megaSearch.toLowerCase();
+        const nameMatch = cat.name.toLowerCase().includes(q);
+        const childMatch = (cat.children || []).some((sub) =>
+          sub.name.toLowerCase().includes(q)
+        );
+        return nameMatch || childMatch;
+      })
+    : catTree;
 
   return (
     <div
@@ -75,9 +85,7 @@ export default function CatalogLayout({ children }) {
         <div className="catalog-topbar-inner">
           <Link to="/" className="catalog-brand-link flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             <BrandLogo height={85} className="catalog-logo-img shrink-0">
-              <div className="catalog-logo-mark shrink-0" aria-hidden="true">
-                S
-              </div>
+              <div className="catalog-logo-mark shrink-0" aria-hidden="true">S</div>
             </BrandLogo>
             <div className="min-w-0 catalog-brand-text">
               <h1 className="catalog-brand-title truncate">اسپاگتی پرینت</h1>
@@ -86,75 +94,18 @@ export default function CatalogLayout({ children }) {
           </Link>
 
           <nav className="catalog-nav catalog-nav--desktop" aria-label="منوی عمومی">
-            {/* Categories dropdown button */}
-            <div ref={catDropdownRef} className="relative">
+            {/* Categories mega-menu trigger */}
+            <div ref={megaRef} className="relative" onMouseEnter={megaEnter} onMouseLeave={megaLeave}>
               <button
                 type="button"
-                className={`catalog-nav-link flex items-center gap-1 ${catOpen ? 'catalog-nav-link--active' : ''}`}
-                onClick={() => setCatOpen((v) => !v)}
-                aria-expanded={catOpen}
+                className={`catalog-nav-link flex items-center gap-1 ${megaOpen ? 'catalog-nav-link--active' : ''}`}
+                onClick={() => setMegaOpen((v) => !v)}
+                aria-expanded={megaOpen}
                 aria-haspopup="true"
               >
                 دسته‌بندی‌ها
-                <ChevronDown size={14} className={`transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`transition-transform duration-200 ${megaOpen ? 'rotate-180' : ''}`} />
               </button>
-
-              {catOpen && catTree.length > 0 && (
-                <div
-                  className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border overflow-hidden animate-fade-in-scale"
-                  style={{ minWidth: '280px', maxWidth: '420px', borderColor: 'var(--border-color)', zIndex: 9999 }}
-                  dir="rtl"
-                >
-                  <div className="p-2 max-h-[60vh] overflow-y-auto">
-                    {catTree.map((cat) => (
-                      <div
-                        key={cat.id}
-                        className="relative"
-                        onMouseEnter={() => setHoveredCat(cat.id)}
-                        onMouseLeave={() => setHoveredCat(null)}
-                      >
-                        <button
-                          type="button"
-                          className="w-full text-right px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between transition-colors hover:bg-orange-50"
-                          style={{ color: 'var(--text-primary)' }}
-                          onClick={() => {
-                            setCatOpen(false);
-                            navigate(`/?category=${cat.id}`);
-                          }}
-                        >
-                          <span>{cat.name}</span>
-                          {cat.children && cat.children.length > 0 && (
-                            <ChevronDown size={14} className="rotate-[-90deg]" style={{ color: 'var(--text-muted)' }} />
-                          )}
-                        </button>
-
-                        {/* Sub-categories panel */}
-                        {cat.children && cat.children.length > 0 && hoveredCat === cat.id && (
-                          <div
-                            className="absolute top-0 right-full mr-1 bg-white rounded-xl shadow-xl border p-2 animate-fade-in-scale"
-                            style={{ minWidth: '200px', borderColor: 'var(--border-color)' }}
-                          >
-                            {cat.children.map((sub) => (
-                              <button
-                                key={sub.id}
-                                type="button"
-                                className="w-full text-right px-3 py-2 rounded-lg text-sm transition-colors hover:bg-orange-50"
-                                style={{ color: 'var(--text-primary)' }}
-                                onClick={() => {
-                                  setCatOpen(false);
-                                  navigate(`/?category=${sub.id}`);
-                                }}
-                              >
-                                {sub.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <NavLink to="/" end className={navLinkClass}>
@@ -188,6 +139,76 @@ export default function CatalogLayout({ children }) {
         </div>
       </header>
 
+      {/* ─── Mega-menu overlay ─── */}
+      {megaOpen && (
+        <div
+          className="fixed inset-0 bg-black/30"
+          style={{ zIndex: Z_INDEX_STICKY - 1 }}
+          onClick={() => setMegaOpen(false)}
+        />
+      )}
+      {megaOpen && (
+        <div
+          className="mega-menu-panel"
+          onMouseEnter={megaEnter}
+          onMouseLeave={megaLeave}
+          style={{ zIndex: Z_INDEX_STICKY }}
+        >
+          <div className="mega-menu-inner">
+            {/* Search bar */}
+            <div className="mega-menu-search">
+              <Search size={16} style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="جستجوی دسته‌بندی..."
+                value={megaSearch}
+                onChange={(e) => setMegaSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            {/* Categories grid */}
+            <div className="mega-menu-grid">
+              {filteredTree.length === 0 ? (
+                <div className="mega-menu-empty">دسته‌بندی‌ای یافت نشد</div>
+              ) : (
+                filteredTree.map((cat) => (
+                  <div key={cat.id} className="mega-menu-col">
+                    <button
+                      type="button"
+                      className="mega-menu-parent"
+                      onClick={() => {
+                        setMegaOpen(false);
+                        navigate(`/?category=${cat.id}`);
+                      }}
+                    >
+                      {cat.name}
+                    </button>
+                    {cat.children && cat.children.length > 0 && (
+                      <div className="mega-menu-children">
+                        {cat.children.map((sub) => (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            className="mega-menu-child"
+                            onClick={() => {
+                              setMegaOpen(false);
+                              navigate(`/?category=${sub.id}`);
+                            }}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile drawer */}
       <div
         className={`catalog-drawer-backdrop${menuOpen ? ' is-open' : ''}`}
@@ -203,9 +224,7 @@ export default function CatalogLayout({ children }) {
         <div className="catalog-drawer-head">
           <div className="flex items-center gap-2.5 min-w-0">
             <BrandLogo height={48} className="catalog-drawer-logo shrink-0">
-              <div className="catalog-logo-mark catalog-logo-mark--drawer shrink-0" aria-hidden="true">
-                S
-              </div>
+              <div className="catalog-logo-mark catalog-logo-mark--drawer shrink-0" aria-hidden="true">S</div>
             </BrandLogo>
             <div className="min-w-0">
               <p className="catalog-drawer-title truncate">اسپاگتی پرینت</p>
@@ -283,26 +302,14 @@ export default function CatalogLayout({ children }) {
             <span>قدرت گرفته از ایده و خیال ما</span>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-3" aria-label="پاورقی">
-            <Link to="/" className="catalog-footer-link">
-              کاتالوگ
-            </Link>
+            <Link to="/" className="catalog-footer-link">کاتالوگ</Link>
             {blogEnabled && (
-              <Link to="/blog" className="catalog-footer-link">
-                وبلاگ
-              </Link>
+              <Link to="/blog" className="catalog-footer-link">وبلاگ</Link>
             )}
-            <Link to="/how-to-order" className="catalog-footer-link">
-              شیوه ثبت سفارش
-            </Link>
-            <Link to="/contact" className="catalog-footer-link">
-              تماس با ما
-            </Link>
-            <Link to="/privacy" className="catalog-footer-link">
-              حریم خصوصی
-            </Link>
-            <Link to="/terms" className="catalog-footer-link">
-              قوانین
-            </Link>
+            <Link to="/how-to-order" className="catalog-footer-link">شیوه ثبت سفارش</Link>
+            <Link to="/contact" className="catalog-footer-link">تماس با ما</Link>
+            <Link to="/privacy" className="catalog-footer-link">حریم خصوصی</Link>
+            <Link to="/terms" className="catalog-footer-link">قوانین</Link>
           </nav>
         </div>
       </footer>
