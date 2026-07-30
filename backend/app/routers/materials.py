@@ -29,7 +29,10 @@ def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
         .first()
     ):
         raise HTTPException(status_code=400, detail="ماده با این نام و رنگ قبلاً وجود دارد")
-    new_mat = Material(**material.model_dump())
+    data = material.model_dump()
+    if data.get("is_default"):
+        db.query(Material).update({"is_default": False})
+    new_mat = Material(**data)
     db.add(new_mat)
     db.commit()
     db.refresh(new_mat)
@@ -42,8 +45,24 @@ def update_material(material_id: int, material: MaterialUpdate, db: Session = De
     existing = db.query(Material).filter(Material.id == material_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Material not found")
-    for field, value in material.model_dump(exclude_unset=True).items():
+    data = material.model_dump(exclude_unset=True)
+    if data.get("is_default"):
+        db.query(Material).filter(Material.id != material_id).update({"is_default": False})
+    for field, value in data.items():
         setattr(existing, field, value)
+    db.commit()
+    db.refresh(existing)
+    invalidate_stats()
+    return existing
+
+
+@router.post("/{material_id}/set-default", response_model=MaterialResponse)
+def set_default_material(material_id: int, db: Session = Depends(get_db)):
+    existing = db.query(Material).filter(Material.id == material_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Material not found")
+    db.query(Material).update({"is_default": False})
+    existing.is_default = True
     db.commit()
     db.refresh(existing)
     invalidate_stats()

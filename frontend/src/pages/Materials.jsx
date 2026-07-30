@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
-import { getMaterialsAll, createMaterial, updateMaterial, deleteMaterial, permanentDeleteMaterial } from '../lib/api'
+import { Plus, Pencil, Trash2, X, Check, Star } from 'lucide-react'
+import { getMaterialsAll, createMaterial, updateMaterial, deleteMaterial, permanentDeleteMaterial, setDefaultMaterial } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, ERROR_STYLE, getInputStyle } from '../lib/constants'
 import { validateField } from '../lib/validation'
@@ -152,6 +152,15 @@ export default function Materials() {
     }
   }
 
+  async function handleSetDefault(m) {
+    try {
+      await setDefaultMaterial(m.id);
+      loadData();
+    } catch (e) {
+      console.error('Failed to set default material:', e);
+    }
+  }
+
   async function handleDelete(m) {
     if (!confirm(`"${m.name} ${m.color || ''}" حذف شود؟`)) return
     try {
@@ -238,7 +247,15 @@ export default function Materials() {
                 {materials.map((m) => (
                   <tr key={m.id} className="table-row">
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {m.name}
+                      <div className="flex items-center gap-2">
+                        <span>{m.name}</span>
+                        {m.is_default && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            <Star size={10} className="fill-amber-400" />
+                            پیش‌فرض
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
@@ -259,6 +276,16 @@ export default function Materials() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefault(m)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            m.is_default ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
+                          }`}
+                          title={m.is_default ? 'فیلامنت پیش‌فرض است' : 'تنظیم به عنوان فیلامنت پیش‌فرض'}
+                        >
+                          <Star size={14} className={m.is_default ? 'fill-amber-400' : ''} />
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEdit(m)}

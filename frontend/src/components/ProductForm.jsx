@@ -55,9 +55,12 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   useEffect(() => {
     Promise.all([getMaterialsAll(), getMachinesAll(), getCategoriesList()])
       .then(([matRes, machRes, catRes]) => {
-        setMaterials(matRes.data || []);
-        setMachines(machRes.data || []);
+        const matList = matRes.data || [];
+        const machList = machRes.data || [];
         const catsData = Array.isArray(catRes.data) ? catRes.data : [];
+
+        setMaterials(matList);
+        setMachines(machList);
         setCategories(catsData);
 
         // Pre-select category IDs from initialData
@@ -67,6 +70,18 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
           // Backward compat: match string category name
           const found = catsData.find(c => c.name === initialData.category);
           if (found) setSelectedCategoryIds([found.id]);
+        }
+
+        // Auto-select default printer and default filament if adding a new product
+        if (!initialData?.id) {
+          const defaultMat = matList.find(m => m.is_default);
+          const defaultMach = machList.find(m => m.is_default);
+
+          setForm(prev => ({
+            ...prev,
+            material_id: prev.material_id || (defaultMat ? String(defaultMat.id) : ''),
+            machine_id: prev.machine_id || (defaultMach ? String(defaultMach.id) : ''),
+          }));
         }
       })
       .catch((err) => console.error('Failed to load form data:', err));

@@ -41,6 +41,7 @@ export const createMaterial = (data) => api.post('/materials', data);
 export const updateMaterial = (id, data) => api.put(`/materials/${id}`, data);
 export const deleteMaterial = (id) => api.delete(`/materials/${id}`);
 export const permanentDeleteMaterial = (id) => api.delete(`/materials/${id}/permanent`);
+export const setDefaultMaterial = (id) => api.post(`/materials/${id}/set-default`);
 
 // ===== Machines =====
 export const getMachines = (params) => api.get('/machines', { params });
@@ -48,6 +49,7 @@ export const getMachinesAll = (config) => api.get('/machines/all', config);
 export const createMachine = (data) => api.post('/machines', data);
 export const updateMachine = (id, data) => api.put(`/machines/${id}`, data);
 export const deleteMachine = (id) => api.delete(`/machines/${id}`);
+export const setDefaultMachine = (id) => api.post(`/machines/${id}/set-default`);
 
 // ===== Products =====
 export const getProducts = (params, config) => api.get('/products', { params, ...config });

@@ -22,7 +22,10 @@ def get_active_machines(db: Session = Depends(get_db)):
 
 @router.post("", response_model=MachineResponse, status_code=201)
 def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
-    new_mach = Machine(**machine.model_dump())
+    data = machine.model_dump()
+    if data.get("is_default"):
+        db.query(Machine).update({"is_default": False})
+    new_mach = Machine(**data)
     db.add(new_mach)
     db.commit()
     db.refresh(new_mach)
@@ -35,8 +38,24 @@ def update_machine(machine_id: int, machine: MachineUpdate, db: Session = Depend
     existing = db.query(Machine).filter(Machine.id == machine_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Machine not found")
-    for field, value in machine.model_dump(exclude_unset=True).items():
+    data = machine.model_dump(exclude_unset=True)
+    if data.get("is_default"):
+        db.query(Machine).filter(Machine.id != machine_id).update({"is_default": False})
+    for field, value in data.items():
         setattr(existing, field, value)
+    db.commit()
+    db.refresh(existing)
+    invalidate_stats()
+    return existing
+
+
+@router.post("/{machine_id}/set-default", response_model=MachineResponse)
+def set_default_machine(machine_id: int, db: Session = Depends(get_db)):
+    existing = db.query(Machine).filter(Machine.id == machine_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Machine not found")
+    db.query(Machine).update({"is_default": False})
+    existing.is_default = True
     db.commit()
     db.refresh(existing)
     invalidate_stats()

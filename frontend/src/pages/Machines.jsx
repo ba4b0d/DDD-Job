@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Check, Zap } from 'lucide-react'
-import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine } from '../lib/api'
+import { Plus, Pencil, Trash2, Check, Zap, Star } from 'lucide-react'
+import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine, setDefaultMachine } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, formatNumber, ERROR_STYLE, getInputStyle } from '../lib/constants'
 import { validateField } from '../lib/validation'
@@ -136,8 +136,16 @@ export default function Machines() {
     }
   }
 
+  async function handleSetDefault(m) {
+    try {
+      await setDefaultMachine(m.id);
+      reload();
+    } catch (e) {
+      console.error('Failed to set default machine:', e);
+    }
+  }
+
   async function handleDelete(m) {
-    if (!confirm(`"${m.name}" حذف شود؟`)) return
     try {
       await deleteMachine(m.id)
       reload()
@@ -223,7 +231,15 @@ export default function Machines() {
                 {machines.map((m) => (
                   <tr key={m.id} className="table-row">
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {m.name}
+                      <div className="flex items-center gap-2">
+                        <span>{m.name}</span>
+                        {m.is_default && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            <Star size={10} className="fill-amber-400" />
+                            پیش‌فرض
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
@@ -250,6 +266,16 @@ export default function Machines() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefault(m)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            m.is_default ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
+                          }`}
+                          title={m.is_default ? 'پرینتر پیش‌فرض است' : 'تنظیم به عنوان پرینتر پیش‌فرض'}
+                        >
+                          <Star size={14} className={m.is_default ? 'fill-amber-400' : ''} />
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEdit(m)}

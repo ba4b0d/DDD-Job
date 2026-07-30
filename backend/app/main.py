@@ -90,6 +90,19 @@ async def lifespan(app: FastAPI):
                 conn.execute(text("ALTER TABLE products ADD COLUMN dimension_y FLOAT"))
                 conn.execute(text("ALTER TABLE products ADD COLUMN dimension_z FLOAT"))
 
+        # Migration: add is_default column to machines and materials tables
+        machine_cols = {c["name"] for c in inspector.get_columns("machines")}
+        if "is_default" not in machine_cols:
+            print("Adding is_default column to machines table...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE machines ADD COLUMN is_default BOOLEAN DEFAULT 0"))
+
+        material_cols = {c["name"] for c in inspector.get_columns("materials")}
+        if "is_default" not in material_cols:
+            print("Adding is_default column to materials table...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE materials ADD COLUMN is_default BOOLEAN DEFAULT 0"))
+
         # Sync: import existing product category strings into categories table
         existing_cat_names = {c.name for c in db.query(Category.name).all()}
         product_cats = (

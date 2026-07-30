@@ -34,6 +34,7 @@ class MachineCreate(BaseModel):
     life_hours: float = Field(default=5000, ge=0)
     maintenance_pct: float = Field(default=0.05, ge=0, le=1)
     is_active: bool = True
+    is_default: bool = False
 
     @field_validator('name')
     @classmethod
@@ -50,6 +51,7 @@ class MachineUpdate(BaseModel):
     life_hours: Optional[float] = None
     maintenance_pct: Optional[float] = None
     is_active: Optional[bool] = None
+    is_default: Optional[bool] = None
 
 
 class MachineResponse(BaseModel):
@@ -60,6 +62,7 @@ class MachineResponse(BaseModel):
     life_hours: float
     maintenance_pct: float
     is_active: bool
+    is_default: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -73,6 +76,7 @@ class MaterialCreate(BaseModel):
     color: str = ""
     notes: str = ""
     is_active: bool = True
+    is_default: bool = False
     @field_validator('name')
     @classmethod
     def name_not_empty(cls, v):
@@ -95,6 +99,7 @@ class MaterialUpdate(BaseModel):
     color: Optional[str] = None
     notes: Optional[str] = None
     is_active: Optional[bool] = None
+    is_default: Optional[bool] = None
 
 
 class MaterialResponse(BaseModel):
@@ -105,6 +110,7 @@ class MaterialResponse(BaseModel):
     color: str
     notes: str
     is_active: bool
+    is_default: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

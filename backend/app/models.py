@@ -26,6 +26,7 @@ class Machine(Base):
     life_hours = Column(Float, nullable=False, default=5000)
     maintenance_pct = Column(Float, nullable=False, default=0.05)
     is_active = Column(Boolean, default=True)
+    is_default = Column(Boolean, default=False)
 
     products = relationship("Product", back_populates="machine")
 
@@ -43,6 +44,7 @@ class Material(Base):
     color = Column(String, default="")
     notes = Column(String, default="")
     is_active = Column(Boolean, default=True)
+    is_default = Column(Boolean, default=False)
 
     products = relationship("Product", back_populates="material")
 
