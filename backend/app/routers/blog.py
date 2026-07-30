@@ -159,6 +159,30 @@ def admin_delete_post(
     return {"message": "مقاله با موفقیت حذف شد"}
 
 
+IMAGE_MAGIC_BYTES = [
+    (b"\xff\xd8\xff", ".jpg"),
+    (b"\x89PNG\r\n\x1a\n", ".png"),
+    (b"GIF87a", ".gif"),
+    (b"GIF89a", ".gif"),
+    (b"RIFF", ".webp"),
+]
+
+
+def validate_image_magic_bytes(contents: bytes) -> str:
+    """Validate magic bytes of uploaded image. Returns normalized extension or raises HTTPException 400."""
+    if len(contents) < 12:
+        raise HTTPException(status_code=400, detail="فایل تصویر نامعتبر یا خالی است")
+    for magic, ext in IMAGE_MAGIC_BYTES:
+        if contents.startswith(magic):
+            if ext == ".webp" and contents[8:12] != b"WEBP":
+                continue
+            return ext
+    raise HTTPException(
+        status_code=400,
+        detail="محتوای فایل با پسوند تصویر مطابقت ندارد. فقط فایل‌های تصویر واقعی مجاز هستند",
+    )
+
+
 @router.post("/admin/posts/upload-cover")
 async def upload_blog_cover(
     file: UploadFile = File(...),
@@ -177,7 +201,8 @@ async def upload_blog_cover(
     if len(contents) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد")
 
-    filename = f"{uuid.uuid4().hex}{ext}"
+    real_ext = validate_image_magic_bytes(contents)
+    filename = f"{uuid.uuid4().hex}{real_ext}"
     filepath = os.path.join(BLOG_UPLOAD_DIR, filename)
     with open(filepath, "wb") as f:
         f.write(contents)
