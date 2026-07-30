@@ -927,8 +927,7 @@ body {
   width: 100%;
 }
 .catalog-hero-cta {
-  width: 200px;
-  flex-shrink: 0;
+  width: 100%;
   background: linear-gradient(135deg, #FF9A3D 0%, #E07B2C 50%, #C96A24 100%);
   display: flex;
   align-items: center;
