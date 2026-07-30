@@ -188,19 +188,26 @@ export default function ProductDetail() {
     );
   }
 
+  const categoryNames = (product.categories && product.categories.length > 0)
+    ? product.categories.map(c => c.name).join('، ')
+    : (product.category && product.category !== '-' ? product.category : null);
+
+  const hasDimensions = product.dimension_x || product.dimension_y || product.dimension_z;
+
   const infoItems = [
-    { icon: Tag, label: 'دسته‌بندی', value: product.category || '—' },
+    { icon: Tag, label: 'دسته‌بندی', value: categoryNames || '—' },
     { icon: Layers, label: 'ماده', value: product.material_name || product.material?.name || '—' },
     { icon: Cog, label: 'ماشین', value: product.machine_name || product.machine?.name || '—' },
-    ...(product.dimension_x || product.dimension_y || product.dimension_z ? [{
+    {
       icon: Box,
-      label: 'ابعاد',
-      // Sort longest -> shortest for natural reading (L × W × H)
-      value: `${[product.dimension_x || 0, product.dimension_y || 0, product.dimension_z || 0]
-        .map((d) => Math.round(d))
-        .sort((a, b) => b - a)
-        .join(' × ')} میلیمتر`,
-    }] : []),
+      label: 'ابعاد (طول × عرض × ارتفاع)',
+      value: hasDimensions
+        ? `${[product.dimension_x || 0, product.dimension_y || 0, product.dimension_z || 0]
+            .map((d) => Math.round(d))
+            .sort((a, b) => b - a)
+            .join(' × ')} میلیمتر`
+        : '—',
+    },
     { icon: Weight, label: 'وزن خالص', value: product.weight_g ? `${product.weight_g} گرم` : '—' },
     {
       icon: Weight,
