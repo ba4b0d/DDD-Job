@@ -103,6 +103,13 @@ export const getAdminBlogPosts = () => api.get('/admin/posts');
 export const createBlogPost = (data) => api.post('/admin/posts', data);
 export const updateBlogPost = (id, data) => api.put(`/admin/posts/${id}`, data);
 export const deleteBlogPost = (id) => api.delete(`/admin/posts/${id}`);
+export const uploadBlogCover = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/admin/posts/upload-cover', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);

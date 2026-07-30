@@ -132,11 +132,16 @@ export default function BlogList() {
               }}
             >
               {/* Cover Image */}
-              <Link to={`/blog/${post.slug}`} className="block relative aspect-video overflow-hidden bg-slate-900">
+              <Link
+                to={`/blog/${post.slug}`}
+                aria-label={`مطالعه مقاله ${post.title}`}
+                className="block relative aspect-video overflow-hidden bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500"
+              >
                 {post.cover_image ? (
                   <img
                     src={post.cover_image}
-                    alt={post.title}
+                    alt=""
+                    aria-hidden="true"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
@@ -146,7 +151,7 @@ export default function BlogList() {
                   </div>
                 )}
                 {/* Image Subtle Outline per better-ui skill */}
-                <div className="absolute inset-0 ring-1 ring-inset ring-black/10 pointer-events-none" />
+                <div className="absolute inset-0 ring-1 ring-inset ring-black/10 dark:ring-white/10 pointer-events-none" />
               </Link>
 
               {/* Card Body */}

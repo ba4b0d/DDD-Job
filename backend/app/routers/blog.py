@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -8,6 +10,13 @@ from app.schemas import BlogPostCreate, BlogPostUpdate, BlogPostResponse
 from app.routers.auth import require_any_role
 
 router = APIRouter(prefix="/api/v1", tags=["blog"])
+
+BLOG_UPLOAD_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "uploads",
+    "blog",
+)
+os.makedirs(BLOG_UPLOAD_DIR, exist_ok=True)
 
 
 def is_blog_enabled(db: Session) -> bool:
@@ -148,3 +157,29 @@ def admin_delete_post(
     db.delete(post)
     db.commit()
     return {"message": "مقاله با موفقیت حذف شد"}
+
+
+@router.post("/admin/posts/upload-cover")
+async def upload_blog_cover(
+    file: UploadFile = File(...),
+    user=Depends(require_any_role),
+):
+    """Upload a cover image for a blog post and return its public URL."""
+    allowed_ext = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in allowed_ext:
+        raise HTTPException(
+            status_code=400,
+            detail=f"فرمت فایل مجاز نیست. پسوندهای مجاز: {', '.join(allowed_ext)}",
+        )
+
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد")
+
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(BLOG_UPLOAD_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    return {"url": f"/uploads/blog/{filename}"}

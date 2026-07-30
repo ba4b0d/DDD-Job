@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Eye, Calendar, BookOpen, Save, X, AlertCircle } from 'lucide-react';
-import { getAdminBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost } from '../lib/api';
+import { Plus, Edit2, Trash2, Eye, Calendar, BookOpen, Save, X, AlertCircle, Upload } from 'lucide-react';
+import { getAdminBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost, uploadBlogCover } from '../lib/api';
 import Modal from '../components/Modal';
 
 export default function AdminBlog() {
@@ -17,6 +17,7 @@ export default function AdminBlog() {
   // Delete State
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -72,6 +73,20 @@ export default function AdminBlog() {
     });
     setFormError(null);
     setModalOpen(true);
+  }
+
+  async function handleCoverUpload(file) {
+    if (!file) return;
+    try {
+      setUploadingCover(true);
+      const res = await uploadBlogCover(file);
+      setFormData((prev) => ({ ...prev, cover_image: res.data.url }));
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('خطا در آپلود تصویر: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setUploadingCover(false);
+    }
   }
 
   async function handleSave(e) {
@@ -283,14 +298,30 @@ export default function AdminBlog() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">آدرس تصویر کاور</label>
-                <input
-                  type="text"
-                  value={formData.cover_image}
-                  onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800 text-white text-sm focus:outline-none focus:border-amber-500 dir-ltr text-left"
-                  placeholder="https://..."
-                />
+                <label className="block text-xs font-semibold text-slate-300 mb-1">تصویر کاور مقاله</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={formData.cover_image}
+                    onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
+                    className="flex-1 px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800 text-white text-sm focus:outline-none focus:border-amber-500 dir-ltr text-left"
+                    placeholder="https://... یا آپلود تصویر"
+                  />
+                  <label
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg cursor-pointer transition-opacity hover:opacity-80 shrink-0 text-xs font-medium text-white focus-within:ring-2 focus-within:ring-amber-500 focus-within:ring-offset-2"
+                    style={{ background: 'var(--accent, #FF9A3D)' }}
+                  >
+                    <Upload size={14} />
+                    <span>{uploadingCover ? '...' : 'آپلود'}</span>
+                    <input
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,.gif"
+                      className="sr-only"
+                      onChange={(e) => handleCoverUpload(e.target.files?.[0])}
+                      disabled={uploadingCover}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -371,9 +402,9 @@ export default function AdminBlog() {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-4 py-2 rounded-lg text-sm text-white font-medium bg-red-600 hover:bg-red-500"
+                className="px-4 py-2 rounded-lg text-sm text-white font-medium bg-red-600 hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-red-500"
               >
-                {deleting ? 'در حال حذف...' : 'حذف مقاله'}
+                {deleting ? 'در حال حذف...' : 'حذف این مقاله'}
               </button>
             </div>
           </div>
