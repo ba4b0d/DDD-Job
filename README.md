@@ -46,10 +46,10 @@
 | ![Dashboard](screenshots/dashboard.png) | ![Orders](screenshots/orders.png) | ![Products](screenshots/products.png) |
 | *KPIs + Monthly Analytics* | *Kanban Board + Shamsi Dates* | *Inventory Management* |
 
-| Cost Calculator | Public Storefront | Blog & CMS |
+| Cost Calculator | Public Storefront | Blog & CMS Module |
 |:---:|:---:|:---:|
-| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog](screenshots/blog.png) |
-| *Live Pricing Breakdown* | *Farsi Customer Catalog* | *SEO Articles & News* |
+| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog & CMS](assets/readme/blog-cms.svg) |
+| *Live Pricing Breakdown* | *Farsi Customer Catalog* | *SEO Articles & CMS Management* |
 
 ---
 
