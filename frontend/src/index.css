@@ -1100,77 +1100,77 @@ body {
   text-align: right;
   pointer-events: auto;
 }
-.mega-menu-search {
+/* Two-panel layout */
+.mega-menu-panels {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  margin-bottom: 12px;
-  background: rgba(255,255,255,0.06);
+  min-height: 280px;
 }
-.mega-menu-search svg {
-  color: rgba(255,255,255,0.4);
-  flex-shrink: 0;
-}
-.mega-menu-search input {
+.mega-menu-right {
   flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 13px;
-  color: #fff;
-  direction: rtl;
-  text-align: right;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 0;
+  overflow-y: auto;
+  max-height: 360px;
 }
-.mega-menu-search input::placeholder {
-  color: rgba(255,255,255,0.35);
+.mega-menu-left {
+  width: 280px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
 }
-.mega-menu-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
+.mega-menu-left-header {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-.mega-menu-col {
-  padding: 0;
+.mega-menu-left-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #FF9A3D;
+}
+.mega-menu-left-hint {
+  display: block;
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 4px;
+}
+.mega-menu-left-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
 }
 .mega-menu-parent {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-weight: 700;
+  padding: 10px 16px;
+  font-weight: 600;
   font-size: 13.5px;
-  color: #fff;
+  color: rgba(255,255,255,0.85);
   text-align: right;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.12s, color 0.12s;
   background: none;
   border: none;
   font-family: inherit;
 }
-.mega-menu-parent:hover {
-  background: rgba(255, 154, 61, 0.15);
+.mega-menu-parent:hover,
+.mega-menu-parent--active {
+  background: rgba(255, 154, 61, 0.12);
   color: #FF9A3D;
-}
-.mega-menu-children {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 0 4px 6px 12px;
 }
 .mega-menu-child {
   display: block;
   width: 100%;
-  padding: 5px 10px;
+  padding: 7px 12px;
   border-radius: 6px;
-  font-size: 12.5px;
-  color: rgba(255,255,255,0.55);
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
   text-align: right;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.12s, color 0.12s;
   background: none;
   border: none;
   font-family: inherit;
@@ -1179,12 +1179,32 @@ body {
   background: rgba(255, 154, 61, 0.1);
   color: #FF9A3D;
 }
+.mega-menu-see-all {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  font-weight: 600;
+  color: #FF9A3D;
+  text-align: right;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  font-family: inherit;
+}
+.mega-menu-see-all:hover {
+  opacity: 0.8;
+}
 .mega-menu-empty {
   text-align: center;
   padding: 24px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.3);
   font-size: 13px;
-  grid-column: 1 / -1;
 }
 @keyframes megaSlideDown {
   from { opacity: 0; transform: translateY(-6px); }
@@ -1192,8 +1212,6 @@ body {
 }
 @media (max-width: 640px) {
   .mega-menu-panel { display: none; }
-  .mega-menu-grid { grid-template-columns: 1fr; }
-  .mega-menu-inner { padding: 12px; }
 }
 
 /* Hero «Spaghetti · FDM» pill — logo orange */

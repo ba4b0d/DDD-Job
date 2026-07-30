@@ -23,6 +23,7 @@ export default function CatalogLayout({ children }) {
   const [catTree, setCatTree] = useState([]);
   const [megaOpen, setMegaOpen] = useState(false);
   const [megaSearch, setMegaSearch] = useState('');
+  const [megaHoveredCat, setMegaHoveredCat] = useState(null);
   const megaRef = useRef(null);
   const megaTimer = useRef(null);
   const navigate = useNavigate();
@@ -134,26 +135,55 @@ export default function CatalogLayout({ children }) {
                       />
                     </div>
 
-                    {/* Categories grid */}
-                    <div className="mega-menu-grid">
-                      {filteredTree.length === 0 ? (
-                        <div className="mega-menu-empty">دسته‌بندی‌ای یافت نشد</div>
-                      ) : (
-                        filteredTree.map((cat) => (
-                          <div key={cat.id} className="mega-menu-col">
+                    {/* Two-panel layout: right = parents, left = children */}
+                    <div className="mega-menu-panels">
+                      {/* Right panel: main categories */}
+                      <div className="mega-menu-right">
+                        {filteredTree.length === 0 ? (
+                          <div className="mega-menu-empty">دسته‌بندی‌ای یافت نشد</div>
+                        ) : (
+                          filteredTree.map((cat) => (
                             <button
+                              key={cat.id}
                               type="button"
-                              className="mega-menu-parent"
+                              className={`mega-menu-parent ${megaHoveredCat === cat.id ? 'mega-menu-parent--active' : ''}`}
+                              onMouseEnter={() => setMegaHoveredCat(cat.id)}
                               onClick={() => {
                                 setMegaOpen(false);
                                 navigate(`/?category=${cat.id}`);
                               }}
                             >
-                              {cat.name}
+                              <span>{cat.name}</span>
+                              {cat.children && cat.children.length > 0 && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4, transform: 'scaleX(-1)' }}>
+                                  <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                              )}
                             </button>
-                            {cat.children && cat.children.length > 0 && (
-                              <div className="mega-menu-children">
-                                {cat.children.map((sub) => (
+                          ))
+                        )}
+                      </div>
+
+                      {/* Left panel: sub-categories */}
+                      <div className="mega-menu-left">
+                        {megaHoveredCat && (() => {
+                          const parent = filteredTree.find((c) => c.id === megaHoveredCat);
+                          if (!parent) return <div className="mega-menu-empty">زیرمجموعه‌ای ندارد</div>;
+                          if (!parent.children || parent.children.length === 0) {
+                            return (
+                              <div className="mega-menu-left-header">
+                                <span className="mega-menu-left-title">{parent.name}</span>
+                                <span className="mega-menu-left-hint">زیرمجموعه‌ای ندارد</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <>
+                              <div className="mega-menu-left-header">
+                                <span className="mega-menu-left-title">{parent.name}</span>
+                              </div>
+                              <div className="mega-menu-left-list">
+                                {parent.children.map((sub) => (
                                   <button
                                     key={sub.id}
                                     type="button"
@@ -167,10 +197,25 @@ export default function CatalogLayout({ children }) {
                                   </button>
                                 ))}
                               </div>
-                            )}
+                              <button
+                                type="button"
+                                className="mega-menu-see-all"
+                                onClick={() => {
+                                  setMegaOpen(false);
+                                  navigate(`/?category=${parent.id}`);
+                                }}
+                              >
+                                مشاهده همه {parent.name}
+                              </button>
+                            </>
+                          );
+                        })()}
+                        {!megaHoveredCat && (
+                          <div className="mega-menu-empty" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            یک دسته‌بندی را انتخاب کنید
                           </div>
-                        ))
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
