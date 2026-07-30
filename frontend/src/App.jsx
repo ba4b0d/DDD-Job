@@ -19,6 +19,7 @@ const Catalog = lazy(() => import('./pages/Catalog'));
 const PublicProductDetail = lazy(() => import('./pages/PublicProductDetail'));
 const Contact = lazy(() => import('./pages/Contact'));
 const HowToOrder = lazy(() => import('./pages/HowToOrder'));
+const CustomOrder = lazy(() => import('./pages/CustomOrder'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const UsersPage = lazy(() => import('./pages/Users'));
@@ -68,6 +69,7 @@ function AppRoutes() {
                 <Route path="/catalog/:slug" element={<CatalogLayout><PublicProductDetail /></CatalogLayout>} />
                 <Route path="/contact" element={<CatalogLayout><Contact /></CatalogLayout>} />
                 <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />
+                <Route path="/custom-order" element={<CatalogLayout><CustomOrder /></CatalogLayout>} />
                 <Route path="/privacy" element={<CatalogLayout><Privacy /></CatalogLayout>} />
                 <Route path="/terms" element={<CatalogLayout><Terms /></CatalogLayout>} />
                 <Route path="/blog" element={<CatalogLayout><BlogList /></CatalogLayout>} />

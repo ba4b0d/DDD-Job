@@ -234,6 +234,9 @@ export default function CatalogLayout({ children }) {
             <NavLink to="/how-to-order" className={navLinkClass}>
               سفارش از کاتالوگ
             </NavLink>
+            <NavLink to="/custom-order" className={navLinkClass}>
+              سفارش طرح دلخواه
+            </NavLink>
             <NavLink to="/contact" className={navLinkClass}>
               تماس با ما
             </NavLink>
@@ -292,6 +295,9 @@ export default function CatalogLayout({ children }) {
           )}
           <NavLink to="/how-to-order" className={drawerLinkClass} onClick={closeMenu}>
             سفارش از کاتالوگ
+          </NavLink>
+          <NavLink to="/custom-order" className={drawerLinkClass} onClick={closeMenu}>
+            سفارش طرح دلخواه
           </NavLink>
           <NavLink to="/contact" className={drawerLinkClass} onClick={closeMenu}>
             تماس با ما
@@ -375,6 +381,7 @@ export default function CatalogLayout({ children }) {
             <Link to="/" className="catalog-footer-link">کاتالوگ</Link>
             {blogEnabled && <Link to="/blog" className="catalog-footer-link">وبلاگ</Link>}
             <Link to="/how-to-order" className="catalog-footer-link">سفارش از کاتالوگ</Link>
+            <Link to="/custom-order" className="catalog-footer-link">سفارش طرح دلخواه</Link>
             <Link to="/contact" className="catalog-footer-link">تماس با ما</Link>
             <Link to="/privacy" className="catalog-footer-link">حریم خصوصی</Link>
             <Link to="/terms" className="catalog-footer-link">قوانین</Link>
