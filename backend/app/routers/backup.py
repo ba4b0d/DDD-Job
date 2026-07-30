@@ -75,7 +75,7 @@ def upload_to_gdrive_service_account(creds_dict: dict, file_path: str, filename:
         }
 
         upload_resp = requests.post(
-            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true",
             headers=headers,
             files=files,
             timeout=60,
