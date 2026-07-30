@@ -1078,16 +1078,12 @@ body {
 
 /* ─── Mega-menu category dropdown ─── */
 .catalog-mega-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 100%;
+  position: static;
 }
 .mega-menu-panel {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  top: var(--mega-top, 120px);
+  left: 0;
   width: 100vw;
   background: #1e2433;
   box-shadow: 0 12px 40px rgba(0,0,0,0.25);

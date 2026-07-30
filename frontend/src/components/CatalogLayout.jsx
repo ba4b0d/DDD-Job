@@ -56,6 +56,14 @@ export default function CatalogLayout({ children }) {
   const megaEnter = () => {
     clearTimeout(megaTimer.current);
     setMegaOpen(true);
+    // Measure header height and set CSS variable
+    requestAnimationFrame(() => {
+      const header = document.querySelector('.catalog-topbar');
+      if (header) {
+        const rect = header.getBoundingClientRect();
+        document.documentElement.style.setProperty('--mega-top', `${rect.bottom}px`);
+      }
+    });
   };
   const megaLeave = () => {
     megaTimer.current = setTimeout(() => setMegaOpen(false), 150);
