@@ -105,6 +105,13 @@ async def lifespan(app: FastAPI):
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE materials ADD COLUMN is_default BOOLEAN DEFAULT 0"))
 
+        # Migration: add parent_id to categories table
+        cat_cols = {c["name"] for c in inspector.get_columns("categories")}
+        if "parent_id" not in cat_cols:
+            print("Adding parent_id column to categories table...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE categories ADD COLUMN parent_id INTEGER REFERENCES categories(id)"))
+
         # Sync: import existing product category strings into categories table
         existing_cat_names = {c.name for c in db.query(Category.name).all()}
         product_cats = (

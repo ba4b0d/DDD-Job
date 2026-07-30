@@ -156,10 +156,20 @@ export default function Catalog() {
       try {
         const [pRes, cRes] = await Promise.all([getCatalog(), getCatalogCategories()]);
         const pList = Array.isArray(pRes.data) ? pRes.data : [];
-        // /catalog/categories returns [{id, name, description}]
-        const catsList = Array.isArray(cRes.data)
-          ? cRes.data.map((c) => ({ id: c.id, name: c.name, count: null }))
-          : [];
+        // /catalog/categories returns tree [{id, name, children: [...]}]
+        // Flatten tree for filter chips with depth info
+        const flattenTree = (nodes, depth = 0) => {
+          let result = [];
+          for (const n of nodes) {
+            result.push({ id: n.id, name: n.name, depth });
+            if (n.children && n.children.length > 0) {
+              result = result.concat(flattenTree(n.children, depth + 1));
+            }
+          }
+          return result;
+        };
+        const treeData = Array.isArray(cRes.data) ? cRes.data : [];
+        const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, count: null }));
         setProducts(pList);
         setCategories(catsList);
         setError(null);
@@ -209,12 +219,19 @@ export default function Catalog() {
           (p) => (!p.categories || p.categories.length === 0) && (!p.category || p.category === '')
         );
       } else {
-        list = list.filter((p) => {
-          // New multi-category: any of p.categories matches activeCategory (id)
-          if (p.categories && p.categories.length > 0) {
-            return p.categories.some((c) => c.id === activeCategory);
+        // Build set of matching category IDs (selected + all its children)
+        const matchingIds = new Set([activeCategory]);
+        // Find children of the active category from the flat list
+        categories.forEach((c) => {
+          if (c.parent_id === activeCategory) {
+            matchingIds.add(c.id);
           }
-          // Backward compat: fall back to string match on p.category vs category name
+        });
+        // Also check if activeCategory is a child — just filter by exact match
+        list = list.filter((p) => {
+          if (p.categories && p.categories.length > 0) {
+            return p.categories.some((c) => matchingIds.has(c.id));
+          }
           if (p.category) {
             const matchedCat = categories.find((c) => c.id === activeCategory);
             return matchedCat ? p.category === matchedCat.name : false;
@@ -369,7 +386,9 @@ export default function Catalog() {
                 type="button"
                 onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
                 className={`catalog-chip ${activeCategory === cat.id ? 'catalog-chip-active' : ''}`}
+                style={cat.depth > 0 ? { marginRight: `${cat.depth * 12}px`, opacity: 0.9 } : undefined}
               >
+                {cat.depth > 0 && <span style={{ marginLeft: '4px', opacity: 0.5 }}>└</span>}
                 {cat.name}
               </button>
             ))}

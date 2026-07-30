@@ -276,6 +276,7 @@ class CalculateResponse(BaseModel):
 class CategoryCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    parent_id: Optional[int] = None
 
     @field_validator('name')
     @classmethod
@@ -289,6 +290,7 @@ class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     sort_order: Optional[int] = None
+    parent_id: Optional[int] = None
 
 
 # ── Order (shop ops board B) ──────────────────────────────────────────────

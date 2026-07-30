@@ -106,10 +106,22 @@ def get_catalog(db: Session = Depends(get_db)):
 
 @router.get("/catalog/categories")
 def get_catalog_categories(db: Session = Depends(get_db)):
-    """Public endpoint — return active categories for the customer catalog."""
+    """Public endpoint — return active categories as a tree for the customer catalog."""
     from app.models import Category
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
-    return [{"id": c.id, "name": c.name, "description": c.description} for c in cats]
+    flat = [{"id": c.id, "name": c.name, "description": c.description, "parent_id": c.parent_id} for c in cats]
+
+    def build_tree(parent_id=None):
+        tree = []
+        for c in flat:
+            if c["parent_id"] == parent_id:
+                children = build_tree(c["id"])
+                node = {**c, "children": children}
+                tree.append(node)
+        tree.sort(key=lambda x: x["name"])
+        return tree
+
+    return build_tree()
 
 
 @router.get("/sitemap.xml", response_class=Response)

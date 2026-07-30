@@ -126,6 +126,10 @@ class Category(Base):
     description = Column(String, default="")
     is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
+    parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+
+    # Self-referencing relationships
+    children = relationship("Category", backref="parent", remote_side="Category.id", lazy="select")
 
 
 class ProductCategory(Base):
