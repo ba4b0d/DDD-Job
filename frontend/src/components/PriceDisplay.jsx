@@ -39,7 +39,7 @@ export default function PriceDisplay({ basePrice, suggestedPrice, finalPrice, si
           className="flex items-center justify-between pt-2 mt-1"
           style={{ borderTop: '1px solid var(--border-color)' }}
         >
-          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>قیمت نهایی</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>قیمت</span>
           <span className="font-bold text-2xl" style={{ color: 'var(--success)' }}>
             {formatPrice(finalPrice)} <span className="text-base font-normal">تومان</span>
           </span>
