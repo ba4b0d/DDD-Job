@@ -84,11 +84,27 @@ def send_telegram_document(file_path: str, caption: str = "") -> bool:
         return False
 
 
-def _send_msg(token: str, chat_id: str, text: str):
+MAIN_KEYBOARD = {
+    "keyboard": [
+        [{"text": "📦 افزودن محصول"}, {"text": "🛒 ثبت سفارش"}],
+        [{"text": "📊 آمار کارگاه"}, {"text": "📋 لیست سفارشات"}],
+        [{"text": "💾 دریافت پشتیبان"}]
+    ],
+    "resize_keyboard": True
+}
+
+
+def _send_msg(token: str, chat_id: str, text: str, reply_markup=None):
     _, _, proxies = get_telegram_config()
     url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    else:
+        payload["reply_markup"] = MAIN_KEYBOARD
+
     try:
-        requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"}, proxies=proxies, timeout=10)
+        requests.post(url, json=payload, proxies=proxies, timeout=10)
     except Exception as e:
         logger.error(f"Error in _send_msg: {e}")
 
@@ -97,14 +113,15 @@ def _send_msg(token: str, chat_id: str, text: str):
 
 def _handle_start(chat_id: str, token: str):
     msg = (
-        "🤖 <b>ربات مدیریت اسپاگتی پرینت</b>\n\n"
-        "به ربات مدیریت کارگاه خوش آمدید! شما می‌توانید از دستورات زیر استفاده کنید:\n\n"
-        "📦 /addproduct — افزودن محصول جدید به سایت\n"
-        "🛒 /addorder — ثبت سفارش جدید در سیستم\n"
-        "📊 /stats — آمار و گزارش فروش کارگاه\n"
-        "📋 /orders — مشاهده سفارش‌های فعال\n"
-        "💾 /backup — دریافت پشتیبان کامل دیتابیس\n"
-        "❓ /help — راهنمای استفاده از ربات"
+        "🤖 <b>ربات مدیریت اسپاگتی پرینت</b> 🎁\n\n"
+        "به ربات مدیریت کارگاه خوش آمدید!\n"
+        "از دکمه‌های زیر برای مدیریت سفارشات و محصولات استفاده کنید 👇\n\n"
+        "📦 <b>افزودن محصول</b> — ایجاد محصول جدید با قیمت خودکار\n"
+        "🛒 <b>ثبت سفارش</b> — ثبت سفارش با انتخاب محصول و قیمت خودکار\n"
+        "📊 <b>آمار کارگاه</b> — خلاصه وضعیت فروش و سفارشات\n"
+        "📋 <b>لیست سفارشات</b> — ۵ سفارش اخیر سیستم\n"
+        "💾 <b>پشتیبان دیتابیس</b> — دریافت فایل .db امن از دیتابیس\n\n"
+        "<i>یا از دستورات /addproduct /addorder /stats /orders /backup نیز می‌توانید استفاده کنید.</i>"
     )
     _send_msg(token, chat_id, msg)
 
@@ -264,20 +281,109 @@ def _handle_user_step(chat_id: str, text: str, token: str):
         step = state.get("step")
         if step == "customer_name":
             state["data"]["customer_name"] = text.strip()
-            state["step"] = "quoted_price"
-            _send_msg(token, chat_id, f"✅ نام مشتری: <b>{text.strip()}</b>\n\nلطفاً مبلغ کل فاکتور (تومان) را وارد کنید:")
+            state["step"] = "product_lookup"
+
+            # Query list of active products to show admin
+            with Session(engine) as db:
+                prods = db.query(Product).filter(Product.is_active == True).limit(8).all()
+                if prods:
+                    prod_lines = ["📦 <b>محصولات ثبت شده در سایت:</b>"]
+                    for p in prods:
+                        price_str = f"{p.suggested_price:,.0f}" if p.suggested_price else "محاسبه بر اساس فرمول"
+                        prod_lines.append(f"🔹 <b>ID {p.id}</b> — {p.name} ({price_str} تومان)")
+                    prod_text = "\n".join(prod_lines)
+                else:
+                    prod_text = "هیچ محصولی در سایت یافت نشد."
+
+            msg = (
+                f"✅ نام مشتری: <b>{text.strip()}</b>\n\n"
+                f"{prod_text}\n\n"
+                f"لطفاً <b>کد محصول (ID)</b> را وارد کنید تا قیمت به‌صورت خودکار محاسبه شود\n"
+                f"<i>(یا عدد 0 را ارسال کنید برای سفارش سفارشی بدون محصول)</i>:"
+            )
+            _send_msg(token, chat_id, msg)
             return True
 
-        elif step == "quoted_price":
+        elif step == "product_lookup":
+            user_input = text.strip()
+            if user_input.isdigit() and int(user_input) > 0:
+                p_id = int(user_input)
+                with Session(engine) as db:
+                    p = db.query(Product).filter(Product.id == p_id, Product.is_active == True).first()
+                    if p:
+                        unit_price = p.suggested_price or 0.0
+                        state["data"]["product_id"] = p.id
+                        state["data"]["product_label"] = p.name
+                        state["data"]["unit_price"] = unit_price
+                        state["step"] = "qty"
+                        msg = (
+                            f"✅ محصول انتخاب شد: <b>{p.name}</b>\n"
+                            f"💰 قیمت واحد: <b>{unit_price:,.0f} تومان</b>\n\n"
+                            f"لطفاً <b>تعداد (تعداد سفارش)</b> را وارد کنید (پیش‌فرض: 1):"
+                        )
+                        _send_msg(token, chat_id, msg)
+                        return True
+
+            # Fallback for custom / non-catalog orders
+            state["data"]["product_id"] = None
+            state["data"]["product_label"] = user_input if user_input != "0" else "سفارش سفارشی"
+            state["step"] = "custom_price"
+            _send_msg(token, chat_id, f"✅ عنوان سفارش: <b>{state['data']['product_label']}</b>\n\nلطفاً <b>مبلغ کل فاکتور (تومان)</b> را وارد کنید:")
+            return True
+
+        elif step == "qty":
             try:
-                price = float(text.replace(",", "").strip())
-                state["data"]["quoted_price"] = price
+                qty = int(text.strip()) if text.strip().isdigit() else 1
+                state["data"]["qty"] = qty
+                unit_price = state["data"].get("unit_price", 0.0)
+                total_price = unit_price * qty
+                state["data"]["quoted_price"] = total_price
 
                 # Create Order in DB
                 o_data = state["data"]
                 with Session(engine) as db:
                     new_order = Order(
                         customer_name=o_data["customer_name"],
+                        product_id=o_data.get("product_id"),
+                        product_label=o_data.get("product_label"),
+                        qty=qty,
+                        quoted_price=total_price,
+                        paid_amount=0.0,
+                        status="new",
+                        is_active=True,
+                    )
+                    db.add(new_order)
+                    db.commit()
+                    db.refresh(new_order)
+                    o_id = new_order.id
+
+                USER_STATES.pop(chat_id, None)
+                _send_msg(
+                    token,
+                    chat_id,
+                    f"🎉 <b>سفارش جدید با موفقیت ثبت شد!</b>\n\n"
+                    f"🆔 کد سفارش: #{o_id}\n"
+                    f"👤 مشتری: {o_data['customer_name']}\n"
+                    f"📦 محصول: {o_data['product_label']} (تعداد: {qty})\n"
+                    f"💰 مبلغ کل: {total_price:,.0f} تومان\n"
+                    f"📍 وضعیت: جدید"
+                )
+                return True
+            except Exception as e:
+                USER_STATES.pop(chat_id, None)
+                _send_msg(token, chat_id, f"❌ خطا در ثبت سفارش: {str(e)}")
+                return True
+
+        elif step == "custom_price":
+            try:
+                price = float(text.replace(",", "").strip())
+                o_data = state["data"]
+                with Session(engine) as db:
+                    new_order = Order(
+                        customer_name=o_data["customer_name"],
+                        product_id=o_data.get("product_id"),
+                        product_label=o_data.get("product_label"),
+                        qty=1,
                         quoted_price=price,
                         paid_amount=0.0,
                         status="new",
@@ -289,7 +395,16 @@ def _handle_user_step(chat_id: str, text: str, token: str):
                     o_id = new_order.id
 
                 USER_STATES.pop(chat_id, None)
-                _send_msg(token, chat_id, f"🎉 <b>سفارش جدید با موفقیت ثبت شد!</b>\n\n🆔 کد سفارش: #{o_id}\nمشتری: {o_data['customer_name']}\nمبلغ: {price:,.0f} تومان\nوضعیت: جدید")
+                _send_msg(
+                    token,
+                    chat_id,
+                    f"🎉 <b>سفارش جدید با موفقیت ثبت شد!</b>\n\n"
+                    f"🆔 کد سفارش: #{o_id}\n"
+                    f"👤 مشتری: {o_data['customer_name']}\n"
+                    f"📦 عنوان: {o_data['product_label']}\n"
+                    f"💰 مبلغ: {price:,.0f} تومان\n"
+                    f"📍 وضعیت: جدید"
+                )
                 return True
             except Exception as e:
                 USER_STATES.pop(chat_id, None)
@@ -332,23 +447,23 @@ def _poll_telegram_updates():
                     if _handle_user_step(chat_id, text, token):
                         continue
 
-                    # Command Dispatcher
-                    if text in ("/start", "/help"):
+                    # Command Dispatcher (slash commands AND keyboard buttons)
+                    if text in ("/start", "/help", "🏠 خانه"):
                         _handle_start(chat_id, token)
-                    elif text == "/stats":
+                    elif text in ("/stats", "📊 آمار کارگاه"):
                         _handle_stats(chat_id, token)
-                    elif text == "/orders":
+                    elif text in ("/orders", "📋 لیست سفارشات"):
                         _handle_orders_list(chat_id, token)
-                    elif text == "/backup":
+                    elif text in ("/backup", "💾 دریافت پشتیبان"):
                         _handle_backup(chat_id, token)
-                    elif text == "/addproduct":
+                    elif text in ("/addproduct", "📦 افزودن محصول"):
                         USER_STATES[chat_id] = {"action": "add_product", "step": "name", "data": {}}
                         _send_msg(token, chat_id, "📦 <b>افزودن محصول جدید</b>\n\nلطفاً **نام محصول** را ارسال کنید:")
-                    elif text == "/addorder":
+                    elif text in ("/addorder", "🛒 ثبت سفارش"):
                         USER_STATES[chat_id] = {"action": "add_order", "step": "customer_name", "data": {}}
                         _send_msg(token, chat_id, "🛒 <b>ثبت سفارش جدید</b>\n\nلطفاً **نام مشتری** را ارسال کنید:")
                     else:
-                        _send_msg(token, chat_id, "دستور ناشناخته است. از /start برای مشاهده لیست دستورات استفاده کنید.")
+                        _send_msg(token, chat_id, "دستور ناشناخته است. از منوی زیر استفاده کنید 👇")
         except Exception as e:
             logger.error(f"Error in Telegram poll loop: {e}")
             time.sleep(5)
