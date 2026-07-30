@@ -937,15 +937,19 @@ body {
   position: relative;
   overflow: hidden;
 }
-.catalog-hero-cta:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(255,154,61,0.3);
-}
 .catalog-hero-cta::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 60%);
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg width='28' height='28' viewBox='0 0 28 28' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 0l14 8v12l-14 8L0 20V8z' fill='none' stroke='%23fff' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-size: 28px 28px;
+}
+.catalog-hero-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.12) 0%, transparent 50%);
 }
 .catalog-hero-cta-inner {
   position: relative;
@@ -970,6 +974,10 @@ body {
   color: #fff;
   opacity: 0.8;
   transition: transform 0.2s ease;
+}
+.catalog-hero-cta:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 24px rgba(255,154,61,0.3);
 }
 .catalog-hero-cta:hover .catalog-hero-cta-arrow {
   transform: translateX(-4px);
