@@ -24,6 +24,7 @@ export default function CatalogLayout({ children }) {
   const [megaOpen, setMegaOpen] = useState(false);
   const [megaSearch, setMegaSearch] = useState('');
   const [megaHoveredCat, setMegaHoveredCat] = useState(null);
+  const [mobileExpandedCat, setMobileExpandedCat] = useState(null);
   const megaRef = useRef(null);
   const megaTimer = useRef(null);
   const navigate = useNavigate();
@@ -301,20 +302,53 @@ export default function CatalogLayout({ children }) {
               <p className="text-xs font-semibold px-3 py-1" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ها</p>
               {catTree.map((cat) => (
                 <div key={cat.id}>
-                  <NavLink to={`/?category=${cat.id}`} className={drawerLinkClass} onClick={closeMenu}>
-                    {cat.name}
-                  </NavLink>
-                  {cat.children && cat.children.map((sub) => (
-                    <NavLink
-                      key={sub.id}
-                      to={`/?category=${sub.id}`}
-                      className={drawerLinkClass}
-                      onClick={closeMenu}
-                      style={{ paddingRight: '32px', fontSize: '13px' }}
-                    >
-                      {sub.name}
-                    </NavLink>
-                  ))}
+                  <button
+                    type="button"
+                    className={`catalog-drawer-link catalog-drawer-cat-btn${mobileExpandedCat === cat.id ? ' catalog-drawer-cat-btn--open' : ''}`}
+                    onClick={() => {
+                      if (cat.children && cat.children.length > 0) {
+                        setMobileExpandedCat(mobileExpandedCat === cat.id ? null : cat.id);
+                      } else {
+                        closeMenu();
+                        navigate(`/?category=${cat.id}`);
+                      }
+                    }}
+                  >
+                    <span>{cat.name}</span>
+                    {cat.children && cat.children.length > 0 && (
+                      <ChevronDown
+                        size={14}
+                        style={{
+                          transition: 'transform 0.2s ease',
+                          transform: mobileExpandedCat === cat.id ? 'rotate(180deg)' : 'none',
+                          opacity: 0.5,
+                        }}
+                      />
+                    )}
+                  </button>
+                  {cat.children && cat.children.length > 0 && mobileExpandedCat === cat.id && (
+                    <div className="catalog-drawer-subcats">
+                      <NavLink
+                        to={`/?category=${cat.id}`}
+                        className="drawer-link-class"
+                        style={{ paddingLeft: '32px', fontSize: '12px', color: '#FF9A3D', fontWeight: 600 }}
+                        onClick={closeMenu}
+                      >
+                        مشاهده همه {cat.name}
+                      </NavLink>
+                      {cat.children.map((sub) => (
+                        <NavLink
+                          key={sub.id}
+                          to={`/?category=${sub.id}`}
+                          className={drawerLinkClass}
+                          onClick={closeMenu}
+                          style={{ paddingLeft: '32px', fontSize: '13px' }}
+                        >
+                          {sub.name}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
