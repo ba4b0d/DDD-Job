@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
-import { getBlogPosts } from '../lib/api';
+import { getBlogPosts, getCatalogCategories } from '../lib/api';
 
 const navLinkClass = ({ isActive }) =>
   `catalog-nav-link${isActive ? ' catalog-nav-link--active' : ''}`;
@@ -20,11 +20,19 @@ export default function CatalogLayout({ children }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);
+  const [catTree, setCatTree] = useState([]);
+  const [catOpen, setCatOpen] = useState(false);
+  const [hoveredCat, setHoveredCat] = useState(null);
+  const catDropdownRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getBlogPosts()
       .then(() => setBlogEnabled(true))
       .catch(() => setBlogEnabled(false));
+    getCatalogCategories()
+      .then((res) => setCatTree(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -40,6 +48,18 @@ export default function CatalogLayout({ children }) {
       window.removeEventListener('keydown', onKey);
     };
   }, [menuOpen]);
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    if (!catOpen) return;
+    const handleClick = (e) => {
+      if (catDropdownRef.current && !catDropdownRef.current.contains(e.target)) {
+        setCatOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [catOpen]);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -66,6 +86,77 @@ export default function CatalogLayout({ children }) {
           </Link>
 
           <nav className="catalog-nav catalog-nav--desktop" aria-label="منوی عمومی">
+            {/* Categories dropdown button */}
+            <div ref={catDropdownRef} className="relative">
+              <button
+                type="button"
+                className={`catalog-nav-link flex items-center gap-1 ${catOpen ? 'catalog-nav-link--active' : ''}`}
+                onClick={() => setCatOpen((v) => !v)}
+                aria-expanded={catOpen}
+                aria-haspopup="true"
+              >
+                دسته‌بندی‌ها
+                <ChevronDown size={14} className={`transition-transform ${catOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {catOpen && catTree.length > 0 && (
+                <div
+                  className="absolute top-full right-0 mt-1 bg-white rounded-xl shadow-xl border overflow-hidden animate-fade-in-scale"
+                  style={{ minWidth: '280px', maxWidth: '420px', borderColor: 'var(--border-color)', zIndex: 9999 }}
+                  dir="rtl"
+                >
+                  <div className="p-2 max-h-[60vh] overflow-y-auto">
+                    {catTree.map((cat) => (
+                      <div
+                        key={cat.id}
+                        className="relative"
+                        onMouseEnter={() => setHoveredCat(cat.id)}
+                        onMouseLeave={() => setHoveredCat(null)}
+                      >
+                        <button
+                          type="button"
+                          className="w-full text-right px-3 py-2.5 rounded-lg text-sm font-medium flex items-center justify-between transition-colors hover:bg-orange-50"
+                          style={{ color: 'var(--text-primary)' }}
+                          onClick={() => {
+                            setCatOpen(false);
+                            navigate(`/?category=${cat.id}`);
+                          }}
+                        >
+                          <span>{cat.name}</span>
+                          {cat.children && cat.children.length > 0 && (
+                            <ChevronDown size={14} className="rotate-[-90deg]" style={{ color: 'var(--text-muted)' }} />
+                          )}
+                        </button>
+
+                        {/* Sub-categories panel */}
+                        {cat.children && cat.children.length > 0 && hoveredCat === cat.id && (
+                          <div
+                            className="absolute top-0 right-full mr-1 bg-white rounded-xl shadow-xl border p-2 animate-fade-in-scale"
+                            style={{ minWidth: '200px', borderColor: 'var(--border-color)' }}
+                          >
+                            {cat.children.map((sub) => (
+                              <button
+                                key={sub.id}
+                                type="button"
+                                className="w-full text-right px-3 py-2 rounded-lg text-sm transition-colors hover:bg-orange-50"
+                                style={{ color: 'var(--text-primary)' }}
+                                onClick={() => {
+                                  setCatOpen(false);
+                                  navigate(`/?category=${sub.id}`);
+                                }}
+                              >
+                                {sub.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <NavLink to="/" end className={navLinkClass}>
               کاتالوگ
             </NavLink>
@@ -141,6 +232,35 @@ export default function CatalogLayout({ children }) {
           <NavLink to="/contact" className={drawerLinkClass} onClick={closeMenu}>
             تماس با ما
           </NavLink>
+
+          {/* Mobile: Categories section */}
+          {catTree.length > 0 && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
+              <p className="text-xs font-semibold px-3 py-1" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ها</p>
+              {catTree.map((cat) => (
+                <div key={cat.id}>
+                  <NavLink
+                    to={`/?category=${cat.id}`}
+                    className={drawerLinkClass}
+                    onClick={closeMenu}
+                  >
+                    {cat.name}
+                  </NavLink>
+                  {cat.children && cat.children.map((sub) => (
+                    <NavLink
+                      key={sub.id}
+                      to={`/?category=${sub.id}`}
+                      className={drawerLinkClass}
+                      onClick={closeMenu}
+                      style={{ paddingRight: '32px', fontSize: '13px' }}
+                    >
+                      {sub.name}
+                    </NavLink>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </nav>
       </aside>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
@@ -142,11 +142,15 @@ export default function Catalog() {
   });
 
   const [products, setProducts] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const cat = searchParams.get('category');
+    return cat ? Number(cat) : null;
+  });
   const [activeTag, setActiveTag] = useState(null);
   const [sortBy, setSortBy] = useState('name');
 
@@ -384,15 +388,13 @@ export default function Catalog() {
             >
               همه ({products.length})
             </button>
-            {categories.map((cat) => (
+            {categories.filter((cat) => cat.depth === 0).map((cat) => (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
                 className={`catalog-chip ${activeCategory === cat.id ? 'catalog-chip-active' : ''}`}
-                style={cat.depth > 0 ? { marginRight: `${cat.depth * 12}px`, opacity: 0.9 } : undefined}
               >
-                {cat.depth > 0 && <span style={{ marginLeft: '4px', opacity: 0.5 }}>└</span>}
                 {cat.name}
               </button>
             ))}
