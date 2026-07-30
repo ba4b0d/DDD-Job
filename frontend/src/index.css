@@ -1006,7 +1006,7 @@ body {
     position: relative;
     inset: auto;
     width: 100%;
-    height: clamp(220px, 60vw, 340px);
+    height: clamp(200px, 60vw, 300px);
     flex-shrink: 0;
     background: var(--hero-void, #0b1220);
   }
@@ -1020,7 +1020,7 @@ body {
     top: 0;
     left: 0;
     transform: none;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
   }
 
