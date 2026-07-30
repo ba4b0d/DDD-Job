@@ -43,7 +43,7 @@ INLINE_MAIN_MENU = {
 
 
 def get_telegram_config():
-    """Retrieve bot token, admin chat ID, and proxy from Settings table or environment."""
+    """Retrieve bot token, admin chat IDs, and proxy from Settings table or environment."""
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "130945736")
     proxy = os.getenv("TELEGRAM_PROXY", "socks5://192.168.100.33:10808")
@@ -68,47 +68,56 @@ def get_telegram_config():
     if proxy and proxy.strip():
         proxies_dict = {"http": proxy.strip(), "https": proxy.strip()}
 
-    return token, chat_id, proxies_dict
+    # Parse multiple chat IDs (comma-separated)
+    admin_chat_ids = [cid.strip() for cid in chat_id.split(",") if cid.strip()]
+
+    return token, admin_chat_ids, proxies_dict
 
 
 def send_telegram_notification(text: str, parse_mode: str = "HTML") -> bool:
-    """Send an instant text message alert to the admin's Telegram chat ID."""
-    token, chat_id, proxies = get_telegram_config()
-    if not token or not chat_id:
+    """Send an instant text message alert to all admin Telegram chat IDs."""
+    token, admin_chat_ids, proxies = get_telegram_config()
+    if not token or not admin_chat_ids:
         return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
+    payload_template = {
         "text": text,
         "parse_mode": parse_mode,
         "disable_web_page_preview": True,
     }
 
-    try:
-        resp = requests.post(url, json=payload, proxies=proxies, timeout=10)
-        return resp.status_code == 200
-    except Exception as e:
-        logger.error(f"Failed to send Telegram notification: {e}")
-        return False
+    sent = False
+    for chat_id in admin_chat_ids:
+        try:
+            payload = {**payload_template, "chat_id": chat_id}
+            resp = requests.post(url, json=payload, proxies=proxies, timeout=10)
+            if resp.status_code == 200:
+                sent = True
+        except Exception as e:
+            logger.error(f"Failed to send Telegram notification to {chat_id}: {e}")
+    return sent
 
 
 def send_telegram_document(file_path: str, caption: str = "") -> bool:
-    """Send a document/file attachment directly to the admin in Telegram."""
-    token, chat_id, proxies = get_telegram_config()
-    if not token or not chat_id:
+    """Send a document/file attachment directly to all admins in Telegram."""
+    token, admin_chat_ids, proxies = get_telegram_config()
+    if not token or not admin_chat_ids:
         return False
 
     url = f"https://api.telegram.org/bot{token}/sendDocument"
-    try:
-        with open(file_path, "rb") as f:
-            files = {"document": f}
-            data = {"chat_id": chat_id, "caption": caption}
-            resp = requests.post(url, data=data, files=files, proxies=proxies, timeout=30)
-            return resp.status_code == 200
-    except Exception as e:
-        logger.error(f"Failed to send Telegram document: {e}")
-        return False
+    sent = False
+    for chat_id in admin_chat_ids:
+        try:
+            with open(file_path, "rb") as f:
+                files = {"document": f}
+                data = {"chat_id": chat_id, "caption": caption}
+                resp = requests.post(url, data=data, files=files, proxies=proxies, timeout=30)
+                if resp.status_code == 200:
+                    sent = True
+        except Exception as e:
+            logger.error(f"Failed to send Telegram document to {chat_id}: {e}")
+    return sent
 
 
 def _send_msg(token: str, chat_id: str, text: str, reply_markup=None):
@@ -620,7 +629,7 @@ def _poll_telegram_updates():
     """Background polling loop for Telegram updates."""
     offset = 0
     while True:
-        token, admin_chat_id, proxies = get_telegram_config()
+        token, admin_chat_ids, proxies = get_telegram_config()
         if not token:
             time.sleep(10)
             continue
@@ -641,7 +650,7 @@ def _poll_telegram_updates():
                         cb_data = callback.get("data", "")
                         cb_query_id = callback.get("id", "")
 
-                        if admin_chat_id and str(cb_chat_id) != str(admin_chat_id):
+                        if admin_chat_ids and cb_chat_id not in admin_chat_ids:
                             _answer_callback(token, cb_query_id, "⛔ دسترسی غیرمجاز")
                             continue
 
@@ -654,8 +663,8 @@ def _poll_telegram_updates():
                     chat_id = str(chat.get("id"))
                     text = msg.get("text", "").strip()
 
-                    # Only allow admin chat_id
-                    if admin_chat_id and str(chat_id) != str(admin_chat_id):
+                    # Only allow admin chat_ids
+                    if admin_chat_ids and chat_id not in admin_chat_ids:
                         _send_msg(token, chat_id, "⛔ شما دسترسی به این ربات مدیریت را ندارید.")
                         continue
 
