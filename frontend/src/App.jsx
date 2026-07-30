@@ -24,6 +24,9 @@ const Terms = lazy(() => import('./pages/Terms'));
 const UsersPage = lazy(() => import('./pages/Users'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Orders = lazy(() => import('./pages/Orders'));
+const BlogList = lazy(() => import('./pages/BlogList'));
+const BlogPostDetail = lazy(() => import('./pages/BlogPostDetail'));
+const AdminBlog = lazy(() => import('./pages/AdminBlog'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -67,9 +70,12 @@ function AppRoutes() {
                 <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />
                 <Route path="/privacy" element={<CatalogLayout><Privacy /></CatalogLayout>} />
                 <Route path="/terms" element={<CatalogLayout><Terms /></CatalogLayout>} />
+                <Route path="/blog" element={<CatalogLayout><BlogList /></CatalogLayout>} />
+                <Route path="/blog/:slug" element={<CatalogLayout><BlogPostDetail /></CatalogLayout>} />
 
         {/* Protected admin+employee */}
         <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+        <Route path="/admin/posts" element={<ProtectedRoute><Layout><AdminBlog /></Layout></ProtectedRoute>} />
         <Route path="/products" element={<ProtectedRoute><Layout><Products /></Layout></ProtectedRoute>} />
         <Route path="/products/:id" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />
         <Route path="/products/:id/edit" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />

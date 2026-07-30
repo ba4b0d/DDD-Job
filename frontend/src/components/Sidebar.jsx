@@ -10,6 +10,7 @@ import {
   Users,
   Tags,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import BrandLogo from './BrandLogo';
@@ -24,6 +25,7 @@ export default function Sidebar({ onLinkClick }) {
     { path: '/materials', label: 'مواد', icon: Layers },
     { path: '/machines', label: 'ماشین‌ها', icon: Cog },
     { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
+    { path: '/admin/posts', label: 'وبلاگ', icon: BookOpen },
     { path: '/calculator', label: 'ماشین حساب', icon: Calculator },
     { path: '/', label: 'کاتالوگ', icon: Store },
     ...(isAdmin

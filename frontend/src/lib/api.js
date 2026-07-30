@@ -89,12 +89,20 @@ export const importProducts = (file) => {
 // ===== Calculator =====
 export const calculate = (data) => api.post('/calculate', data);
 
-// ===== Public Catalog (no auth) =====
+// ===== Public Catalog & Blog (no auth) =====
 const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
 export const getCatalog = () => publicApi.get('/catalog');
 export const getCatalogCategories = () => publicApi.get('/catalog/categories');
 export const getCatalogProduct = (productId) => publicApi.get(`/catalog/${productId}`);
 export const getCatalogProductBySlug = (slug) => publicApi.get(`/catalog/by-slug/${slug}`);
+export const getBlogPosts = () => publicApi.get('/blog');
+export const getBlogPostBySlug = (slug) => publicApi.get(`/blog/${slug}`);
+
+// ===== Admin Blog CMS =====
+export const getAdminBlogPosts = () => api.get('/admin/posts');
+export const createBlogPost = (data) => api.post('/admin/posts', data);
+export const updateBlogPost = (id, data) => api.put(`/admin/posts/${id}`, data);
+export const deleteBlogPost = (id) => api.delete(`/admin/posts/${id}`);
 
 // ===== Stats =====
 export const getStats = (config) => api.get('/stats', config);

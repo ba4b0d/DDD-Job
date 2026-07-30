@@ -183,6 +183,36 @@ export default function Settings() {
         ))}
       </div>
 
+      {/* ── Features & Modules Section ── */}
+      <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">ماژول‌ها و امکانات سایت</h2>
+      <div className="settings-fields-grid max-w-6xl">
+        <div className="settings-field-card rounded-xl p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📰</span>
+            <div>
+              <label className="font-semibold text-white block">فعال‌سازی ماژول وبلاگ</label>
+              <p className="text-sm mt-0.5 settings-field-hint">
+                نمایش منو و بخش وبلاگ/مقالات در بخش عمومی و مدیریت
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={(settings['enable_blog']?.value ?? 0) > 0}
+            onClick={() => handleChange('enable_blog', (settings['enable_blog']?.value ?? 0) > 0 ? 0 : 1, false)}
+            className={`w-14 h-8 rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500`}
+            style={{ background: (settings['enable_blog']?.value ?? 0) > 0 ? 'var(--accent, #FF9A3D)' : '#475569' }}
+          >
+            <div
+              className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-200 ease-in-out ${
+                (settings['enable_blog']?.value ?? 0) > 0 ? '-translate-x-6' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
       {/* ── Contact Info Section ── */}
       <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">اطلاعات تماس</h2>
       <div className="settings-fields-grid max-w-6xl">

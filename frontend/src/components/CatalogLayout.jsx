@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
+import { getBlogPosts } from '../lib/api';
 
 const navLinkClass = ({ isActive }) =>
   `catalog-nav-link${isActive ? ' catalog-nav-link--active' : ''}`;
@@ -18,6 +19,13 @@ export default function CatalogLayout({ children }) {
   });
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [blogEnabled, setBlogEnabled] = useState(false);
+
+  useEffect(() => {
+    getBlogPosts()
+      .then(() => setBlogEnabled(true))
+      .catch(() => setBlogEnabled(false));
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -61,6 +69,11 @@ export default function CatalogLayout({ children }) {
             <NavLink to="/" end className={navLinkClass}>
               کاتالوگ
             </NavLink>
+            {blogEnabled && (
+              <NavLink to="/blog" className={navLinkClass}>
+                وبلاگ
+              </NavLink>
+            )}
             <NavLink to="/how-to-order" className={navLinkClass}>
               شیوه ثبت سفارش
             </NavLink>
@@ -117,6 +130,11 @@ export default function CatalogLayout({ children }) {
           <NavLink to="/" end className={drawerLinkClass} onClick={closeMenu}>
             کاتالوگ
           </NavLink>
+          {blogEnabled && (
+            <NavLink to="/blog" className={drawerLinkClass} onClick={closeMenu}>
+              وبلاگ
+            </NavLink>
+          )}
           <NavLink to="/how-to-order" className={drawerLinkClass} onClick={closeMenu}>
             شیوه ثبت سفارش
           </NavLink>
@@ -148,6 +166,11 @@ export default function CatalogLayout({ children }) {
             <Link to="/" className="catalog-footer-link">
               کاتالوگ
             </Link>
+            {blogEnabled && (
+              <Link to="/blog" className="catalog-footer-link">
+                وبلاگ
+              </Link>
+            )}
             <Link to="/how-to-order" className="catalog-footer-link">
               شیوه ثبت سفارش
             </Link>
