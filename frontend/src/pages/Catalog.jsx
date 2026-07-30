@@ -307,7 +307,8 @@ export default function Catalog() {
   return (
     <div className="space-y-7 sm:space-y-9 animate-fade-in">
       {/* Desktop: photo + overlay copy · Mobile: stacked media + panel */}
-            <section className="catalog-hero overflow-hidden rounded-[1.35rem]">
+      <div className="catalog-hero-row">
+        <section className="catalog-hero catalog-hero--main overflow-hidden rounded-[1.35rem]">
               <div className="catalog-hero-media">
                 <img
                   src="/catalog-hero.jpg"
@@ -343,7 +344,18 @@ export default function Catalog() {
                   )}
                 </div>
               </div>
-            </section>
+        </section>
+
+        <Link
+          to="/custom-order"
+          className="catalog-hero-cta overflow-hidden rounded-[1.35rem]"
+        >
+          <div className="catalog-hero-cta-inner">
+            <span className="catalog-hero-cta-title">طرح دلخواهتو پرینت کن</span>
+            <span className="catalog-hero-cta-arrow">←</span>
+          </div>
+        </Link>
+      </div>
 
       {/* Sticky-ish toolbar */}
       <div className="catalog-toolbar flex flex-col gap-3 sm:gap-4">

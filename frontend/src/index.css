@@ -917,8 +917,78 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Hero row: main hero + CTA stacked */
+.catalog-hero-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.catalog-hero--main {
+  width: 100%;
+}
+.catalog-hero-cta {
+  width: 200px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #FF9A3D 0%, #E07B2C 50%, #C96A24 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.catalog-hero-cta:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(255,154,61,0.3);
+}
+.catalog-hero-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15) 0%, transparent 60%);
+}
+.catalog-hero-cta-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 20px;
+  text-align: center;
+}
+.catalog-hero-cta-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.4;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.catalog-hero-cta-arrow {
+  font-size: 22px;
+  color: #fff;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+.catalog-hero-cta:hover .catalog-hero-cta-arrow {
+  transform: translateX(-4px);
+}
+
 /* Mobile hero: stacked image band + solid copy panel (no overlay fight) */
 @media (max-width: 768px) {
+  .catalog-hero-row {
+    flex-direction: column;
+  }
+  .catalog-hero-cta {
+    width: 100%;
+  }
+  .catalog-hero-cta-inner {
+    flex-direction: row;
+    padding: 18px 20px;
+    justify-content: space-between;
+  }
   .catalog-hero {
     min-height: 0;
     display: flex;
