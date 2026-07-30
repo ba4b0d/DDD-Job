@@ -17,17 +17,26 @@ import BrandLogo from './BrandLogo';
 
 export default function Sidebar({ onLinkClick }) {
   const { isAdmin, user } = useAuth();
+  const isWriter = user?.role === 'writer';
 
   const navItems = [
-    { path: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
-    { path: '/orders', label: 'سفارش‌ها', icon: ClipboardList },
-    { path: '/products', label: 'محصولات', icon: Package },
-    { path: '/materials', label: 'مواد', icon: Layers },
-    { path: '/machines', label: 'ماشین‌ها', icon: Cog },
-    { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
-    { path: '/admin/posts', label: 'وبلاگ', icon: BookOpen },
-    { path: '/calculator', label: 'ماشین حساب', icon: Calculator },
-    { path: '/', label: 'کاتالوگ', icon: Store },
+    // Writer sees only blog
+    ...(isWriter
+      ? [
+          { path: '/admin/posts', label: 'وبلاگ', icon: BookOpen },
+          { path: '/', label: 'کاتالوگ', icon: Store },
+        ]
+      : [
+          { path: '/dashboard', label: 'داشبورد', icon: LayoutDashboard },
+          { path: '/orders', label: 'سفارش‌ها', icon: ClipboardList },
+          { path: '/products', label: 'محصولات', icon: Package },
+          { path: '/materials', label: 'مواد', icon: Layers },
+          { path: '/machines', label: 'ماشین‌ها', icon: Cog },
+          { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
+          { path: '/admin/posts', label: 'وبلاگ', icon: BookOpen },
+          { path: '/calculator', label: 'ماشین حساب', icon: Calculator },
+          { path: '/', label: 'کاتالوگ', icon: Store },
+        ]),
     ...(isAdmin
       ? [
           { path: '/settings', label: 'تنظیمات', icon: Settings },

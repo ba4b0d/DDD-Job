@@ -129,7 +129,7 @@ export default function UsersPage() {
                   {u.display_name || u.username}
                 </div>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  @{u.username} • {u.role === 'admin' ? 'مدیر' : 'کارمند'}
+                  @{u.username} • {u.role === 'admin' ? 'مدیر' : u.role === 'writer' ? 'نویسنده' : 'کارمند'}
                   {!u.is_active && ' • غیرفعال'}
                 </div>
               </div>
@@ -184,7 +184,8 @@ export default function UsersPage() {
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>نقش</label>
             <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="select-field">
-              <option value="employee">کارمند (محصولات + دسته‌بندی)</option>
+              <option value="employee">کارمند (محصولات + دسته‌بندی + سفارشات)</option>
+              <option value="writer">نویسنده ( فقط وبلاگ)</option>
               <option value="admin">مدیر (دسترسی کامل)</option>
             </select>
           </div>

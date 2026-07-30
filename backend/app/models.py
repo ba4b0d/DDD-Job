@@ -112,7 +112,7 @@ class User(Base):
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     display_name = Column(String, default="")
-    role = Column(String, nullable=False, default="employee")  # admin | employee
+    role = Column(String, nullable=False, default="employee")  # admin | employee | writer
     is_active = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

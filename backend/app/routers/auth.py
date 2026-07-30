@@ -135,9 +135,16 @@ def require_admin(user=Depends(get_current_user)):
 
 
 def require_any_role(user=Depends(get_current_user)):
-    """Admin or employee — any logged-in user."""
-    if user.get("role") not in ("admin", "employee"):
+    """Admin, employee, or writer — any logged-in user."""
+    if user.get("role") not in ("admin", "employee", "writer"):
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    return user
+
+
+def require_blog_role(user=Depends(get_current_user)):
+    """Admin or writer — blog management only."""
+    if user.get("role") not in ("admin", "writer"):
+        raise HTTPException(status_code=403, detail="فقط مدیران و نویسندگان دسترسی دارند")
     return user
 
 

@@ -7,7 +7,7 @@ from typing import List
 from app.database import get_db
 from app.models import BlogPost, Settings
 from app.schemas import BlogPostCreate, BlogPostUpdate, BlogPostResponse
-from app.routers.auth import require_any_role
+from app.routers.auth import require_blog_role
 
 router = APIRouter(prefix="/api/v1", tags=["blog"])
 
@@ -69,7 +69,7 @@ def get_published_post_by_slug(slug: str, db: Session = Depends(get_db)):
 @router.get("/admin/posts", response_model=List[BlogPostResponse])
 def admin_list_posts(
     db: Session = Depends(get_db),
-    user=Depends(require_any_role),
+    user=Depends(require_blog_role),
 ):
     """Admin: returns all posts."""
     return db.query(BlogPost).order_by(BlogPost.created_at.desc()).all()
@@ -79,7 +79,7 @@ def admin_list_posts(
 def admin_create_post(
     body: BlogPostCreate,
     db: Session = Depends(get_db),
-    user=Depends(require_any_role),
+    user=Depends(require_blog_role),
 ):
     """Admin: create post. Auto-generate slug if empty and ensure uniqueness."""
     slug = (body.slug or "").strip()
@@ -112,7 +112,7 @@ def admin_update_post(
     id: int,
     body: BlogPostUpdate,
     db: Session = Depends(get_db),
-    user=Depends(require_any_role),
+    user=Depends(require_blog_role),
 ):
     """Admin: update post."""
     post = db.query(BlogPost).filter(BlogPost.id == id).first()
@@ -147,7 +147,7 @@ def admin_update_post(
 def admin_delete_post(
     id: int,
     db: Session = Depends(get_db),
-    user=Depends(require_any_role),
+    user=Depends(require_blog_role),
 ):
     """Admin: delete post."""
     post = db.query(BlogPost).filter(BlogPost.id == id).first()
@@ -186,7 +186,7 @@ def validate_image_magic_bytes(contents: bytes) -> str:
 @router.post("/admin/posts/upload-cover")
 async def upload_blog_cover(
     file: UploadFile = File(...),
-    user=Depends(require_any_role),
+    user=Depends(require_blog_role),
 ):
     """Upload a cover image for a blog post and return its public URL."""
     allowed_ext = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
