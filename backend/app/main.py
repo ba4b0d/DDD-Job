@@ -31,6 +31,7 @@ from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
 from app.routers.blog import router as blog_router
 from app.routers.backup import router as backup_router
+from app.telegram_bot import start_telegram_bot_thread, send_telegram_notification
 
 from sqlalchemy import inspect, text
 
@@ -215,6 +216,9 @@ async def lifespan(app: FastAPI):
 
     finally:
         db.close()
+
+    # Start Telegram Admin Bot background thread
+    start_telegram_bot_thread()
 
     yield
 

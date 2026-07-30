@@ -183,6 +183,12 @@ export default function Settings() {
     { key: 'contact_note', label: 'توضیحات', icon: '📝', stringField: true, hint: 'توضیح کوتاه برای صفحه تماس' },
   ]
 
+  const telegramFields = [
+    { key: 'telegram_bot_token', label: 'توکن ربات تلگرام (Bot Token)', icon: '🤖', stringField: true, hint: 'توکن دریافت شده از BotFather@ (مثال: 123456789:ABCDefgh...)' },
+    { key: 'telegram_admin_chat_id', label: 'چت آیدی ادمین (Admin Chat ID)', icon: '👤', stringField: true, hint: 'شناسه تلگرام ادمین (پیش‌فرض: 130945736)' },
+    { key: 'telegram_proxy', label: 'پروکسی SOCKS5 تلگرام (Proxy)', icon: '🌐', stringField: true, hint: 'آدرس پروکسی (پیش‌فرض: socks5h://192.168.100.33:10808)' },
+  ]
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 gap-3">
@@ -295,6 +301,31 @@ export default function Settings() {
       <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">اطلاعات تماس</h2>
       <div className="settings-fields-grid max-w-6xl">
         {contactFields.map(f => (
+          <div
+            key={f.key}
+            className="settings-field-card rounded-xl p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">{f.icon}</span>
+              <div className="flex-1">
+                <label className="font-semibold text-white">{f.label}</label>
+                {f.hint && <p className="text-sm mt-0.5 settings-field-hint">{f.hint}</p>}
+              </div>
+            </div>
+            <input
+              type="text"
+              value={settings[f.key]?.string_value ?? ''}
+              onChange={e => handleChange(f.key, e.target.value, true)}
+              className="w-full px-4 py-3 rounded-lg border text-base outline-none transition-colors settings-field-input"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* ── Telegram Admin Bot Section ── */}
+      <h2 className="settings-page-title text-xl font-bold text-white mt-10 mb-4">تنظیمات ربات تلگرام و اعلان‌ها</h2>
+      <div className="settings-fields-grid max-w-6xl">
+        {telegramFields.map(f => (
           <div
             key={f.key}
             className="settings-field-card rounded-xl p-5"

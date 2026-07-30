@@ -27,6 +27,7 @@ from app.routers.auth import require_any_role
 from app.routers.stats import invalidate_stats
 from app.cache import get_settings_dict
 from app.calculator import calculate_product_costs_from_dicts
+from app.telegram_bot import send_telegram_notification
 
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
@@ -286,6 +287,22 @@ def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session 
     db.commit()
     db.refresh(order)
     invalidate_stats()
+
+    # Trigger instant Telegram Admin Notification
+    try:
+        msg = (
+            f"🛒 <b>سفارش جدید در سیستم ثبت شد!</b>\n\n"
+            f"🆔 <b>کد سفارش:</b> #{order.id}\n"
+            f"👤 <b>نام مشتری:</b> {order.customer_name or 'نامشخص'}\n"
+            f"📞 <b>تماس:</b> {order.contact or 'ثبت‌نشده'}\n"
+            f"📦 <b>عنوان:</b> {order.product_label or 'سفارش عمومی'}\n"
+            f"💰 <b>مبلغ فاکتور:</b> {order.quoted_price:,.0f} تومان\n"
+            f"📍 <b>وضعیت:</b> جدید"
+        )
+        send_telegram_notification(msg)
+    except Exception:
+        pass
+
     return _serialize(order)
 
 
