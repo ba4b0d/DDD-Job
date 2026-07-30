@@ -77,8 +77,8 @@ export default function CustomOrder() {
       </ol>
 
       <div className="public-page-actions">
-        <Link to="/" className="public-btn public-btn-primary">
-          مشاهده کاتالوگ
+        <Link to="/contact" className="public-btn public-btn-primary">
+          تماس با ما
         </Link>
       </div>
     </div>
