@@ -62,24 +62,38 @@ def upload_to_gdrive_service_account(creds_dict: dict, file_path: str, filename:
 
     access_token = token_resp.json().get("access_token")
 
-    # Multipart upload to Google Drive v3 API
+    # Google Drive v3 API expects multipart/related (NOT multipart/form-data)
     metadata = {"name": filename}
     if folder_id and folder_id.strip():
         metadata["parents"] = [folder_id.strip()]
 
-    headers = {"Authorization": f"Bearer {access_token}"}
-    with open(file_path, "rb") as f_data:
-        files = {
-            "data": ("metadata", json.dumps(metadata), "application/json; charset=UTF-8"),
-            "file": (filename, f_data, "application/octet-stream"),
-        }
+    boundary = f"3djat_gdrive_{uuid.uuid4().hex}"
+    meta_json = json.dumps(metadata)
 
-        upload_resp = requests.post(
-            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true",
-            headers=headers,
-            files=files,
-            timeout=60,
-        )
+    with open(file_path, "rb") as f_data:
+        file_bytes = f_data.read()
+
+    body = (
+        f"--{boundary}\r\n"
+        "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+        f"{meta_json}\r\n"
+        f"--{boundary}\r\n"
+        "Content-Type: application/octet-stream\r\n\r\n"
+    ).encode("utf-8") + file_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": f"multipart/related; boundary={boundary}",
+        "Content-Length": str(len(body)),
+    }
+
+    upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&supportsTeamDrives=true"
+    upload_resp = requests.post(
+        upload_url,
+        headers=headers,
+        data=body,
+        timeout=60,
+    )
 
     if upload_resp.status_code not in (200, 201):
         raise ValueError(f"خطا در ارسال به گوگل درایو: {upload_resp.text}")
