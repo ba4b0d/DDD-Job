@@ -135,7 +135,7 @@ export default function Calculator() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <CalcIcon size={28} style={{color:'var(--accent)'}} />
-          <h1 className="text-2xl font-bold" style={{color:'var(--text-primary)'}}>ماشین حساب قیمت</h1>
+          <h1 className="text-2xl font-bold" style={{color:'#ffffff'}}>ماشین حساب قیمت</h1>
         </div>
         <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{background:'var(--bg-card)', border:'1px solid var(--border)', color:'var(--text-secondary)'}}>
           <RotateCcw size={16} /> شروع مجدد

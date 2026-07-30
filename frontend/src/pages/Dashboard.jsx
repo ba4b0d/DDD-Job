@@ -163,7 +163,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Page title — mock: large داشبورد on the right (RTL start) */}
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-2xl lg:text-[26px] font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+        <h2 className="text-2xl lg:text-[26px] font-bold tracking-tight" style={{ color: '#ffffff' }}>
           داشبورد
         </h2>
       </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
       {/* Shop ops this month — board B, not accounting */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3 px-0.5">
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-sm font-semibold" style={{ color: '#ffffff' }}>
             سفارش‌ها
           </h3>
           <button

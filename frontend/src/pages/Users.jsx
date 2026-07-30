@@ -109,7 +109,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>مدیریت کاربران</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#ffffff' }}>مدیریت کاربران</h2>
         <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> کاربر جدید
         </button>

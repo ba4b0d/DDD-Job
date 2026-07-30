@@ -194,7 +194,7 @@ export default function Machines() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#ffffff' }}>
             ماشین‌های چاپ
           </h1>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>

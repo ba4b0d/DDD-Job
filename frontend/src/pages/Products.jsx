@@ -231,7 +231,7 @@ export default function Products() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#ffffff' }}>
             محصولات
           </h2>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>

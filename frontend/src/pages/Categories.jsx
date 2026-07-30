@@ -93,7 +93,7 @@ export default function Categories() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>مدیریت دسته‌بندی‌ها</h2>
+        <h2 className="text-2xl font-bold" style={{ color: '#ffffff' }}>مدیریت دسته‌بندی‌ها</h2>
         <button onClick={openCreate} className="btn-primary">
           <Plus size={16} /> دسته‌بندی جدید
         </button>
