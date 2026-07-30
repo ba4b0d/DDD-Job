@@ -133,6 +133,14 @@ export const importBackup = (file) => {
   });
 };
 export const getLocalBackups = () => api.get('/admin/backup/list');
+export const uploadGDriveCreds = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/admin/backup/upload-gdrive-creds', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+export const pushGDriveBackup = () => api.post('/admin/backup/gdrive-upload');
 export const verifyToken = () => api.get('/auth/verify');
 
 // ===== Users (admin only) =====

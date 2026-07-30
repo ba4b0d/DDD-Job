@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Save, Check, Upload, Download, Database, RotateCcw, AlertTriangle } from 'lucide-react'
-import { getSettings, updateSettings, uploadBranding, exportBackup, importBackup } from '../lib/api'
+import { Save, Check, Upload, Download, Database, RotateCcw, AlertTriangle, Cloud, HardDrive } from 'lucide-react'
+import { getSettings, updateSettings, uploadBranding, exportBackup, importBackup, uploadGDriveCreds, pushGDriveBackup } from '../lib/api'
 import { SAVED_FEEDBACK_DELAY } from '../lib/constants'
 
 export default function Settings() {
@@ -12,6 +12,8 @@ export default function Settings() {
   const [uploading, setUploading] = useState({})
   const [exportingBackup, setExportingBackup] = useState(false)
   const [importingBackup, setImportingBackup] = useState(false)
+  const [uploadingGDriveCreds, setUploadingGDriveCreds] = useState(false)
+  const [pushingGDrive, setPushingGDrive] = useState(false)
   const [backupMessage, setBackupMessage] = useState(null)
 
   useEffect(() => { load() }, [])
@@ -64,6 +66,35 @@ export default function Settings() {
       setBackupMessage({ type: 'error', text: e.response?.data?.detail || 'خطا در بازگردانی پشتیبان' });
     } finally {
       setImportingBackup(false);
+    }
+  }
+
+  async function handleUploadGDriveCreds(file) {
+    if (!file) return;
+    try {
+      setUploadingGDriveCreds(true);
+      setBackupMessage(null);
+      const res = await uploadGDriveCreds(file);
+      setBackupMessage({ type: 'success', text: res.data.message + ` (${res.data.client_email})` });
+    } catch (e) {
+      console.error(e);
+      setBackupMessage({ type: 'error', text: e.response?.data?.detail || 'خطا در آپلود فایل اعتبارنامه گوگل' });
+    } finally {
+      setUploadingGDriveCreds(false);
+    }
+  }
+
+  async function handlePushGDrive() {
+    try {
+      setPushingGDrive(true);
+      setBackupMessage(null);
+      const res = await pushGDriveBackup();
+      setBackupMessage({ type: 'success', text: res.data.message || 'پشتیبان به گوگل درایو ارسال شد' });
+    } catch (e) {
+      console.error(e);
+      setBackupMessage({ type: 'error', text: e.response?.data?.detail || 'خطا در ارسال به گوگل درایو' });
+    } finally {
+      setPushingGDrive(false);
     }
   }
 
@@ -339,6 +370,60 @@ export default function Settings() {
               <span>{backupMessage.text}</span>
             </div>
           )}
+        </div>
+
+        {/* ── Google Drive Cloud Backup Card ── */}
+        <div className="settings-field-card rounded-xl p-6 col-span-full border border-amber-500/20 bg-slate-900/40">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
+                <Cloud size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">اتصال و پشتیبان‌گیری ابری (Google Drive)</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  ارسال مستقیم پشتیبان WAL-safe به گوگل درایو با اکانت Service Account یا OAuth
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0 w-full sm:w-auto">
+              <label className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 font-medium text-sm cursor-pointer transition-colors">
+                <Upload size={16} />
+                <span>{uploadingGDriveCreds ? 'در حال آپلود...' : 'آپلود کلید Google JSON'}</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={e => handleUploadGDriveCreds(e.target.files?.[0])}
+                  disabled={uploadingGDriveCreds}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handlePushGDrive}
+                disabled={pushingGDrive}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors disabled:opacity-50"
+              >
+                <Cloud size={16} />
+                <span>{pushingGDrive ? 'در حال ارسال...' : 'ارسال به گوگل درایو'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex-1 w-full sm:w-auto">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">شناسه پوشه گوگل درایو (Folder ID - اختیاری)</label>
+              <input
+                type="text"
+                value={settings['gdrive_folder_id']?.string_value ?? ''}
+                onChange={e => handleChange('gdrive_folder_id', e.target.value, true)}
+                className="w-full px-3 py-2 rounded-lg border border-white/10 bg-slate-800 text-white text-xs dir-ltr text-left outline-none focus:border-amber-500"
+                placeholder="1a2b3c4d5e... (خالی بگذارید تا در صفحه اصلی Drive ذخیره شود)"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
