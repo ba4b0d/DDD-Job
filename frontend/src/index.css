@@ -921,7 +921,7 @@ body {
 .catalog-hero-row {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 27px;
 }
 .catalog-hero--main {
   width: 100%;
@@ -1006,7 +1006,7 @@ body {
     position: relative;
     inset: auto;
     width: 100%;
-    height: clamp(160px, 42vw, 220px);
+    height: clamp(220px, 60vw, 340px);
     flex-shrink: 0;
     background: var(--hero-void, #0b1220);
   }
@@ -1020,8 +1020,8 @@ body {
     top: 0;
     left: 0;
     transform: none;
-    object-fit: cover;
-    object-position: center 40%;
+    object-fit: contain;
+    object-position: center;
   }
 
   .catalog-hero-scrim {
