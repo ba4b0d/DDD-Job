@@ -1083,107 +1083,112 @@ body {
 .mega-menu-panel {
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90vw;
-  max-width: 900px;
-  background: #fff;
+  right: 0;
+  width: 520px;
+  background: #1e2433;
   border-radius: 0 0 12px 12px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-  animation: megaSlideDown 0.2s ease;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  animation: megaSlideDown 0.18s ease;
+  direction: rtl;
+  text-align: right;
 }
 .mega-menu-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 32px;
+  padding: 16px;
 }
 .mega-menu-search {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  margin-bottom: 24px;
-  background: var(--bg-secondary);
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.06);
+}
+.mega-menu-search svg {
+  color: rgba(255,255,255,0.4);
+  flex-shrink: 0;
 }
 .mega-menu-search input {
   flex: 1;
   border: none;
   background: transparent;
   outline: none;
-  font-size: 14px;
-  color: var(--text-primary);
+  font-size: 13px;
+  color: #fff;
+  direction: rtl;
+  text-align: right;
 }
 .mega-menu-search input::placeholder {
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.35);
 }
 .mega-menu-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
 }
 .mega-menu-col {
-  padding: 8px 0;
+  padding: 0;
 }
 .mega-menu-parent {
   display: flex;
   align-items: center;
-  gap: 6px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 14px;
-  color: var(--text-primary);
+  font-size: 13.5px;
+  color: #fff;
   text-align: right;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s;
   background: none;
   border: none;
+  font-family: inherit;
 }
 .mega-menu-parent:hover {
-  background: #fff5ed;
+  background: rgba(255, 154, 61, 0.15);
   color: #FF9A3D;
 }
 .mega-menu-children {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 4px;
-  padding-right: 12px;
+  gap: 1px;
+  padding: 0 4px 6px 12px;
 }
 .mega-menu-child {
   display: block;
   width: 100%;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.55);
   text-align: right;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   background: none;
   border: none;
+  font-family: inherit;
 }
 .mega-menu-child:hover {
-  background: #fff5ed;
+  background: rgba(255, 154, 61, 0.1);
   color: #FF9A3D;
 }
 .mega-menu-empty {
   text-align: center;
-  padding: 32px;
-  color: var(--text-muted);
-  font-size: 14px;
+  padding: 24px;
+  color: rgba(255,255,255,0.35);
+  font-size: 13px;
+  grid-column: 1 / -1;
 }
 @keyframes megaSlideDown {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 640px) {
   .mega-menu-panel { display: none; }
   .mega-menu-grid { grid-template-columns: 1fr; }
-  .mega-menu-inner { padding: 16px; }
+  .mega-menu-inner { padding: 12px; }
 }
 
 /* Hero «Spaghetti · FDM» pill — logo orange */
