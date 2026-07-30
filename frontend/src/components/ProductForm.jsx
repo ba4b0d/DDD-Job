@@ -39,6 +39,18 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [submitError, setSubmitError] = useState(null);
   const [costPreviewOpen, setCostPreviewOpen] = useState(false);
 
+  // Flatten tree for category chip display
+  const flattenCatTree = (nodes, depth = 0) => {
+    let result = [];
+    for (const n of nodes) {
+      result.push({ id: n.id, name: n.name, depth });
+      if (n.children && n.children.length > 0) {
+        result = result.concat(flattenCatTree(n.children, depth + 1));
+      }
+    }
+    return result;
+  };
+
   const [form, setForm] = useState({
     name: '', product_id: '', category: '', material_id: '', machine_id: '',
     weight_g: '', support_g: '', flushed_g: '', post_pro_hours: '',
@@ -57,18 +69,20 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
       .then(([matRes, machRes, catRes]) => {
         const matList = matRes.data || [];
         const machList = machRes.data || [];
-        const catsData = Array.isArray(catRes.data) ? catRes.data : [];
+        // /categories now returns tree [{id, name, children: [...]}]
+        const treeData = Array.isArray(catRes.data) ? catRes.data : [];
 
         setMaterials(matList);
         setMachines(machList);
-        setCategories(catsData);
+        setCategories(treeData);
 
         // Pre-select category IDs from initialData
         if (initialData?.categories && Array.isArray(initialData.categories)) {
           setSelectedCategoryIds(initialData.categories.map(c => c.id));
         } else if (initialData?.category) {
-          // Backward compat: match string category name
-          const found = catsData.find(c => c.name === initialData.category);
+          // Backward compat: match string category name in flat tree
+          const flat = flattenCatTree(treeData);
+          const found = flat.find(c => c.name === initialData.category);
           if (found) setSelectedCategoryIds([found.id]);
         }
 
@@ -187,7 +201,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
             {categories.length === 0 ? (
               <span className="text-xs p-1" style={{ color: 'var(--text-muted)' }}>هیچ دسته‌بندی تعریف نشده است</span>
             ) : (
-              categories.map((cat) => {
+              flattenCatTree(categories).map((cat) => {
                 const isSelected = selectedCategoryIds.includes(cat.id);
                 return (
                   <button
@@ -204,8 +218,10 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
                       color: isSelected ? '#ffffff' : 'var(--text-primary)',
                       borderColor: isSelected ? 'var(--accent)' : 'var(--border-color)',
                       boxShadow: isSelected ? '0 2px 4px rgba(255, 154, 61, 0.25)' : 'none',
+                      marginLeft: cat.depth > 0 ? `${cat.depth * 12}px` : undefined,
                     }}
                   >
+                    {cat.depth > 0 && <span style={{ opacity: 0.5, fontSize: '10px' }}>└</span>}
                     <span>{cat.name}</span>
                     {isSelected && <span className="text-[10px] font-bold">✓</span>}
                   </button>

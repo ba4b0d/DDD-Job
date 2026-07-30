@@ -219,15 +219,19 @@ export default function Catalog() {
           (p) => (!p.categories || p.categories.length === 0) && (!p.category || p.category === '')
         );
       } else {
-        // Build set of matching category IDs (selected + all its children)
+        // Build set of matching category IDs (selected + all descendants recursively)
         const matchingIds = new Set([activeCategory]);
-        // Find children of the active category from the flat list
-        categories.forEach((c) => {
-          if (c.parent_id === activeCategory) {
-            matchingIds.add(c.id);
-          }
-        });
-        // Also check if activeCategory is a child — just filter by exact match
+        // Use the flat list which has parent_id to find all descendants
+        let found = true;
+        while (found) {
+          found = false;
+          categories.forEach((c) => {
+            if (matchingIds.has(c.parent_id) && !matchingIds.has(c.id)) {
+              matchingIds.add(c.id);
+              found = true;
+            }
+          });
+        }
         list = list.filter((p) => {
           if (p.categories && p.categories.length > 0) {
             return p.categories.some((c) => matchingIds.has(c.id));
