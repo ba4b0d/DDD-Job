@@ -256,11 +256,11 @@ def _handle_user_step(chat_id: str, text: str, token: str):
                 with Session(engine) as db:
                     new_prod = Product(
                         name=p_data["name"],
-                        suggested_price=p_data["price"],
+                        final_price=p_data["price"],
                         material_id=p_data["material_id"],
                         machine_id=mach_id,
-                        weight_grams=100.0,
-                        print_hours=2.0,
+                        weight_g=100.0,
+                        print_time_hours=2.0,
                         is_active=True,
                     )
                     db.add(new_prod)
@@ -289,7 +289,7 @@ def _handle_user_step(chat_id: str, text: str, token: str):
                 if prods:
                     prod_lines = ["📦 <b>محصولات ثبت شده در سایت:</b>"]
                     for p in prods:
-                        price_str = f"{p.suggested_price:,.0f}" if p.suggested_price else "محاسبه بر اساس فرمول"
+                        price_str = f"{p.final_price:,.0f}" if p.final_price else "محاسبه بر اساس فرمول"
                         prod_lines.append(f"🔹 <b>ID {p.id}</b> — {p.name} ({price_str} تومان)")
                     prod_text = "\n".join(prod_lines)
                 else:
@@ -311,7 +311,7 @@ def _handle_user_step(chat_id: str, text: str, token: str):
                 with Session(engine) as db:
                     p = db.query(Product).filter(Product.id == p_id, Product.is_active == True).first()
                     if p:
-                        unit_price = p.suggested_price or 0.0
+                        unit_price = p.final_price or 0.0
                         state["data"]["product_id"] = p.id
                         state["data"]["product_label"] = p.name
                         state["data"]["unit_price"] = unit_price
