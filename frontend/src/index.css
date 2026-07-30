@@ -956,9 +956,9 @@ body {
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 24px 2rem 24px 1.5rem;
-  direction: rtl;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 2rem;
   width: 100%;
 }
 .catalog-hero-cta-title {
@@ -967,9 +967,9 @@ body {
   color: #fff;
   line-height: 1.4;
   text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  text-align: center;
 }
 .catalog-hero-cta-arrow {
-  margin-right: auto;
   font-size: 22px;
   color: #fff;
   opacity: 0.8;
