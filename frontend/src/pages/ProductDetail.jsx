@@ -247,11 +247,11 @@ export default function ProductDetail() {
             <ArrowRight size={18} />
           </button>
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-2xl font-bold text-white">
               {product.name}
             </h2>
             {product.product_id && (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-sm text-gray-300">
                 {product.product_id}
               </p>
             )}
