@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="sidebarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#0f172a"/>
       <stop offset="100%" stop-color="#1e293b"/>
     </linearGradient>
@@ -8,80 +13,128 @@
       <stop offset="0%" stop-color="#1e293b"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="accentOrange" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#FF9A3D"/>
       <stop offset="100%" stop-color="#FF7A00"/>
     </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="800" height="450" rx="16" fill="url(#bgGrad)" stroke="#334155" stroke-width="2"/>
+  <!-- Container Box -->
+  <rect width="1000" height="600" rx="20" fill="url(#bgGrad)" stroke="#334155" stroke-width="2" filter="url(#shadow)"/>
 
-  <!-- Top App Header Bar -->
-  <rect x="0" y="0" width="800" height="50" rx="16" fill="#1e293b"/>
-  <rect x="0" y="34" width="800" height="16" fill="#1e293b"/>
-  <circle cx="30" cy="25" r="6" fill="#ef4444"/>
-  <circle cx="50" cy="25" r="6" fill="#f59e0b"/>
-  <circle cx="70" cy="25" r="6" fill="#10b981"/>
+  <!-- Top App Window Bar -->
+  <rect x="0" y="0" width="1000" height="44" rx="20" fill="#0f172a"/>
+  <rect x="0" y="24" width="1000" height="20" fill="#0f172a"/>
+  <circle cx="28" cy="22" r="5.5" fill="#ef4444"/>
+  <circle cx="46" cy="22" r="5.5" fill="#f59e0b"/>
+  <circle cx="64" cy="22" r="5.5" fill="#10b981"/>
   
-  <text x="400" y="30" fill="#94a3b8" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" dir="rtl">مدیریت وبلاگ و مقالات آموزشی (Blog CMS)</text>
+  <text x="500" y="27" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Vazirmatn', sans-serif" font-size="12" font-weight="600" text-anchor="middle">spaghetti-pricing.ir/admin/posts — مدیریت وبلاگ و مقالات آموزشی</text>
 
-  <!-- Navigation Bar inside header -->
-  <rect x="620" y="15" width="150" height="22" rx="11" fill="url(#accentGrad)"/>
-  <text x="695" y="30" fill="#0f172a" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">+ مطلب جدید</text>
+  <!-- Sidebar (RTL Right Side) -->
+  <g transform="translate(820, 44)">
+    <rect width="180" height="556" fill="url(#sidebarGrad)" stroke="#334155" stroke-width="1"/>
+    
+    <!-- Logo & Brand -->
+    <rect x="136" y="20" width="28" height="28" rx="8" fill="url(#accentOrange)"/>
+    <text x="124" y="39" fill="#f8fafc" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="end">اسپاگتی پرینت</text>
+    
+    <!-- Nav Items -->
+    <!-- Active NavItem: Blog -->
+    <rect x="12" y="75" width="156" height="38" rx="10" fill="url(#accentOrange)" opacity="0.15"/>
+    <rect x="164" y="75" width="4" height="38" rx="2" fill="#FF9A3D"/>
+    <text x="144" y="99" fill="#FF9A3D" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="end">📚 وبلاگ و مقالات</text>
+
+    <text x="144" y="145" fill="#94a3b8" font-family="sans-serif" font-size="13" text-anchor="end">📊 داشبورد</text>
+    <text x="144" y="185" fill="#94a3b8" font-family="sans-serif" font-size="13" text-anchor="end">🛒 سفارش‌ها</text>
+    <text x="144" y="225" fill="#94a3b8" font-family="sans-serif" font-size="13" text-anchor="end">📦 محصولات</text>
+    <text x="144" y="265" fill="#94a3b8" font-family="sans-serif" font-size="13" text-anchor="end">🧮 محاسبه قیمت</text>
+    <text x="144" y="305" fill="#94a3b8" font-family="sans-serif" font-size="13" text-anchor="end">⚙️ تنظیمات</text>
+  </g>
+
+  <!-- Main Content View -->
+  <!-- Top Bar Controls -->
+  <g transform="translate(40, 68)">
+    <text x="760" y="30" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Vazirmatn', sans-serif" font-size="22" font-weight="800" text-anchor="end">مدیریت مطالب وبلاگ (CMS)</text>
+    <text x="760" y="52" fill="#64748b" font-family="sans-serif" font-size="12" text-anchor="end">ایجاد، ویرایش و مدیریت انتشار مقالات سئو و آموزش‌های چاپ سه‌بعدی</text>
+
+    <rect x="0" y="12" width="130" height="38" rx="10" fill="url(#accentOrange)"/>
+    <text x="65" y="36" fill="#0f172a" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">+ مقاله جدید</text>
+  </g>
+
+  <!-- Stats Strip (KPIs) -->
+  <g transform="translate(40, 140)">
+    <rect x="520" y="0" width="240" height="60" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="740" y="26" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">کل مقالات</text>
+    <text x="740" y="48" fill="#f8fafc" font-family="sans-serif" font-size="18" font-weight="bold" text-anchor="end">14 مقاله</text>
+
+    <rect x="260" y="0" width="240" height="60" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="480" y="26" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">مقالات منتشرشده</text>
+    <text x="480" y="48" fill="#34d399" font-family="sans-serif" font-size="18" font-weight="bold" text-anchor="end">12 مقاله</text>
+
+    <rect x="0" y="0" width="240" height="60" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="220" y="26" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">بازدید کل وبلاگ</text>
+    <text x="220" y="48" fill="#60a5fa" font-family="sans-serif" font-size="18" font-weight="bold" text-anchor="end">3,420 بازدید</text>
+  </g>
 
   <!-- Article Cards Grid -->
   <!-- Card 1 -->
-  <g transform="translate(40, 75)">
-    <rect width="220" height="340" rx="12" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
-    <rect x="12" y="12" width="196" height="110" rx="8" fill="#334155"/>
-    <circle cx="110" cy="67" r="22" fill="#FF9A3D" opacity="0.2"/>
-    <path d="M102 67l6 6 12-12" stroke="#FF9A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <g transform="translate(540, 220)">
+    <rect width="240" height="350" rx="14" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
+    <rect x="12" y="12" width="216" height="120" rx="10" fill="#334155"/>
+    <!-- Image Cover Art -->
+    <path d="M12 90l50-40 40 30 60-50 66 60v30H12z" fill="#FF9A3D" opacity="0.25"/>
+    <circle cx="60" cy="45" r="14" fill="#FF9A3D" opacity="0.6"/>
+
+    <rect x="156" y="144" width="70" height="20" rx="10" fill="#10b981" opacity="0.2"/>
+    <text x="191" y="158" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">منتشرشده</text>
+
+    <text x="216" y="190" fill="#f8fafc" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="end">راهنمای تنظیمات PETG</text>
+    <text x="216" y="212" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">تنظیمات کامل دما، سرعت و چسبندگی...</text>
     
-    <rect x="140" y="132" width="68" height="18" rx="9" fill="#10b981" opacity="0.2"/>
-    <text x="174" y="145" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">منتشرشده</text>
-    
-    <text x="196" y="175" fill="#f8fafc" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="end">راهنمای جامع فیلامنت PETG</text>
-    <text x="196" y="195" fill="#94a3b8" font-family="sans-serif" font-size="10" text-anchor="end">تنظیمات دما، سرعت و چسبندگی صفحه...</text>
-    
-    <rect x="16" y="295" width="188" height="1" fill="#334155"/>
-    <text x="20" y="320" fill="#64748b" font-family="sans-serif" font-size="10">⏱ 5 دقیقه مطالعه</text>
-    <text x="196" y="320" fill="#64748b" font-family="sans-serif" font-size="10" text-anchor="end">8 مرداد 1405</text>
+    <rect x="16" y="295" width="208" height="1" fill="#334155"/>
+    <text x="24" y="325" fill="#64748b" font-family="sans-serif" font-size="11">⏱ 5 دقیقه</text>
+    <text x="216" y="325" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">8 مرداد 1405</text>
   </g>
 
   <!-- Card 2 -->
-  <g transform="translate(290, 75)">
-    <rect width="220" height="340" rx="12" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
-    <rect x="12" y="12" width="196" height="110" rx="8" fill="#334155"/>
-    <circle cx="110" cy="67" r="22" fill="#3b82f6" opacity="0.2"/>
-    <path d="M98 67h24M110 55v24" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(270, 220)">
+    <rect width="240" height="350" rx="14" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
+    <rect x="12" y="12" width="216" height="120" rx="10" fill="#334155"/>
+    <!-- Image Cover Art -->
+    <path d="M12 100l60-60 50 40 50-30 46 50v20H12z" fill="#60a5fa" opacity="0.25"/>
+    <circle cx="170" cy="45" r="14" fill="#60a5fa" opacity="0.6"/>
 
-    <rect x="140" y="132" width="68" height="18" rx="9" fill="#10b981" opacity="0.2"/>
-    <text x="174" y="145" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">منتشرشده</text>
-    
-    <text x="196" y="175" fill="#f8fafc" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="end">مقایسه نازل برنجی و فولادی</text>
-    <text x="196" y="195" fill="#94a3b8" font-family="sans-serif" font-size="10" text-anchor="end">کدام نازل برای فیلامنت فیبر کربن مناسب است؟</text>
+    <rect x="156" y="144" width="70" height="20" rx="10" fill="#10b981" opacity="0.2"/>
+    <text x="191" y="158" fill="#34d399" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">منتشرشده</text>
 
-    <rect x="16" y="295" width="188" height="1" fill="#334155"/>
-    <text x="20" y="320" fill="#64748b" font-family="sans-serif" font-size="10">⏱ 3 دقیقه مطالعه</text>
-    <text x="196" y="320" fill="#64748b" font-family="sans-serif" font-size="10" text-anchor="end">2 مرداد 1405</text>
+    <text x="216" y="190" fill="#f8fafc" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="end">مقایسه نازل برنجی و فولادی</text>
+    <text x="216" y="212" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">کدام نازل برای فیلامنت فیبر کربن...</text>
+
+    <rect x="16" y="295" width="208" height="1" fill="#334155"/>
+    <text x="24" y="325" fill="#64748b" font-family="sans-serif" font-size="11">⏱ 3 دقیقه</text>
+    <text x="216" y="325" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">2 مرداد 1405</text>
   </g>
 
   <!-- Card 3 -->
-  <g transform="translate(540, 75)">
-    <rect width="220" height="340" rx="12" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
-    <rect x="12" y="12" width="196" height="110" rx="8" fill="#334155"/>
-    <circle cx="110" cy="67" r="22" fill="#f59e0b" opacity="0.2"/>
-    <path d="M100 67h20" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <g transform="translate(0, 220)">
+    <rect width="240" height="350" rx="14" fill="url(#cardGrad)" stroke="#334155" stroke-width="1.5"/>
+    <rect x="12" y="12" width="216" height="120" rx="10" fill="#334155"/>
+    <!-- Image Cover Art -->
+    <circle cx="120" cy="72" r="30" fill="#f59e0b" opacity="0.2"/>
+    <path d="M105 72l10 10 20-20" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" fill="none"/>
 
-    <rect x="140" y="132" width="68" height="18" rx="9" fill="#f59e0b" opacity="0.2"/>
-    <text x="174" y="145" fill="#fbbf24" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">پیش‌نویس</text>
-    
-    <text x="196" y="175" fill="#f8fafc" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="end">کالیبراسیون دقیق اکسترودر</text>
-    <text x="196" y="195" fill="#94a3b8" font-family="sans-serif" font-size="10" text-anchor="end">محاسبه E-steps در چاپگرهای FDM...</text>
+    <rect x="156" y="144" width="70" height="20" rx="10" fill="#f59e0b" opacity="0.2"/>
+    <text x="191" y="158" fill="#fbbf24" font-family="sans-serif" font-size="10" font-weight="bold" text-anchor="middle">پیش‌نویس</text>
 
-    <rect x="16" y="295" width="188" height="1" fill="#334155"/>
-    <text x="20" y="320" fill="#64748b" font-family="sans-serif" font-size="10">⏱ 7 دقیقه مطالعه</text>
-    <text x="196" y="320" fill="#64748b" font-family="sans-serif" font-size="10" text-anchor="end">در حال ویرایش</text>
+    <text x="216" y="190" fill="#f8fafc" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="end">کالیبراسیون دقیق E-steps</text>
+    <text x="216" y="212" fill="#94a3b8" font-family="sans-serif" font-size="11" text-anchor="end">آموزش گام به گام تنظیم اکسترودر...</text>
+
+    <rect x="16" y="295" width="208" height="1" fill="#334155"/>
+    <text x="24" y="325" fill="#64748b" font-family="sans-serif" font-size="11">⏱ 7 دقیقه</text>
+    <text x="216" y="325" fill="#64748b" font-family="sans-serif" font-size="11" text-anchor="end">پیش‌نویس</text>
   </g>
 </svg>

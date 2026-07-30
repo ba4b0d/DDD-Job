@@ -41,14 +41,14 @@
        alt="Screenshots section header">
 </p>
 
-| Dashboard | Orders Board | Product Catalog |
+| 📊 Dashboard & Analytics | 🛒 Orders Board (Kanban) | 📦 Inventory & Products |
 |:---:|:---:|:---:|
 | ![Dashboard](screenshots/dashboard.png) | ![Orders](screenshots/orders.png) | ![Products](screenshots/products.png) |
 | *KPIs + Monthly Analytics* | *Kanban Board + Shamsi Dates* | *Inventory Management* |
 
-| Cost Calculator | Public Storefront | Blog & CMS Module |
+| 🧮 Cost Calculator Engine | 🛍️ Public Customer Storefront | 📝 Blog & CMS Module |
 |:---:|:---:|:---:|
-| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog & CMS](assets/readme/blog-cms.svg) |
+| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog & CMS Module](assets/readme/blog-cms.svg) |
 | *Live Pricing Breakdown* | *Farsi Customer Catalog* | *SEO Articles & CMS Management* |
 
 ---
