@@ -3,11 +3,16 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.models import BlogPost
+from app.models import BlogPost, Settings
 from app.schemas import BlogPostCreate, BlogPostUpdate, BlogPostResponse
 from app.routers.auth import require_any_role
 
 router = APIRouter(prefix="/api/v1", tags=["blog"])
+
+
+def is_blog_enabled(db: Session) -> bool:
+    s = db.query(Settings).filter(Settings.key == "enable_blog").first()
+    return s is not None and s.value > 0
 
 
 # ── Public Endpoints ─────────────────────────────────────────────────────────
@@ -15,6 +20,11 @@ router = APIRouter(prefix="/api/v1", tags=["blog"])
 @router.get("/blog", response_model=List[BlogPostResponse])
 def list_published_posts(db: Session = Depends(get_db)):
     """Public list of published posts, ordered by created_at desc."""
+    if not is_blog_enabled(db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="وبلاگ در حال حاضر غیرفعال است",
+        )
     return (
         db.query(BlogPost)
         .filter(BlogPost.is_published == True)
@@ -26,6 +36,11 @@ def list_published_posts(db: Session = Depends(get_db)):
 @router.get("/blog/{slug}", response_model=BlogPostResponse)
 def get_published_post_by_slug(slug: str, db: Session = Depends(get_db)):
     """Public single post by slug if published. Increments views by 1."""
+    if not is_blog_enabled(db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="وبلاگ در حال حاضر غیرفعال است",
+        )
     post = (
         db.query(BlogPost)
         .filter(BlogPost.slug == slug, BlogPost.is_published == True)
