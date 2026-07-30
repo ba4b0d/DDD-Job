@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.database import engine, DB_PATH
 from app.models import Product, Order, OrderItem, Settings, Material, Machine
+from app.calculator import calculate_product_costs_from_dicts
+from app.cache import get_settings_dict
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +137,20 @@ def _answer_callback(token: str, callback_query_id: str, text: str = ""):
 
 
 # ── Telegram Bot Command Handlers ──
+
+def _calc_product_price(product) -> float:
+    """Calculate product price dynamically using the cost calculator."""
+    try:
+        with Session(engine) as db:
+            material = db.query(Material).filter(Material.id == product.material_id).first() if product.material_id else None
+            machine = db.query(Machine).filter(Machine.id == product.machine_id).first() if product.machine_id else None
+            settings = get_settings_dict(db)
+            result = calculate_product_costs_from_dicts(product, material, machine, settings)
+            return round(result.get("suggested_price", 0) or result.get("final_price", 0), 2)
+    except Exception as e:
+        logger.warning(f"Price calc failed for product {product.id}: {e}")
+        return product.final_price or 0.0
+
 
 def _handle_start(chat_id: str, token: str):
     msg = (
@@ -328,7 +344,7 @@ def _handle_user_step(chat_id: str, text: str, token: str):
                 with Session(engine) as db:
                     p = db.query(Product).filter(Product.id == p_id, Product.is_active == True).first()
                     if p:
-                        unit_price = p.final_price or 0.0
+                        unit_price = _calc_product_price(p)
                         state["data"]["current_item"] = {
                             "product_id": p.id,
                             "product_label": p.name,
@@ -546,7 +562,7 @@ def _show_product_list_and_ask(chat_id: str, token: str):
         if prods:
             prod_lines = ["📦 <b>محصولات موجود در سایت:</b>\n"]
             for p in prods:
-                price = p.final_price or 0
+                price = _calc_product_price(p)
                 price_str = f"{price:,.0f}" if price > 0 else "—"
                 prod_lines.append(f"🔹 <b>ID {p.id}</b> — {p.name}  ({price_str} تومان)")
             prod_text = "\n".join(prod_lines)
