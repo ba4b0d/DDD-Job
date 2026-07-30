@@ -327,10 +327,10 @@ export default function Catalog() {
                   Spaghetti · FDM
                 </div>
                 <h2
-                  className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
+                  className="catalog-hero-title text-lg sm:text-xl lg:text-2xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  طراحی، چاپ و قیمت شفاف — محصولات آماده و سفارشی را ببینید، فیلتر کنید و قیمت را مقایسه کنید.
+                  کاتالوگ محصولات پیشنهادی
                 </h2>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
