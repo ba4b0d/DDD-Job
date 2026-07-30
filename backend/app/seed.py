@@ -21,6 +21,7 @@ def seed_all(db: Session):
         ("coloring_cost_per_hour", 150000, "Coloring/post-processing cost per hour in IRR"),
         ("favicon_url", 0, "URL of the favicon image (string)"),
         ("logo_url", 0, "URL of the brand logo image (string)"),
+        ("enable_blog", 0.0, "Enable public blog feature (1.0 = enabled, 0.0 = disabled)"),
     ]
     for key, value, desc in settings_data:
         existing = db.query(Settings).filter(Settings.key == key).first()

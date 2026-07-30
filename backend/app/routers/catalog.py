@@ -114,7 +114,7 @@ def get_catalog_categories(db: Session = Depends(get_db)):
 
 @router.get("/sitemap.xml", response_class=Response)
 def get_sitemap(request: Request, db: Session = Depends(get_db)):
-    """Dynamic sitemap: static public pages + every active product with a slug."""
+    """Dynamic sitemap: static public pages + active products + blog posts if enabled."""
     base = _public_base_url(request)
     now = datetime.now(timezone.utc).date().isoformat()
 
@@ -154,6 +154,27 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
             f"  </url>"
         )
 
+    settings = get_settings_dict(db)
+    if settings.get("enable_blog", 0.0) > 0:
+        from app.models import BlogPost
+        posts = (
+            db.query(BlogPost)
+            .filter(BlogPost.is_published == True, BlogPost.slug.isnot(None), BlogPost.slug != "")
+            .order_by(BlogPost.id)
+            .all()
+        )
+        for post in posts:
+            created = getattr(post, "created_at", None)
+            lastmod = created.date().isoformat() if created else now
+            urls.append(
+                f"  <url>\n"
+                f"    <loc>{base}/blog/{post.slug}</loc>\n"
+                f"    <lastmod>{lastmod}</lastmod>\n"
+                f"    <changefreq>weekly</changefreq>\n"
+                f"    <priority>0.7</priority>\n"
+                f"  </url>"
+            )
+
     body = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -161,6 +182,7 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
         + "\n</urlset>\n"
     )
     return Response(content=body, media_type="application/xml")
+
 
 
 @router.get("/catalog/by-slug/{slug}")

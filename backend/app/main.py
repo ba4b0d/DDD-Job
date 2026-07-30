@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import engine, SessionLocal, Base
-from app.models import Settings, Machine, Material, Product, Category, ProductImage, Order, ProductCategory
+from app.models import Settings, Machine, Material, Product, Category, ProductImage, Order, ProductCategory, BlogPost
 from app.seed import seed_all
 from fastapi import HTTPException
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -29,6 +29,7 @@ from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
+from app.routers.blog import router as blog_router
 
 from sqlalchemy import inspect, text
 
@@ -44,12 +45,17 @@ async def lifespan(app: FastAPI):
 
     db = SessionLocal()
     try:
-        # Seed if settings table is empty
+        # Seed if settings table is empty or missing enable_blog
         if db.query(Settings).count() == 0:
             seed_all(db)
             print("Database seeded with initial data.")
         else:
-            print("Database already contains data, skipping seed.")
+            enable_blog_setting = db.query(Settings).filter(Settings.key == "enable_blog").first()
+            if not enable_blog_setting:
+                db.add(Settings(key="enable_blog", value=0.0, string_value="", description="Enable public blog feature (1.0 = enabled, 0.0 = disabled)"))
+                db.commit()
+                print("Seeded default enable_blog setting.")
+            print("Database already contains data, skipping full seed.")
 
         # Ensure default admin exists (one-time, at startup)
         _ensure_default_admin(db)
@@ -237,6 +243,7 @@ app.include_router(stats_router, dependencies=[Depends(require_any_role)])
 app.include_router(auth_router)
 app.include_router(categories_router)
 app.include_router(orders_router)  # Shop ops board B — auth via route Depends
+app.include_router(blog_router)
 app.include_router(catalog_router)  # No auth — public catalog
 
 # ── Static files for uploads ────────────────────────────────────────

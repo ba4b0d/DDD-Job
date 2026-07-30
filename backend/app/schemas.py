@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
@@ -418,3 +418,55 @@ class StatsResponse(BaseModel):
     products_per_category: dict[str, int]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ── Blog ──────────────────────────────────────────────────────────────────
+
+class BlogPostCreate(BaseModel):
+    title: str
+    slug: Optional[str] = None
+    summary: Optional[str] = ""
+    content: Optional[str] = ""
+    cover_image: Optional[str] = None
+    is_published: bool = True
+
+    @field_validator("title")
+    @classmethod
+    def title_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("عنوان مقاله نمی‌تواند خالی باشد")
+        return v.strip()
+
+
+class BlogPostUpdate(BaseModel):
+    title: Optional[str] = None
+    slug: Optional[str] = None
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    cover_image: Optional[str] = None
+    is_published: Optional[bool] = None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_empty(cls, v):
+        if v is not None:
+            if not v.strip():
+                raise ValueError("عنوان مقاله نمی‌تواند خالی باشد")
+            return v.strip()
+        return v
+
+
+class BlogPostResponse(BaseModel):
+    id: int
+    title: str
+    slug: str
+    summary: Optional[str] = ""
+    content: Optional[str] = ""
+    cover_image: Optional[str] = None
+    is_published: bool
+    views: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+

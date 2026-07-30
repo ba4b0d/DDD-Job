@@ -190,3 +190,33 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product", lazy="joined")
+
+
+class BlogPost(Base):
+    __tablename__ = "blog_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    slug = Column(String, unique=True, nullable=False, index=True)
+    summary = Column(String, default="")
+    content = Column(String, default="")  # Markdown/HTML content
+    cover_image = Column(String, nullable=True, default=None)
+    is_published = Column(Boolean, default=True, index=True)
+    views = Column(Integer, default=0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    @staticmethod
+    def generate_slug(title: str) -> str:
+        if not title:
+            return ""
+        slug = unicodedata.normalize("NFKD", title)
+        slug = slug.encode("ascii", "ignore").decode("ascii").lower()
+        slug = re.sub(r"[^a-z0-9]+", "-", slug)
+        slug = re.sub(r"-+", "-", slug).strip("-")
+        return slug or "post"
+
