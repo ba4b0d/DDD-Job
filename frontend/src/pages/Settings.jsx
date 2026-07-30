@@ -28,7 +28,12 @@ export default function Settings() {
   function handleChange(key, value, isString = false) {
     setSettings(prev => ({
       ...prev,
-      [key]: { ...prev[key], [isString ? 'string_value' : 'value']: isString ? value : (parseFloat(value) || 0) }
+      [key]: {
+        ...prev[key],
+        [isString ? 'string_value' : 'value']: isString
+          ? value
+          : (typeof value === 'number' ? value : (parseFloat(value) || 0))
+      }
     }))
   }
 
