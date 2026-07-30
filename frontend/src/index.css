@@ -1094,6 +1094,40 @@ body {
   pointer-events: auto;
   overflow: hidden;
 }
+/* Search bar inside mega-menu */
+.mega-menu-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 0 16px 4px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: border-color 0.2s, background 0.2s;
+}
+.mega-menu-search:focus-within {
+  border-color: rgba(255,154,61,0.4);
+  background: rgba(255,255,255,0.08);
+}
+.mega-menu-search svg {
+  color: rgba(255,255,255,0.35);
+  flex-shrink: 0;
+}
+.mega-menu-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: #fff;
+  direction: rtl;
+  text-align: right;
+  font-family: inherit;
+}
+.mega-menu-search input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
 .mega-menu-panels {
   display: flex;
   min-height: 300px;
