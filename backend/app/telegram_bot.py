@@ -93,6 +93,22 @@ MAIN_KEYBOARD = {
     "resize_keyboard": True
 }
 
+INLINE_MAIN_MENU = {
+    "inline_keyboard": [
+        [
+            {"text": "📦 افزودن محصول", "callback_data": "cmd_addproduct"},
+            {"text": "🛒 ثبت سفارش", "callback_data": "cmd_addorder"}
+        ],
+        [
+            {"text": "📊 آمار کارگاه", "callback_data": "cmd_stats"},
+            {"text": "📋 لیست سفارشات", "callback_data": "cmd_orders"}
+        ],
+        [
+            {"text": "💾 پشتیبان دیتابیس", "callback_data": "cmd_backup"}
+        ]
+    ]
+}
+
 
 def _send_msg(token: str, chat_id: str, text: str, reply_markup=None):
     _, _, proxies = get_telegram_config()
@@ -109,6 +125,16 @@ def _send_msg(token: str, chat_id: str, text: str, reply_markup=None):
         logger.error(f"Error in _send_msg: {e}")
 
 
+def _answer_callback(token: str, callback_query_id: str, text: str = ""):
+    """Answer the callback query to remove the loading spinner on the button."""
+    _, _, proxies = get_telegram_config()
+    url = f"https://api.telegram.org/bot{token}/answerCallbackQuery"
+    try:
+        requests.post(url, json={"callback_query_id": callback_query_id, "text": text}, proxies=proxies, timeout=5)
+    except Exception as e:
+        logger.error(f"Error in _answer_callback: {e}")
+
+
 # ── Telegram Bot Command Handlers ──
 
 def _handle_start(chat_id: str, token: str):
@@ -123,7 +149,7 @@ def _handle_start(chat_id: str, token: str):
         "💾 <b>پشتیبان دیتابیس</b> — دریافت فایل .db امن از دیتابیس\n\n"
         "<i>یا از دستورات /addproduct /addorder /stats /orders /backup نیز می‌توانید استفاده کنید.</i>"
     )
-    _send_msg(token, chat_id, msg)
+    _send_msg(token, chat_id, msg, reply_markup=INLINE_MAIN_MENU)
 
 
 def _handle_stats(chat_id: str, token: str):
@@ -430,6 +456,36 @@ def _poll_telegram_updates():
                 data = resp.json()
                 for update in data.get("result", []):
                     offset = update["update_id"] + 1
+
+                    # ── Handle inline button callback queries ──
+                    callback = update.get("callback_query")
+                    if callback:
+                        cb_chat = callback.get("message", {}).get("chat", {})
+                        cb_chat_id = str(cb_chat.get("id"))
+                        cb_data = callback.get("data", "")
+                        cb_query_id = callback.get("id", "")
+
+                        if admin_chat_id and str(cb_chat_id) != str(admin_chat_id):
+                            _answer_callback(token, cb_query_id, "⛔ دسترسی غیرمجاز")
+                            continue
+
+                        _answer_callback(token, cb_query_id)
+
+                        if cb_data == "cmd_addproduct":
+                            USER_STATES[cb_chat_id] = {"action": "add_product", "step": "name", "data": {}}
+                            _send_msg(token, cb_chat_id, "📦 <b>افزودن محصول جدید</b>\n\nلطفاً <b>نام محصول</b> را ارسال کنید:")
+                        elif cb_data == "cmd_addorder":
+                            USER_STATES[cb_chat_id] = {"action": "add_order", "step": "customer_name", "data": {}}
+                            _send_msg(token, cb_chat_id, "🛒 <b>ثبت سفارش جدید</b>\n\nلطفاً <b>نام مشتری</b> را ارسال کنید:")
+                        elif cb_data == "cmd_stats":
+                            _handle_stats(cb_chat_id, token)
+                        elif cb_data == "cmd_orders":
+                            _handle_orders_list(cb_chat_id, token)
+                        elif cb_data == "cmd_backup":
+                            _handle_backup(cb_chat_id, token)
+                        continue
+
+                    # ── Handle normal messages ──
                     msg = update.get("message", {})
                     chat = msg.get("chat", {})
                     chat_id = str(chat.get("id"))
@@ -458,10 +514,10 @@ def _poll_telegram_updates():
                         _handle_backup(chat_id, token)
                     elif text in ("/addproduct", "📦 افزودن محصول"):
                         USER_STATES[chat_id] = {"action": "add_product", "step": "name", "data": {}}
-                        _send_msg(token, chat_id, "📦 <b>افزودن محصول جدید</b>\n\nلطفاً **نام محصول** را ارسال کنید:")
+                        _send_msg(token, chat_id, "📦 <b>افزودن محصول جدید</b>\n\nلطفاً <b>نام محصول</b> را ارسال کنید:")
                     elif text in ("/addorder", "🛒 ثبت سفارش"):
                         USER_STATES[chat_id] = {"action": "add_order", "step": "customer_name", "data": {}}
-                        _send_msg(token, chat_id, "🛒 <b>ثبت سفارش جدید</b>\n\nلطفاً **نام مشتری** را ارسال کنید:")
+                        _send_msg(token, chat_id, "🛒 <b>ثبت سفارش جدید</b>\n\nلطفاً <b>نام مشتری</b> را ارسال کنید:")
                     else:
                         _send_msg(token, chat_id, "دستور ناشناخته است. از منوی زیر استفاده کنید 👇")
         except Exception as e:
