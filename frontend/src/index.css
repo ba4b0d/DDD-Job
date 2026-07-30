@@ -1077,14 +1077,19 @@ body {
 }
 
 /* ─── Mega-menu category dropdown ─── */
+.catalog-mega-wrap {
+  position: relative;
+}
 .mega-menu-panel {
   position: absolute;
   top: 100%;
-  right: 0;
-  width: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  max-width: 900px;
   background: #fff;
-  border-top: 1px solid var(--border-color);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
   animation: megaSlideDown 0.2s ease;
 }
 .mega-menu-inner {

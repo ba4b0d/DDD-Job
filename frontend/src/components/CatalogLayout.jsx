@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown, ChevronLeft, Search } from 'lucide-react';
+import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
@@ -52,13 +52,13 @@ export default function CatalogLayout({ children }) {
 
   const closeMenu = () => setMenuOpen(false);
 
-  // Hover handlers for mega menu (with delay to prevent flicker)
+  // Hover handlers with delay to prevent flicker
   const megaEnter = () => {
     clearTimeout(megaTimer.current);
     setMegaOpen(true);
   };
   const megaLeave = () => {
-    megaTimer.current = setTimeout(() => setMegaOpen(false), 200);
+    megaTimer.current = setTimeout(() => setMegaOpen(false), 150);
   };
 
   // Filter categories by search
@@ -94,18 +94,79 @@ export default function CatalogLayout({ children }) {
           </Link>
 
           <nav className="catalog-nav catalog-nav--desktop" aria-label="منوی عمومی">
-            {/* Categories mega-menu trigger */}
-            <div ref={megaRef} className="relative" onMouseEnter={megaEnter} onMouseLeave={megaLeave}>
+            {/* Categories mega-menu trigger + panel (single positioned container) */}
+            <div
+              ref={megaRef}
+              className="catalog-mega-wrap"
+              onMouseEnter={megaEnter}
+              onMouseLeave={megaLeave}
+            >
               <button
                 type="button"
                 className={`catalog-nav-link flex items-center gap-1 ${megaOpen ? 'catalog-nav-link--active' : ''}`}
-                onClick={() => setMegaOpen((v) => !v)}
                 aria-expanded={megaOpen}
                 aria-haspopup="true"
               >
                 دسته‌بندی‌ها
                 <ChevronDown size={14} className={`transition-transform duration-200 ${megaOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {megaOpen && (
+                <div className="mega-menu-panel">
+                  <div className="mega-menu-inner">
+                    {/* Search bar */}
+                    <div className="mega-menu-search">
+                      <Search size={16} style={{ color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        placeholder="جستجوی دسته‌بندی..."
+                        value={megaSearch}
+                        onChange={(e) => setMegaSearch(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Categories grid */}
+                    <div className="mega-menu-grid">
+                      {filteredTree.length === 0 ? (
+                        <div className="mega-menu-empty">دسته‌بندی‌ای یافت نشد</div>
+                      ) : (
+                        filteredTree.map((cat) => (
+                          <div key={cat.id} className="mega-menu-col">
+                            <button
+                              type="button"
+                              className="mega-menu-parent"
+                              onClick={() => {
+                                setMegaOpen(false);
+                                navigate(`/?category=${cat.id}`);
+                              }}
+                            >
+                              {cat.name}
+                            </button>
+                            {cat.children && cat.children.length > 0 && (
+                              <div className="mega-menu-children">
+                                {cat.children.map((sub) => (
+                                  <button
+                                    key={sub.id}
+                                    type="button"
+                                    className="mega-menu-child"
+                                    onClick={() => {
+                                      setMegaOpen(false);
+                                      navigate(`/?category=${sub.id}`);
+                                    }}
+                                  >
+                                    {sub.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <NavLink to="/" end className={navLinkClass}>
@@ -138,76 +199,6 @@ export default function CatalogLayout({ children }) {
           </div>
         </div>
       </header>
-
-      {/* ─── Mega-menu overlay ─── */}
-      {megaOpen && (
-        <div
-          className="fixed inset-0 bg-black/30"
-          style={{ zIndex: Z_INDEX_STICKY - 1 }}
-          onClick={() => setMegaOpen(false)}
-        />
-      )}
-      {megaOpen && (
-        <div
-          className="mega-menu-panel"
-          onMouseEnter={megaEnter}
-          onMouseLeave={megaLeave}
-          style={{ zIndex: Z_INDEX_STICKY }}
-        >
-          <div className="mega-menu-inner">
-            {/* Search bar */}
-            <div className="mega-menu-search">
-              <Search size={16} style={{ color: 'var(--text-muted)' }} />
-              <input
-                type="text"
-                placeholder="جستجوی دسته‌بندی..."
-                value={megaSearch}
-                onChange={(e) => setMegaSearch(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            {/* Categories grid */}
-            <div className="mega-menu-grid">
-              {filteredTree.length === 0 ? (
-                <div className="mega-menu-empty">دسته‌بندی‌ای یافت نشد</div>
-              ) : (
-                filteredTree.map((cat) => (
-                  <div key={cat.id} className="mega-menu-col">
-                    <button
-                      type="button"
-                      className="mega-menu-parent"
-                      onClick={() => {
-                        setMegaOpen(false);
-                        navigate(`/?category=${cat.id}`);
-                      }}
-                    >
-                      {cat.name}
-                    </button>
-                    {cat.children && cat.children.length > 0 && (
-                      <div className="mega-menu-children">
-                        {cat.children.map((sub) => (
-                          <button
-                            key={sub.id}
-                            type="button"
-                            className="mega-menu-child"
-                            onClick={() => {
-                              setMegaOpen(false);
-                              navigate(`/?category=${sub.id}`);
-                            }}
-                          >
-                            {sub.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mobile drawer */}
       <div
@@ -252,17 +243,12 @@ export default function CatalogLayout({ children }) {
             تماس با ما
           </NavLink>
 
-          {/* Mobile: Categories section */}
           {catTree.length > 0 && (
             <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
               <p className="text-xs font-semibold px-3 py-1" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ها</p>
               {catTree.map((cat) => (
                 <div key={cat.id}>
-                  <NavLink
-                    to={`/?category=${cat.id}`}
-                    className={drawerLinkClass}
-                    onClick={closeMenu}
-                  >
+                  <NavLink to={`/?category=${cat.id}`} className={drawerLinkClass} onClick={closeMenu}>
                     {cat.name}
                   </NavLink>
                   {cat.children && cat.children.map((sub) => (
@@ -287,10 +273,7 @@ export default function CatalogLayout({ children }) {
         {children}
       </main>
 
-      <footer
-        className="relative border-t py-7 catalog-footer"
-        style={{ borderColor: 'var(--border-color)' }}
-      >
+      <footer className="relative border-t py-7 catalog-footer" style={{ borderColor: 'var(--border-color)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           <div className="text-center sm:text-right catalog-footer-copy">
             <span className="opacity-95">© Spaghettiprints · اسپاگتی پرینت</span>
@@ -303,9 +286,7 @@ export default function CatalogLayout({ children }) {
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-3" aria-label="پاورقی">
             <Link to="/" className="catalog-footer-link">کاتالوگ</Link>
-            {blogEnabled && (
-              <Link to="/blog" className="catalog-footer-link">وبلاگ</Link>
-            )}
+            {blogEnabled && <Link to="/blog" className="catalog-footer-link">وبلاگ</Link>}
             <Link to="/how-to-order" className="catalog-footer-link">شیوه ثبت سفارش</Link>
             <Link to="/contact" className="catalog-footer-link">تماس با ما</Link>
             <Link to="/privacy" className="catalog-footer-link">حریم خصوصی</Link>
