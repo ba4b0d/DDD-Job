@@ -5,6 +5,7 @@ import {
   MessageCircle,
   Palette,
   BadgeCheck,
+  PenTool,
   PackageCheck,
 } from 'lucide-react';
 import { useSEO, buildWebSiteJsonLd } from '../lib/seo';
@@ -26,7 +27,7 @@ const STEPS = [
     n: 3,
     icon: MessageCircle,
     title: 'ارسال پیام',
-    body: 'برای انتخاب رنگ و سفارش هر محصول، کد آن را از طریق تلگرام، واتس اپ و یا بله برای ما ارسال کنید.',
+    body: 'برای انتخاب رنگ و سفارش هر محصول، کد آن را از طریق تلگرام، واتس اپ، اینستاگرام و یا بله برای ما ارسال کنید.',
   },
   {
     n: 4,
@@ -59,9 +60,9 @@ export default function HowToOrder() {
     <div className="public-page" dir="rtl">
       <header className="public-page-hero public-page-hero--dark">
         <p className="public-page-kicker">راهنما</p>
-        <h1 className="public-page-title public-page-title--white">سفارش از کاتالوگ</h1>
+        <h1 className="public-page-title public-page-title--white">نحوه سفارش</h1>
         <p className="public-page-lead">
-          در چند قدم ساده محصول مورد نظر خود را سفارش دهید.
+          سفارش از کاتالوگ پیشنهادی از طریق پیام رسانها انجام میشود.
         </p>
       </header>
 

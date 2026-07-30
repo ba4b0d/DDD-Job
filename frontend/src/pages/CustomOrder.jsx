@@ -4,6 +4,7 @@ import {
   MessageCircle,
   BadgeCheck,
   Wallet,
+  PenTool,
   PackageCheck,
 } from 'lucide-react';
 import { useSEO, buildWebSiteJsonLd } from '../lib/seo';
@@ -19,13 +20,13 @@ const STEPS = [
     n: 2,
     icon: MessageCircle,
     title: 'ارسال پیام',
-    body: 'برای استعلام قیمت، اطلاعات زیر را از طریق تلگرام، واتس اپ و یا بله برای ما ارسال کنید:\n• توصیف طرح ذهنی\n• ارائه توضیحات (برای مثال اگر طرح دلخواهتان مربوط به شخصیت یک فیلم است، نام شخصیت و فیلم را برایمان بفرستید)\n• ابعاد حدودی مورد نظر',
+    body: 'برای استعلام قیمت، اطلاعات زیر را از طریق تلگرام، واتس اپ، اینستاگرام و یا بله برای ما ارسال کنید:\n• توصیف طرح ذهنی\n• ارائه توضیحات (برای مثال اگر طرح دلخواهتان مربوط به شخصیت یک فیلم است، نام شخصیت و فیلم را برایمان بفرستید)\n• تصویر/ تصاویر مشابه\n• ابعاد حدودی',
   },
   {
     n: 3,
     icon: BadgeCheck,
-    title: 'اعلام قیمت',
-    body: 'پس از بررسی، رنگ‌بندی موجود، قیمت نهایی و زمان تقریبی تحویل برایتان ارسال خواهد شد.',
+    title: 'استعلام قیمت',
+    body: 'پس از بررسی تا حداکثر ۴۸ ساعت، موارد زیر برایتان ارسال میشود:\n• رنگ‌بندی موجود\n• قیمت نهایی\n• زمان تقریبی طراحی\n• زمان تقریبی پرینت محصول پس از نهایی شدن طرح',
   },
   {
     n: 4,
@@ -35,6 +36,12 @@ const STEPS = [
   },
   {
     n: 5,
+    icon: PenTool,
+    title: 'طراحی',
+    body: 'برای نهایی کردن طرح با شما در تماس خواهیم بود. پس از قطعی شدن طرح، سفارش در صف پرینت قرار میگیرد.',
+  },
+  {
+    n: 6,
     icon: PackageCheck,
     title: 'تحویل',
     body: 'پس از آماده شدن سفارش، برای هماهنگی تحویل سفارش به صورت حضوری و یا ارسال آن، با شما تماس میگیریم.',
@@ -52,9 +59,9 @@ export default function CustomOrder() {
     <div className="public-page" dir="rtl">
       <header className="public-page-hero public-page-hero--dark">
         <p className="public-page-kicker">راهنما</p>
-        <h1 className="public-page-title public-page-title--white">سفارش طرح دلخواه</h1>
+        <h1 className="public-page-title public-page-title--white">نحوه سفارش</h1>
         <p className="public-page-lead">
-          طرح مورد نظرتان را برایمان بفرستید تا آن را برایتان چاپ کنیم.
+          سفارش طرح دلخواه از طریق پیام رسانها انجام میشود.
         </p>
       </header>
 
