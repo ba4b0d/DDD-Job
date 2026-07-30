@@ -186,7 +186,7 @@ export default function Settings() {
   const telegramFields = [
     { key: 'telegram_bot_token', label: 'توکن ربات تلگرام (Bot Token)', icon: '🤖', stringField: true, hint: 'توکن دریافت شده از BotFather@ (مثال: 123456789:ABCDefgh...)' },
     { key: 'telegram_admin_chat_id', label: 'چت آیدی ادمین (Admin Chat ID)', icon: '👤', stringField: true, hint: 'شناسه تلگرام ادمین (پیش‌فرض: 130945736)' },
-    { key: 'telegram_proxy', label: 'پروکسی SOCKS5 تلگرام (Proxy)', icon: '🌐', stringField: true, hint: 'آدرس پروکسی (پیش‌فرض: socks5h://192.168.100.33:10808)' },
+    { key: 'telegram_proxy', label: 'پروکسی SOCKS5 تلگرام (Proxy)', icon: '🌐', stringField: true, hint: 'آدرس پروکسی (پیش‌فرض: socks5://192.168.100.33:10808)' },
   ]
 
   return (

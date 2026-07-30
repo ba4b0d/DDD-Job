@@ -19,7 +19,7 @@ def get_telegram_config():
     """Retrieve bot token, admin chat ID, and proxy from Settings table or environment."""
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.getenv("TELEGRAM_ADMIN_CHAT_ID", "130945736")
-    proxy = os.getenv("TELEGRAM_PROXY", "socks5h://192.168.100.33:10808")
+    proxy = os.getenv("TELEGRAM_PROXY", "socks5://192.168.100.33:10808")
 
     try:
         with Session(engine) as db:
