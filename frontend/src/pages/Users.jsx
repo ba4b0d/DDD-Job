@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Trash2, Edit, Shield, UserCheck, Key } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser, changePassword } from '../lib/api';
-import { Z_INDEX_MODAL } from '../lib/constants';
+import Modal from '../components/Modal';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -160,72 +160,56 @@ export default function UsersPage() {
         ))}
       </div>
 
-      {/* Create/Edit modal */}
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--overlay-bg)', direction: 'ltr', zIndex: Z_INDEX_MODAL }}
-          role="dialog" aria-modal="true" aria-labelledby="users-modal-title" onClick={handleCloseModal}>
-          <div className="card w-full max-w-md p-6 animate-fade-in-scale" style={{ direction: 'rtl' }} onClick={e => e.stopPropagation()}>
-            <h3 id="users-modal-title" className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              {editingUser ? 'ویرایش کاربر' : 'کاربر جدید'}
-            </h3>
-            {error && <div className="text-sm mb-3 py-2 rounded-lg text-center" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: 'var(--danger)' }}>{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>نام کاربری</label>
-                <input type="text" value={form.username} onChange={e => setForm({...form, username: e.target.value})}
-                  className="input-field" disabled={!!editingUser} required />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  {editingUser ? 'رمز جدید (خالی = بدون تغییر)' : 'رمز عبور'}
-                </label>
-                <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
-                  className="input-field" required={!editingUser} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>نام نمایشی</label>
-                <input type="text" value={form.display_name} onChange={e => setForm({...form, display_name: e.target.value})}
-                  className="input-field" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>نقش</label>
-                <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="select-field">
-                  <option value="employee">کارمند (محصولات + دسته‌بندی)</option>
-                  <option value="admin">مدیر (دسترسی کامل)</option>
-                </select>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" className="btn-primary flex-1 justify-center">
-                  {editingUser ? 'ذخیره' : 'ایجاد'}
-                </button>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1 justify-center">
-                  انصراف
-                </button>
-              </div>
-            </form>
+      {/* Create/Edit modal — uses shared Modal component */}
+      <Modal isOpen={showModal} onClose={handleCloseModal} title={editingUser ? 'ویرایش کاربر' : 'کاربر جدید'} size="md">
+        {error && <div className="text-sm mb-4 py-2.5 rounded-lg text-center" style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: 'var(--danger)' }}>{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>نام کاربری</label>
+            <input type="text" value={form.username} onChange={e => setForm({...form, username: e.target.value})}
+              className="input-field" disabled={!!editingUser} required />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              {editingUser ? 'رمز جدید (خالی = بدون تغییر)' : 'رمز عبور'}
+            </label>
+            <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+              className="input-field" required={!editingUser} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>نام نمایشی</label>
+            <input type="text" value={form.display_name} onChange={e => setForm({...form, display_name: e.target.value})}
+              className="input-field" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>نقش</label>
+            <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="select-field">
+              <option value="employee">کارمند (محصولات + دسته‌بندی)</option>
+              <option value="admin">مدیر (دسترسی کامل)</option>
+            </select>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button type="submit" className="btn-primary flex-1 justify-center">
+              {editingUser ? 'ذخیره' : 'ایجاد'}
+            </button>
+            <button type="button" onClick={handleCloseModal} className="btn-secondary flex-1 justify-center">
+              انصراف
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-      {/* Password change modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'var(--overlay-bg)', direction: 'ltr', zIndex: Z_INDEX_MODAL }}
-          role="dialog" aria-modal="true" aria-labelledby="password-modal-title" onClick={handleClosePasswordModal}>
-          <div className="card w-full max-w-sm p-6 animate-fade-in-scale" style={{ direction: 'rtl' }} onClick={e => e.stopPropagation()}>
-            <h3 id="password-modal-title" className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              تغییر رمز — {showPasswordModal.username}
-            </h3>
-            <form onSubmit={handlePassword} className="space-y-3">
-              <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)}
-                className="input-field" placeholder="رمز جدید" required autoFocus />
-              <div className="flex gap-2">
-                <button type="submit" className="btn-primary flex-1 justify-center">تغییر رمز</button>
-                <button type="button" onClick={() => setShowPasswordModal(null)} className="btn-secondary flex-1 justify-center">انصراف</button>
-              </div>
-            </form>
+      {/* Password change modal — uses shared Modal component */}
+      <Modal isOpen={!!showPasswordModal} onClose={handleClosePasswordModal} title={`تغییر رمز — ${showPasswordModal?.username || ''}`} size="sm">
+        <form onSubmit={handlePassword} className="space-y-4">
+          <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)}
+            className="input-field" placeholder="رمز جدید" required autoFocus />
+          <div className="flex gap-2">
+            <button type="submit" className="btn-primary flex-1 justify-center">تغییر رمز</button>
+            <button type="button" onClick={handleClosePasswordModal} className="btn-secondary flex-1 justify-center">انصراف</button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }
