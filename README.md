@@ -48,7 +48,7 @@
 
 | 🧮 Cost Calculator Engine | 🛍️ Public Customer Storefront | 📝 Blog & CMS Module |
 |:---:|:---:|:---:|
-| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog & CMS Module](assets/readme/blog-cms.svg) |
+| ![Calculator](screenshots/calculator.png) | ![Catalog](screenshots/catalog.png) | ![Blog & CMS Module](screenshots/blog.png) |
 | *Live Pricing Breakdown* | *Farsi Customer Catalog* | *SEO Articles & CMS Management* |
 
 ---
