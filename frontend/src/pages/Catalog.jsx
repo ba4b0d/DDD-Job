@@ -328,7 +328,7 @@ export default function Catalog() {
                   Spaghetti · FDM
                 </div>
                 <h2
-                  className="catalog-hero-title text-sm sm:text-base lg:text-lg font-bold mb-2.5 tracking-tight leading-[1.15]"
+                  className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   کاتالوگ محصولات پیشنهادی
