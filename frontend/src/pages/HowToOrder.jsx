@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 import {
   Search,
+  Hash,
   MessageCircle,
+  Palette,
   BadgeCheck,
-  Wallet,
-  Printer,
   PackageCheck,
-  Phone,
 } from 'lucide-react';
 import { useSEO, buildWebSiteJsonLd } from '../lib/seo';
 
@@ -14,52 +13,45 @@ const STEPS = [
   {
     n: 1,
     icon: Search,
-    title: 'محصول را در کاتالوگ پیدا کنید',
-    body: 'جستجو کنید، دسته را فیلتر کنید و کد یا نام محصول را یادداشت کنید. اگر فایل STL/3MF سفارشی دارید، مرحله بعد کافی است.',
+    title: 'انتخاب محصول',
+    body: 'محصول مورد نظر را در کاتالوگ پیشنهادی پیدا کنید.',
   },
   {
     n: 2,
-    icon: MessageCircle,
-    title: 'از طریق تلگرام، واتساپ، اینستاگرام یا بله پیام بدهید',
-    body: 'کد محصول، تعداد، رنگ/مادهٔ مورد نظر و هر نکتهٔ تحویل را بنویسید. برای کار سفارشی، فایل را هم بفرستید.',
+    icon: Hash,
+    title: 'کد محصول',
+    body: 'کد محصول را یادداشت نمایید.',
   },
   {
     n: 3,
-    icon: BadgeCheck,
-    title: 'قیمت و زمان تأیید می‌شود',
-    body: 'پس از بررسی، قیمت نهایی و زمان تقریبی چاپ/تحویل را اعلام می‌کنیم. تا قبل از تأیید، سفارشی ثبت نشده است.',
+    icon: MessageCircle,
+    title: 'ارسال پیام',
+    body: 'برای انتخاب رنگ و سفارش هر محصول، کد آن را از طریق تلگرام، واتس اپ و یا بله برای ما ارسال کنید.',
   },
   {
     n: 4,
-    icon: Wallet,
-    title: 'پیش‌پرداخت',
-    body: 'پس از توافق، راهنمای پرداخت ارسال می‌شود. با تأیید واریز، نوبت چاپ قطعی می‌شود.',
+    icon: Palette,
+    title: 'انتخاب رنگ',
+    body: 'رنگ‌بندی موجود و زمان تقریبی تحویل سفارش برایتان ارسال خواهد شد.',
   },
   {
     n: 5,
-    icon: Printer,
-    title: 'چاپ و آماده‌سازی',
-    body: 'چاپ، جداسازی ساپورت و در صورت نیاز رنگ‌کاری/پرداخت انجام می‌شود. وضعیت را در همان کانال پیام‌رسان پیگیری کنید.',
+    icon: BadgeCheck,
+    title: 'ثبت سفارش',
+    body: 'پس از تایید رنگ‌، راهنمای پرداخت برایتان ارسال خواهد شد. سفارش با تایید واریز، ثبت میشود.',
   },
   {
     n: 6,
     icon: PackageCheck,
     title: 'تحویل',
-    body: 'تحویل حضوری یا ارسال — جزئیات را هنگام تأیید سفارش هماهنگ می‌کنیم.',
+    body: 'پس از آماده شدن سفارش، برای هماهنگی تحویل سفارش به صورت حضوری و یا ارسال آن، با شما تماس میگیریم.',
   },
-];
-
-const TIPS = [
-  'کد محصول از کاتالوگ را در پیام اول بنویسید تا سریع‌تر پاسخ بگیرید.',
-  'برای سفارشی: فایل STL یا 3MF، ابعاد تقریبی، ماده (PLA/PETG و …) و رنگ را بفرستید.',
-  'زمان تحویل به صف چاپ و پیچیدگی مدل بستگی دارد؛ تاریخ قطعی بعد از تأیید اعلام می‌شود.',
-  'تغییر رنگ/ماده بعد از شروع چاپ ممکن است هزینه یا زمان را عوض کند.',
 ];
 
 export default function HowToOrder() {
   useSEO({
-    title: 'نحوه سفارش',
-    description: 'راهنمای سفارش محصولات چاپ سه‌بعدی از اسپاگتی پرینت',
+    title: 'سفارش از کاتالوگ',
+    description: 'راهنمای سفارش محصولات چاپ سه‌بعدی از کاتالوگ اسپاگتی پرینت',
     jsonLd: buildWebSiteJsonLd(),
   });
 
@@ -67,9 +59,9 @@ export default function HowToOrder() {
     <div className="public-page" dir="rtl">
       <header className="public-page-hero public-page-hero--dark">
         <p className="public-page-kicker">راهنما</p>
-        <h1 className="public-page-title public-page-title--white">نحوه سفارش</h1>
+        <h1 className="public-page-title public-page-title--white">سفارش از کاتالوگ</h1>
         <p className="public-page-lead">
-          سفارش از کاتالوگ یا کار سفارشی — در چند قدم ساده. فعلاً ثبت سفارش از طریق پیام‌رسان‌ها انجام می‌شود.
+          در چند قدم ساده محصول مورد نظر خود را سفارش دهید.
         </p>
       </header>
 
@@ -91,23 +83,8 @@ export default function HowToOrder() {
         })}
       </ol>
 
-      <section className="public-tips" aria-labelledby="order-tips-title">
-        <h2 id="order-tips-title" className="public-tips-title">
-          نکات مهم
-        </h2>
-        <ul className="public-tips-list">
-          {TIPS.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
-      </section>
-
       <div className="public-page-actions">
-        <Link to="/contact" className="public-btn public-btn-primary">
-          <Phone size={16} />
-          تماس با ما
-        </Link>
-        <Link to="/" className="public-btn public-btn-ghost">
+        <Link to="/" className="public-btn public-btn-primary">
           مشاهده کاتالوگ
         </Link>
       </div>
