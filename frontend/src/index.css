@@ -1083,17 +1083,22 @@ body {
 .mega-menu-panel {
   position: fixed;
   top: var(--mega-top, 120px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50%;
-  background: #1e2433;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
   animation: megaSlideDown 0.18s ease;
-  direction: rtl;
-  text-align: right;
 }
 .mega-menu-inner {
-  padding: 16px;
+  width: 50%;
+  max-width: 700px;
+  background: #1e2433;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  direction: rtl;
+  text-align: right;
+  pointer-events: auto;
 }
 .mega-menu-search {
   display: flex;
