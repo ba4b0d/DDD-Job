@@ -203,9 +203,9 @@ export default function ProductDetail() {
       label: 'ابعاد (طول × عرض × ارتفاع)',
       value: hasDimensions
         ? `${[product.dimension_x || 0, product.dimension_y || 0, product.dimension_z || 0]
-            .map((d) => Math.round(d))
+            .map((d) => (d / 10).toFixed(1))
             .sort((a, b) => b - a)
-            .join(' × ')} میلیمتر`
+            .join(' × ')} سانتی‌متر`
         : '—',
     },
     { icon: Weight, label: 'وزن خالص', value: product.weight_g ? `${product.weight_g} گرم` : '—' },
@@ -218,13 +218,6 @@ export default function ProductDetail() {
       icon: Weight,
       label: 'وزن شستشو',
       value: product.flushed_g ? `${product.flushed_g} گرم` : '—',
-    },
-    {
-      icon: Clock,
-      label: 'زمان چاپ',
-      value: product.print_time_hours
-        ? formatMinutes(product.print_time_hours * 60)
-        : '—',
     },
     {
       icon: Clock,

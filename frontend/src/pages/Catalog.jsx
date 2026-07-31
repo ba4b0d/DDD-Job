@@ -563,21 +563,15 @@ export default function Catalog() {
                           <Weight size={11} className="opacity-70" /> {product.weight_g}g
                         </span>
                       )}
-                      {product.print_time_hours > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock size={11} className="opacity-70" />{' '}
-                          {formatMinutes(product.print_time_hours * 60)}
-                        </span>
-                      )}
                       {(product.dimension_x || product.dimension_y || product.dimension_z) ? (() => {
-                        // Sort longest -> shortest for natural reading (L × W × H).
+                        // Sort longest -> shortest for natural reading (L × W × H). Convert mm → cm.
                         const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
-                          .map((d) => Math.round(d || 0))
+                          .map((d) => (d / 10).toFixed(1))
                           .sort((a, b) => b - a);
                         return (
                           <span className="inline-flex items-center gap-1">
                             <Ruler size={11} className="opacity-70" />{' '}
-                            {dims[0]} × {dims[1]} × {dims[2]} میلیمتر
+                            {dims[0]} × {dims[1]} × {dims[2]} سانتی‌متر
                           </span>
                         );
                       })() : null}
