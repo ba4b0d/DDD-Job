@@ -2,11 +2,20 @@
 3DJAT 3D Printing Product Pricing API
 FastAPI application with CORS, SQLite, and seed data.
 """
-import os
+import os, logging
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env file if present
+
+# Configure logging framework
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -50,14 +59,14 @@ async def lifespan(app: FastAPI):
         # Seed if settings table is empty or missing enable_blog
         if db.query(Settings).count() == 0:
             seed_all(db)
-            print("Database seeded with initial data.")
+            logger.info("Database seeded with initial data.")
         else:
             enable_blog_setting = db.query(Settings).filter(Settings.key == "enable_blog").first()
             if not enable_blog_setting:
                 db.add(Settings(key="enable_blog", value=0.0, string_value="", description="Enable public blog feature (1.0 = enabled, 0.0 = disabled)"))
                 db.commit()
-                print("Seeded default enable_blog setting.")
-            print("Database already contains data, skipping full seed.")
+                logger.info("Seeded default enable_blog setting.")
+            logger.info("Database already contains data, skipping full seed.")
 
         # Ensure default admin exists (one-time, at startup)
         _ensure_default_admin(db)

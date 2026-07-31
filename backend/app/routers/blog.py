@@ -7,7 +7,7 @@ from typing import List
 from app.database import get_db
 from app.models import BlogPost, Settings
 from app.schemas import BlogPostCreate, BlogPostUpdate, BlogPostResponse
-from app.routers.auth import require_blog_role
+from app.routers.auth import require_blog_role, limiter
 
 router = APIRouter(prefix="/api/v1", tags=["blog"])
 
@@ -76,6 +76,7 @@ def admin_list_posts(
 
 
 @router.post("/admin/posts", response_model=BlogPostResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 def admin_create_post(
     body: BlogPostCreate,
     db: Session = Depends(get_db),
@@ -108,6 +109,7 @@ def admin_create_post(
 
 
 @router.put("/admin/posts/{id}", response_model=BlogPostResponse)
+@limiter.limit("10/minute")
 def admin_update_post(
     id: int,
     body: BlogPostUpdate,
@@ -144,6 +146,7 @@ def admin_update_post(
 
 
 @router.delete("/admin/posts/{id}")
+@limiter.limit("10/minute")
 def admin_delete_post(
     id: int,
     db: Session = Depends(get_db),

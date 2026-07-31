@@ -6,7 +6,7 @@ from app.schemas import SettingsUpdate, SettingsBulkUpdate, SettingsResponse
 from app.cache import invalidate_settings_cache
 from app.routers.stats import invalidate_stats
 
-from app.routers.auth import require_admin
+from app.routers.auth import require_admin, limiter
 
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
 
@@ -60,6 +60,7 @@ def get_public_settings(db: Session = Depends(get_db)):
 
 
 @router.put("")
+@limiter.limit("20/minute")
 def update_settings(payload: SettingsBulkUpdate, db: Session = Depends(get_db)):
     """Update one or more settings by key."""
     updated = []
@@ -109,6 +110,7 @@ def _is_valid_image_header(contents: bytes, ext: str) -> bool:
 
 
 @router.post("/upload/{key}")
+@limiter.limit("10/minute")
 async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Depends(require_admin), db: Session = Depends(get_db)):
     """Upload a favicon or logo image and store its URL in settings (admin only)."""
     if key not in ("favicon_url", "logo_url"):

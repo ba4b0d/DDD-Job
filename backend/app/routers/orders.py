@@ -11,9 +11,10 @@ Features:
   - CSV export
   - Customer search + date range filtering
 """
-import csv
-import io
+import csv, io, logging
 from datetime import datetime, timezone, date
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -23,7 +24,7 @@ from sqlalchemy import func, and_
 from app.database import get_db
 from app.models import Order, OrderItem, ORDER_STATUSES, Product, Material, Machine
 from app.schemas import OrderCreate, OrderUpdate
-from app.routers.auth import require_any_role
+from app.routers.auth import require_any_role, limiter
 from app.routers.stats import invalidate_stats
 from app.cache import get_settings_dict
 from app.calculator import calculate_product_costs_from_dicts
@@ -220,6 +221,7 @@ def _sync_order_items(db: Session, order: Order, items_data: list) -> list[Order
 # ── Create ──────────────────────────────────────────────────────────────
 
 @router.post("")
+@limiter.limit("20/minute")
 def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
     # If items provided, use them; otherwise fall back to legacy single-product fields
     has_items = len(body.items) > 0
@@ -300,8 +302,8 @@ def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session 
             f"📍 <b>وضعیت:</b> جدید"
         )
         send_telegram_notification(msg)
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning("Failed to send Telegram alert for order #%s: %s", order.id, err)
 
     return _serialize(order)
 
@@ -309,6 +311,7 @@ def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session 
 # ── Update ──────────────────────────────────────────────────────────────
 
 @router.put("/{order_id}")
+@limiter.limit("20/minute")
 def update_order(
     order_id: int,
     body: OrderUpdate,
@@ -386,6 +389,7 @@ def update_order(
 # ── Soft delete (archive) ──────────────────────────────────────────────
 
 @router.delete("/{order_id}")
+@limiter.limit("20/minute")
 def soft_delete_order(order_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:

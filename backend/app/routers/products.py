@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+import logging
 import uuid, os, shutil, io, csv
 from openpyxl import Workbook, load_workbook
 
+logger = logging.getLogger(__name__)
+
 from app.database import get_db
 from app.models import Product, Machine, Material, ProductImage
-from app.repositories.products import ProductRepository
+from app.repositories.products import ProductRepository, batch_load_machines_and_materials as _batch_load_related
 from app.schemas import (
     ProductCreate, ProductUpdate, ProductResponse, ImageReorderRequest,
     CalculateRequest, CalculateResponse,
@@ -113,11 +116,7 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
     return enriched
 
 
-def _batch_load_related(db: Session):
-    """Pre-fetch machines and materials into lookup dicts to avoid N+1 queries."""
-    machines = {m.id: m for m in db.query(Machine).all()}
-    materials = {m.id: m for m in db.query(Material).all()}
-    return machines, materials
+
 
 
 # ── Specific routes BEFORE parameterized ──────────────────────────────
@@ -500,7 +499,8 @@ async def upload_product_images(
 
     try:
         db.commit()
-    except Exception:
+    except Exception as err:
+        logger.exception("Failed to commit product image upload: %s", err)
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ذخیره تصاویر")
 
@@ -549,7 +549,8 @@ def delete_product_image_by_id(product_id: int, image_id: int, db: Session = Dep
 
     try:
         db.commit()
-    except Exception:
+    except Exception as err:
+        logger.exception("Failed to delete product image: %s", err)
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در حذف تصویر")
 
@@ -583,7 +584,8 @@ def set_primary_image(product_id: int, image_id: int, db: Session = Depends(get_
 
     try:
         db.commit()
-    except Exception:
+    except Exception as err:
+        logger.exception("Failed to set primary image: %s", err)
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در تنظیم تصویر اصلی")
 
@@ -615,7 +617,8 @@ def reorder_images(product_id: int, body: ImageReorderRequest, db: Session = Dep
 
     try:
         db.commit()
-    except Exception:
+    except Exception as err:
+        logger.exception("Failed to reorder images: %s", err)
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در مرتب‌سازی تصاویر")
 
@@ -664,8 +667,8 @@ def _extract_dimensions_from_3mf(file_path: str) -> dict:
                             "dimension_y": round(max_y - min_y, 2),
                             "dimension_z": round(max_z - min_z, 2),
                         }
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning("Could not extract dimensions from 3MF %s: %s", file_path, err)
     return {}
 
 
@@ -697,8 +700,8 @@ def _extract_dimensions_from_stl(file_path: str) -> dict:
                         "dimension_y": round(max_y - min_y, 2),
                         "dimension_z": round(max_z - min_z, 2),
                     }
-    except Exception:
-        pass
+    except Exception as e:
+        logging.getLogger(__name__).warning("STL dimension extraction failed: %s", e)
     return {}
 
 
@@ -743,10 +746,14 @@ def extract_dimensions(product_id: int, db: Session = Depends(get_db)):
     }
 
 
+from app.routers.auth import limiter, require_admin, Request
+
+
 # ── Stateless calculator ──────────────────────────────────────────────
 
 @router.post("/calculate", response_model=CalculateResponse)
-def stateless_calculator(req: CalculateRequest, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+def stateless_calculator(request: Request, req: CalculateRequest, db: Session = Depends(get_db)):
     """Calculate costs without creating a product."""
     costs = calculate_product_costs(
         db,
