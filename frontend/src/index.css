@@ -691,6 +691,7 @@ body {
   border-color: color-mix(in srgb, var(--brand-orange) 30%, transparent);
 }
 .catalog-drawer-subcats {
+  margin-top: 0.5rem;
   overflow: hidden;
   animation: megaSlideDown 0.18s ease;
 }
