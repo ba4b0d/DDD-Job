@@ -84,6 +84,12 @@ export default function HowToOrder() {
         })}
       </ol>
 
+      <div className="order-note">
+        <p className="order-note-title">نکات مهم:</p>
+        <p>هنگام انتخاب محصول به ابعاد توجه فرمایید.</p>
+        <p>تمامی محصولات در رنگ ها و ابعاد مختلف قابل سفارش هستند.</p>
+      </div>
+
       <div className="public-page-actions">
         <Link to="/" className="public-btn public-btn-primary">
           مشاهده کاتالوگ
