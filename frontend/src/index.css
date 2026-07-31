@@ -692,7 +692,7 @@ body {
 }
 .catalog-drawer-subcats {
   margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   overflow: hidden;
   animation: megaSlideDown 0.18s ease;
 }
