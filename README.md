@@ -19,7 +19,7 @@
 
 ## 🌟 Overview
 
-**Spaghetti** is a modern, production-ready full-stack web application designed for 3D printing workshops (**FDM**). It combines an automated product pricing engine, public storefront catalog, lightweight blog/CMS with SEO metadata, and a real-time shop order tracking board.
+**Spaghetti** is a modern, production-ready full-stack web application designed for 3D printing workshops (**FDM**). It combines an automated product pricing engine, public storefront catalog with mega-menu navigation, lightweight blog/CMS with SEO metadata, a Telegram order bot, and a real-time shop order tracking board.
 
 ---
 
@@ -27,11 +27,16 @@
 
 - 🧮 **Real-time Cost Engine** — Material weight, support, flushed volume, power consumption, machine depreciation, maintenance, post-processing, overhead, and custom markup in a single formula.
 - ⭐ **Default Printer & Filament** — Mark primary machines and filaments to auto-populate forms when creating new products.
+- 📂 **Sub-categories & Mega-menu** — Hierarchical category tree with two-panel mega-menu dropdown on desktop and expandable accordion in mobile hamburger menu.
+- 🛍️ **Public Catalog Storefront** — Hero section with CTA, product grid with images/prices/dimensions (cm), Telegram share buttons, category filtering via URL params.
+- 🎨 **Custom Order Page** — Dedicated "سفارش طرح دلخواه" page with step-by-step flow for custom 3D print requests.
 - 📝 **Blog & CMS Module** — Built-in article manager with cover image upload, Persian reading time, Telegram sharing, and structured `Article` JSON-LD schema for SEO. Dynamic on/off toggle via Settings.
 - 🛒 **Workshop Orders Board** — Manage shop orders with Shamsi (Jalali) calendar support, payment statuses, and quick action steps.
 - 📏 **Auto 3D Mesh Extraction** — Automatically computes X/Y/Z dimensions directly from uploaded 3MF or STL files.
 - 💾 **WAL-Safe Database Backup & Restore** — One-click database export (`.db`), instant backup upload & restore in UI, plus an automated daily 14-day rolling backup script for production.
-- 🛡️ **Hardened Security** — `httpOnly` cookie JWT auth, `slowapi` rate limiting on sensitive routes, and strict magic-byte validation for uploaded images (PNG/JPG/WEBP).
+- 🤖 **Telegram Order Bot** — Lightweight polling bot with SOCKS5 proxy, inline keyboards, multi-item order wizard with dynamic pricing, and multi-admin support via comma-separated chat IDs.
+- 🛡️ **Hardened Security** — `httpOnly` cookie JWT auth, `slowapi` rate limiting on all mutating endpoints, magic-byte validation for uploaded images, `COOKIE_SECURE` env var, `SENSITIVE_SETTING_KEYS` RBAC filtering, and Farsi slug generation.
+- 📝 **Writer Role** — Blog-only access role for content creators; sidebar shows only "وبلاگ" for writers.
 - 🇮🇷 **Native Persian / RTL UI** — Vazirmatn typography, responsive Tailwind layout, and soft-blue / brand-orange dark theme.
 
 ---
@@ -79,7 +84,7 @@ cd backend
 python -m venv .venv
 source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-echo "JWT_SECRET=your-super-secret-key-32-chars-min" > .env
+cp .env.example .env         # Edit with your JWT_SECRET and other vars
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -98,28 +103,50 @@ docker compose logs -f
 
 ---
 
+## ⚙️ Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+| Variable | Description | Default |
+|:---|:---|:---|
+| `JWT_SECRET` | Secret key for JWT signing (≥32 chars) | *required* |
+| `COOKIE_SECURE` | Set `true` for HTTPS production | `false` |
+| `LOG_LEVEL` | Logging level (`DEBUG`, `INFO`, `WARNING`) | `INFO` |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot API token | *optional* |
+| `TELEGRAM_ADMIN_CHAT_ID` | Comma-separated admin chat IDs | *optional* |
+| `TELEGRAM_PROXY` | SOCKS5 proxy URL for Telegram API | *optional* |
+
+---
+
 ## 📍 Navigation & Access
 
 | Page / Endpoint | Path | Auth Required |
 |:---|:---|:---:|
 | Public Storefront Catalog | `http://localhost:5173/` | ❌ |
+| Category Page (no hero) | `http://localhost:5173/category/:id` | ❌ |
 | Public Blog Articles | `http://localhost:5173/blog` | ❌ (if enabled) |
+| How to Order | `http://localhost:5173/how-to-order` | ❌ |
+| Custom Order | `http://localhost:5173/custom-order` | ❌ |
+| Contact | `http://localhost:5173/contact` | ❌ |
 | Admin Login | `http://localhost:5173/login` | ❌ |
 | Dashboard | `http://localhost:5173/dashboard` | ✅ |
 | Workshop Orders Board | `http://localhost:5173/orders` | ✅ |
-| Admin CMS Posts | `http://localhost:5173/admin/posts` | ✅ |
-| System Settings | `http://localhost:5173/settings` | ✅ |
+| Admin CMS Posts | `http://localhost:5173/admin/posts` | ✅ (admin/writer) |
+| System Settings | `http://localhost:5173/settings` | ✅ (admin) |
 | Interactive API Docs | `http://localhost:8000/docs` | ❌ |
 
-**Default Admin Credentials**: `admin` / `admin` *(Forces password change on initial login)*.
+**Default Admin Credentials**: `admin` / `admin123`
 
 ---
 
 ## 🛡️ Security & Backup Architecture
 
 - **Auth Storage**: JWT issued via `httpOnly`, `SameSite=Lax` cookies — immune to XSS token theft.
-- **Rate Limiting**: `slowapi` integration enforcing 5 attempts/minute limit on `/login` to stop brute-force attacks.
-- **Image Inspection**: Validates binary magic-byte signatures (`\x89PNG`, `\xff\xd8\xff`, `RIFF` WEBP) to block uploaded script payloads.
+- **Rate Limiting**: `slowapi` on all mutating endpoints — login (5/min), orders (20/min), settings (20/min), blog (10/min), backup (5/min).
+- **Image Inspection**: Validates binary magic-byte signatures (`\x89PNG`, `\xff\xd8\xff`, `RIFF` WEBP) for all uploads including branding assets.
+- **Sensitive Settings RBAC**: Credential fields (JWT_SECRET, passwords, Telegram tokens) hidden from non-admin roles.
+- **Backup Integrity**: Upload size limit (10MB) and SQLite header validation on backup import.
+- **Logging Framework**: Structured logging via `logging` module with configurable `LOG_LEVEL` env var.
 - **Database Backup**:
   - **Manual UI**: Download `.db` backup file or restore from a previous backup in `/settings`.
   - **Automated Host Script**: Run `./scripts/backup-db.sh` via cron for daily WAL-safe backups with automatic 14-day rotation.
@@ -133,9 +160,10 @@ docker compose logs -f
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python 3.11, FastAPI 0.104+, SQLAlchemy 2.0 (SQLite WAL mode), Pydantic v2, PyJWT, slowapi.
+- **Backend**: Python 3.11, FastAPI 0.104+, SQLAlchemy 2.0 (SQLite WAL mode), Pydantic v2, PyJWT, slowapi, PySocks (SOCKS5 proxy).
 - **Frontend**: React 18, Vite 5, TailwindCSS, React Router v6, Axios (`withCredentials`), Lucide Icons, `jalaali-js`.
 - **Infrastructure**: Docker Compose (Non-root containers with HTTP healthchecks).
+- **Telegram Bot**: Lightweight polling + `PySocks` + SOCKS5 proxy. Inline keyboards, multi-item order wizard.
 
 ---
 
