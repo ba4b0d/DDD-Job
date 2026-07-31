@@ -1,6 +1,6 @@
 import os
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -77,7 +77,7 @@ def admin_list_posts(
 
 @router.post("/admin/posts", response_model=BlogPostResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/minute")
-def admin_create_post(
+def admin_create_post(request: Request,
     body: BlogPostCreate,
     db: Session = Depends(get_db),
     user=Depends(require_blog_role),
@@ -110,7 +110,7 @@ def admin_create_post(
 
 @router.put("/admin/posts/{id}", response_model=BlogPostResponse)
 @limiter.limit("10/minute")
-def admin_update_post(
+def admin_update_post(request: Request,
     id: int,
     body: BlogPostUpdate,
     db: Session = Depends(get_db),
@@ -147,7 +147,7 @@ def admin_update_post(
 
 @router.delete("/admin/posts/{id}")
 @limiter.limit("10/minute")
-def admin_delete_post(
+def admin_delete_post(request: Request,
     id: int,
     db: Session = Depends(get_db),
     user=Depends(require_blog_role),

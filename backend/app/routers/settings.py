@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Settings
@@ -61,7 +61,7 @@ def get_public_settings(db: Session = Depends(get_db)):
 
 @router.put("")
 @limiter.limit("20/minute")
-def update_settings(payload: SettingsBulkUpdate, db: Session = Depends(get_db)):
+def update_settings(request: Request, payload: SettingsBulkUpdate, db: Session = Depends(get_db)):
     """Update one or more settings by key."""
     updated = []
     for item in payload.settings:
@@ -111,7 +111,7 @@ def _is_valid_image_header(contents: bytes, ext: str) -> bool:
 
 @router.post("/upload/{key}")
 @limiter.limit("10/minute")
-async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Depends(require_admin), db: Session = Depends(get_db)):
+async def upload_branding_asset(request: Request, key: str, file: UploadFile = File(...), user=Depends(require_admin), db: Session = Depends(get_db)):
     """Upload a favicon or logo image and store its URL in settings (admin only)."""
     if key not in ("favicon_url", "logo_url"):
         raise HTTPException(status_code=400, detail="Invalid key. Must be 'favicon_url' or 'logo_url'")

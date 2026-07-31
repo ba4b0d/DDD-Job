@@ -16,7 +16,7 @@ from datetime import datetime, timezone, date
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
@@ -222,7 +222,7 @@ def _sync_order_items(db: Session, order: Order, items_data: list) -> list[Order
 
 @router.post("")
 @limiter.limit("20/minute")
-def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def create_order(request: Request, body: OrderCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
     # If items provided, use them; otherwise fall back to legacy single-product fields
     has_items = len(body.items) > 0
 
@@ -312,7 +312,7 @@ def create_order(body: OrderCreate, user=Depends(require_any_role), db: Session 
 
 @router.put("/{order_id}")
 @limiter.limit("20/minute")
-def update_order(
+def update_order(request: Request,
     order_id: int,
     body: OrderUpdate,
     user=Depends(require_any_role),
@@ -390,7 +390,7 @@ def update_order(
 
 @router.delete("/{order_id}")
 @limiter.limit("20/minute")
-def soft_delete_order(order_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def soft_delete_order(request: Request, order_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="سفارش یافت نشد")
