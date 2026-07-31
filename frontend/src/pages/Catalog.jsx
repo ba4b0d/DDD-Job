@@ -154,6 +154,13 @@ export default function Catalog() {
   const [activeTag, setActiveTag] = useState(null);
   const [sortBy, setSortBy] = useState('name');
 
+  // Sync activeCategory when URL ?category= param changes (e.g. from mega-menu navigate)
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    const num = cat ? Number(cat) : null;
+    setActiveCategory((prev) => (prev === num ? prev : num));
+  }, [searchParams]);
+
   useEffect(() => {
     const controller = new AbortController();
     const load = async () => {
