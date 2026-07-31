@@ -4,9 +4,9 @@ Category CRUD API tests.
 import time
 
 
-def test_list_categories(client):
-    """GET /categories returns a list (public or auth-free)."""
-    resp = client.get("/api/v1/categories")
+def test_list_categories(client, auth_headers):
+    """GET /categories returns a list of categories (requires auth)."""
+    resp = client.get("/api/v1/categories", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)

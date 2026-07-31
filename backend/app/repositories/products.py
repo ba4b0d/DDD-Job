@@ -5,7 +5,14 @@ Centralizes DB access logic for products in one place.
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import or_
 
-from app.models import Product
+from app.models import Product, Machine, Material
+
+
+def batch_load_machines_and_materials(db: Session) -> tuple[dict[int, Machine], dict[int, Material]]:
+    """Pre-fetch machines and materials into lookup dicts to avoid N+1 queries."""
+    machines = {m.id: m for m in db.query(Machine).all()}
+    materials = {m.id: m for m in db.query(Material).all()}
+    return machines, materials
 
 
 class ProductRepository:

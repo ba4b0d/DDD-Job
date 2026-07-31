@@ -120,13 +120,17 @@ def client():
 
 
 def _get_token(client, username, password):
-    """Login and return a Bearer token string."""
+    """Login and return token string from HTTP cookie or JSON response."""
     resp = client.post("/api/v1/auth/login", json={
         "username": username,
         "password": password,
     })
     assert resp.status_code == 200, f"Login failed for {username}: {resp.json()}"
-    return resp.json()["token"]
+    token = resp.cookies.get("access_token")
+    if not token and "token" in resp.json():
+        token = resp.json()["token"]
+    assert token, f"No access token returned for {username}"
+    return token
 
 
 def _make_token(username, password):

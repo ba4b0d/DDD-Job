@@ -11,8 +11,8 @@ def test_login_success(client):
         "password": "3djat2024",
     })
     assert resp.status_code == 200
+    assert resp.cookies.get("access_token") is not None
     data = resp.json()
-    assert "token" in data
     assert data["username"] == "admin"
     assert data["role"] == "admin"
     assert data["display_name"]
@@ -139,13 +139,9 @@ def test_refresh_token_valid(client, auth_headers):
     })
     assert resp.status_code == 200
     data = resp.json()
-    assert "token" in data
     assert data["username"] == "admin"
     assert data["role"] == "admin"
-    # The new token should be valid
-    verify_resp = client.get("/api/v1/auth/verify", headers={
-        "Authorization": f"Bearer {data['token']}",
-    })
+    verify_resp = client.get("/api/v1/auth/verify", cookies={"access_token": client.cookies.get("access_token")})
     assert verify_resp.status_code == 200
 
 
@@ -161,9 +157,7 @@ def test_refresh_token_expired(client):
         "exp": int(time.time()) - 1,  # already expired
     }
     token = pyjwt.encode(payload, os_secret, algorithm="HS256")
-    resp = client.post("/api/v1/auth/refresh", headers={
-        "Authorization": f"Bearer {token}",
-    })
+    resp = client.post("/api/v1/auth/refresh", cookies={"access_token": token})
     assert resp.status_code == 401
 
 
@@ -179,9 +173,7 @@ def test_refresh_token_too_early(client):
         "exp": int(time.time()) + 7200,  # 2 hours from now (outside 1h window)
     }
     token = pyjwt.encode(payload, os_secret, algorithm="HS256")
-    resp = client.post("/api/v1/auth/refresh", headers={
-        "Authorization": f"Bearer {token}",
-    })
+    resp = client.post("/api/v1/auth/refresh", cookies={"access_token": token})
     assert resp.status_code == 400
 
 
@@ -189,16 +181,15 @@ def test_token_expiry_24_hours(client, auth_headers):
     """Tokens should have a 24-hour expiry (not 7 days)."""
     import jwt as pyjwt
     os_secret = os.environ.get("JWT_SECRET", "test-secret-key-for-pytest-2024")
-    # Login to get a real token
     resp = client.post("/api/v1/auth/login", json={
         "username": "admin",
         "password": "3djat2024",
     })
     assert resp.status_code == 200
-    token = resp.json()["token"]
+    token = resp.cookies.get("access_token")
+    assert token, "Cookie access_token missing from login response"
     payload = pyjwt.decode(token, os_secret, algorithms=["HS256"])
     delta = payload["exp"] - payload["iat"]
-    # Should be ~24 hours (±60s tolerance for test execution)
     assert 86340 <= delta <= 86460, f"Token expiry should be ~24h, got {delta}s"
 
 

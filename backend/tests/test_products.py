@@ -11,6 +11,7 @@ def test_list_products_requires_auth(client):
 
 def test_list_products_with_auth(client, auth_headers):
     """GET /products with valid token returns a list."""
+    client.post("/api/v1/products", json={"name": "Sample Product", "weight_g": 50}, headers=auth_headers)
     resp = client.get("/api/v1/products", headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()

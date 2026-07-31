@@ -47,12 +47,7 @@ def _public_base_url(request: Request) -> str:
     return f"{proto}://{host}".rstrip("/")
 
 
-def _batch_load_related(db: Session):
-    """Pre-fetch machines and materials into lookup dicts to avoid N+1 queries."""
-    from app.models import Machine, Material
-    machines = {m.id: m for m in db.query(Machine).all()}
-    materials = {m.id: m for m in db.query(Material).all()}
-    return machines, materials
+from app.repositories.products import batch_load_machines_and_materials as _batch_load_related
 
 
 def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict, settings: dict) -> dict:
@@ -94,9 +89,13 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
     }
 
 
+from app.routers.auth import limiter
+
+
 # IMPORTANT: static routes BEFORE parameterized /catalog/{product_id}
 @router.get("/catalog")
-def get_catalog(db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def get_catalog(request: Request, db: Session = Depends(get_db)):
     """Public endpoint — return active products for the customer catalog."""
     products = db.query(Product).options(selectinload(Product.images), selectinload(Product.categories)).filter(Product.is_active == True).all()
     machines_dict, materials_dict = _batch_load_related(db)
@@ -198,7 +197,8 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/catalog/by-slug/{slug}")
-def get_catalog_product_by_slug(slug: str, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def get_catalog_product_by_slug(request: Request, slug: str, db: Session = Depends(get_db)):
     """Public endpoint — return a single active product by slug."""
     product = (
         db.query(Product)
@@ -214,7 +214,8 @@ def get_catalog_product_by_slug(slug: str, db: Session = Depends(get_db)):
 
 
 @router.get("/catalog/{product_id}")
-def get_catalog_product(product_id: int, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def get_catalog_product(request: Request, product_id: int, db: Session = Depends(get_db)):
     """Public endpoint — return a single active product by ID."""
     product = (
         db.query(Product)

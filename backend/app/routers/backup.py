@@ -130,6 +130,9 @@ def export_database_backup(user=Depends(require_admin)):
     )
 
 
+MAX_BACKUP_SIZE = 100 * 1024 * 1024  # 100MB max limit
+
+
 @router.post("/import")
 async def import_database_backup(
     file: UploadFile = File(...),
@@ -141,6 +144,9 @@ async def import_database_backup(
         raise HTTPException(status_code=400, detail="فایل پشتیبان باید دارای پسوند .db باشد")
 
     content = await file.read()
+    if len(content) > MAX_BACKUP_SIZE:
+        raise HTTPException(status_code=400, detail="حجم فایل پشتیبان نباید بیشتر از ۱۰۰ مگابایت باشد")
+
     if len(content) < 100 or not content.startswith(b"SQLite format 3\x00"):
         raise HTTPException(status_code=400, detail="فایل آپلود شده یک دیتابیس معتبر SQLite نیست")
 
@@ -151,8 +157,14 @@ async def import_database_backup(
         f.write(content)
 
     try:
-        # Perform WAL-safe restore into active database
+        # Validate SQLite integrity before restoring
         src = sqlite3.connect(temp_upload_path)
+        check_res = src.execute("PRAGMA quick_check").fetchone()
+        if not check_res or check_res[0] != "ok":
+            src.close()
+            raise ValueError("فایل دیتابیس آپلود شده دچار آسیب‌دیدگی ساختاری است")
+
+        # Perform WAL-safe restore into active database
         dst = sqlite3.connect(DB_PATH)
         with dst:
             src.backup(dst)

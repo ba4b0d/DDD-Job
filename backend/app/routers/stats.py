@@ -44,41 +44,53 @@ def _month_bounds_utc(now: datetime | None = None) -> tuple[datetime, datetime, 
     return start, end, y, m
 
 
+from sqlalchemy import func, case
+
+
 def _order_ops_stats(db: Session) -> dict:
-    """Monthly order volume + cash in — board B only, not a ledger."""
+    """Monthly order volume + cash in using SQL aggregation queries."""
     start, end, year, month = _month_bounds_utc()
-    # SQLite often stores naive UTC; compare both naive and aware safely
     start_naive = start.replace(tzinfo=None)
     end_naive = end.replace(tzinfo=None)
 
-    active = (
-        db.query(Order)
-        .filter(Order.is_active == True)  # noqa: E712
-        .all()
+    # 1. Total open active orders
+    open_count = (
+        db.query(func.count(Order.id))
+        .filter(Order.is_active == True, Order.status.in_(_OPEN_STATUSES))
+        .scalar()
+        or 0
     )
 
-    month_rows = []
-    open_count = 0
-    for o in active:
-        if o.status in _OPEN_STATUSES:
-            open_count += 1
-        ca = o.created_at
-        if not ca:
-            continue
-        # normalize to naive for range check
-        ca_n = ca.replace(tzinfo=None) if getattr(ca, "tzinfo", None) else ca
-        if start_naive <= ca_n < end_naive and o.status != "cancelled":
-            month_rows.append(o)
-
-    paid = round(sum(float(o.paid_amount or 0) for o in month_rows), 2)
-    quoted = round(sum(float(o.quoted_price or 0) for o in month_rows), 2)
-    remaining = round(sum(max(0.0, float(o.quoted_price or 0) - float(o.paid_amount or 0)) for o in month_rows), 2)
+    # 2. Monthly active non-cancelled orders aggregation
+    month_stats = (
+        db.query(
+            func.count(Order.id).label("count"),
+            func.coalesce(func.sum(Order.paid_amount), 0.0).label("paid"),
+            func.coalesce(func.sum(Order.quoted_price), 0.0).label("quoted"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (Order.quoted_price > Order.paid_amount, Order.quoted_price - Order.paid_amount),
+                        else_=0.0,
+                    )
+                ),
+                0.0,
+            ).label("remaining"),
+        )
+        .filter(
+            Order.is_active == True,
+            Order.status != "cancelled",
+            Order.created_at >= start_naive,
+            Order.created_at < end_naive,
+        )
+        .first()
+    )
 
     return {
-        "orders_this_month": len(month_rows),
-        "orders_paid_this_month": paid,
-        "orders_quoted_this_month": quoted,
-        "orders_remaining_this_month": remaining,
+        "orders_this_month": month_stats.count if month_stats else 0,
+        "orders_paid_this_month": round(float(month_stats.paid), 2) if month_stats else 0.0,
+        "orders_quoted_this_month": round(float(month_stats.quoted), 2) if month_stats else 0.0,
+        "orders_remaining_this_month": round(float(month_stats.remaining), 2) if month_stats else 0.0,
         "orders_open": open_count,
         "orders_month": month,
         "orders_year": year,

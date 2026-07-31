@@ -235,10 +235,7 @@ class ProductResponse(BaseModel):
     overhead: float = 0
     base_price: float = 0
     suggested_price: float = 0
-    profit: float = 0
     margin_pct: float = 0
-
-    images: list[ProductImageResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
