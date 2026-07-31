@@ -681,6 +681,14 @@ body {
 }
 
 /* Mobile category accordion */
+.catalog-drawer-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.catalog-drawer-cat-item {
+  margin-bottom: 0;
+}
 .catalog-drawer-cat-btn {
   width: 100%;
   justify-content: space-between;

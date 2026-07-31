@@ -304,10 +304,10 @@ export default function CatalogLayout({ children }) {
           </NavLink>
 
           {catTree.length > 0 && (
-            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <div className="mt-3 pt-3 border-t catalog-drawer-cats" style={{ borderColor: 'var(--border-color)' }}>
               <p className="text-xs font-semibold px-3 py-1" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ها</p>
               {catTree.map((cat) => (
-                <div key={cat.id}>
+                <div key={cat.id} className="catalog-drawer-cat-item">
                   <button
                     type="button"
                     className={`catalog-drawer-link catalog-drawer-cat-btn${mobileExpandedCat === cat.id ? ' catalog-drawer-cat-btn--open' : ''}`}
