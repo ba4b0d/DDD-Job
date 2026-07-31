@@ -27,11 +27,28 @@ ALLOWED_PUBLIC_KEYS = {
 }
 
 
+SENSITIVE_SETTING_KEYS = {"gdrive_credentials_json", "telegram_bot_token"}
+
+
+from app.routers.auth import get_current_user
+
+
 @router.get("")
-def get_all_settings(db: Session = Depends(get_db)):
-    """Return all settings as a flat key-value dict."""
+def get_all_settings(user=Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return all settings as a flat key-value dict. Masks sensitive keys for non-admin roles."""
     settings = db.query(Settings).all()
-    return {s.key: {"value": s.value, "description": s.description, "id": s.id, "string_value": s.string_value or ""} for s in settings}
+    is_admin = user.get("role") == "admin"
+    result = {}
+    for s in settings:
+        if not is_admin and s.key in SENSITIVE_SETTING_KEYS:
+            continue
+        result[s.key] = {
+            "value": s.value,
+            "description": s.description,
+            "id": s.id,
+            "string_value": s.string_value or "",
+        }
+    return result
 
 
 @router.get("/public")
@@ -73,6 +90,24 @@ BRANDING_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirna
 os.makedirs(BRANDING_UPLOAD_DIR, exist_ok=True)
 
 
+def _is_valid_image_header(contents: bytes, ext: str) -> bool:
+    """Validate file binary header against declared image format extension."""
+    if ext in (".png",):
+        return contents.startswith(b"\x89PNG\r\n\x1a\n")
+    elif ext in (".jpg", ".jpeg"):
+        return contents.startswith(b"\xff\xd8\xff")
+    elif ext in (".gif",):
+        return contents.startswith(b"GIF87a") or contents.startswith(b"GIF89a")
+    elif ext in (".webp",):
+        return b"WEBP" in contents[:16]
+    elif ext in (".ico",):
+        return contents.startswith(b"\x00\x00\x01\x00") or contents.startswith(b"\x00\x00\x02\x00")
+    elif ext in (".svg",):
+        snippet = contents[:500].decode("utf-8", errors="ignore").lower()
+        return "<svg" in snippet
+    return False
+
+
 @router.post("/upload/{key}")
 async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Depends(require_admin), db: Session = Depends(get_db)):
     """Upload a favicon or logo image and store its URL in settings (admin only)."""
@@ -89,6 +124,10 @@ async def upload_branding_asset(key: str, file: UploadFile = File(...), user=Dep
     contents = await file.read()
     if len(contents) > 2 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۲ مگابایت باشد")
+
+    # Validate magic bytes / image header
+    if not _is_valid_image_header(contents, ext):
+        raise HTTPException(status_code=400, detail="محتوای فایل با پسوند تصویر مطابقت ندارد")
 
     # Save with UUID filename
     filename = f"{uuid.uuid4().hex}{ext}"

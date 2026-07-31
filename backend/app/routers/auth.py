@@ -34,11 +34,12 @@ security = HTTPBearer(auto_error=False)
 
 
 def _set_auth_cookie(response: Response, token: str):
+    is_secure = os.getenv("COOKIE_SECURE", "false").lower() in ("true", "1", "yes")
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=False,  # set True when HTTPS is enabled
+        secure=is_secure,
         samesite="lax",
         max_age=TOKEN_EXPIRY_HOURS * 3600,
     )

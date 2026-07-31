@@ -95,13 +95,12 @@ class Product(Base):
 
     @staticmethod
     def generate_slug(name: str) -> str:
-        """Convert a product name (Persian/English) to a URL-safe slug."""
+        """Convert a product name (Persian/English) to a URL-safe slug preserving Farsi Unicode text."""
         if not name:
             return ""
-        slug = unicodedata.normalize("NFKD", name)
-        slug = slug.encode("ascii", "ignore").decode("ascii").lower()
-        slug = re.sub(r"[^a-z0-9]+", "-", slug)
-        slug = re.sub(r"-+", "-", slug).strip("-")
+        # Keep letters, numbers, spaces, and hyphens (supports Farsi/Arabic + Latin)
+        slug = re.sub(r"[^\w\s-]", "", name, flags=re.UNICODE).strip().lower()
+        slug = re.sub(r"[-\s]+", "-", slug)
         return slug or "product"
 
 
@@ -218,11 +217,10 @@ class BlogPost(Base):
 
     @staticmethod
     def generate_slug(title: str) -> str:
+        """Convert a blog title (Persian/English) to a URL-safe slug preserving Farsi Unicode text."""
         if not title:
             return ""
-        slug = unicodedata.normalize("NFKD", title)
-        slug = slug.encode("ascii", "ignore").decode("ascii").lower()
-        slug = re.sub(r"[^a-z0-9]+", "-", slug)
-        slug = re.sub(r"-+", "-", slug).strip("-")
+        slug = re.sub(r"[^\w\s-]", "", title, flags=re.UNICODE).strip().lower()
+        slug = re.sub(r"[-\s]+", "-", slug)
         return slug or "post"
 
