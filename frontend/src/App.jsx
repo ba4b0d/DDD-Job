@@ -16,6 +16,7 @@ const Machines = lazy(() => import('./pages/Machines'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Calculator = lazy(() => import('./pages/Calculator'));
 const Catalog = lazy(() => import('./pages/Catalog'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage'));
 const PublicProductDetail = lazy(() => import('./pages/PublicProductDetail'));
 const Contact = lazy(() => import('./pages/Contact'));
 const HowToOrder = lazy(() => import('./pages/HowToOrder'));
@@ -66,6 +67,7 @@ function AppRoutes() {
         {/* Public */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/category/:id" element={<CatalogLayout><CategoryPage /></CatalogLayout>} />
                 <Route path="/catalog/:slug" element={<CatalogLayout><PublicProductDetail /></CatalogLayout>} />
                 <Route path="/contact" element={<CatalogLayout><Contact /></CatalogLayout>} />
                 <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />

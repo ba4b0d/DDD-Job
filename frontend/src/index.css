@@ -1771,6 +1771,54 @@ body {
   margin: 0.2rem 0;
 }
 
+/* Category page (no hero) */
+.category-page-header {
+  padding: 1.5rem 0 0.5rem;
+}
+.category-page-back {
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+.category-page-back:hover {
+  text-decoration: underline;
+}
+.category-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+.category-page-parent {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+.category-page-subchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+}
+.category-page-subchip {
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.category-page-subchip:hover {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-card));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .public-tips {
   padding: 1.1rem 1.15rem;
   border-radius: 1rem;

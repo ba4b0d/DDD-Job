@@ -151,7 +151,7 @@ export default function CatalogLayout({ children }) {
                               onMouseEnter={() => setMegaHoveredCat(cat.id)}
                               onClick={() => {
                                 setMegaOpen(false);
-                                navigate(`/?category=${cat.id}`);
+                                navigate(`/category/${cat.id}`);
                               }}
                             >
                               <span>{cat.name}</span>
@@ -191,7 +191,7 @@ export default function CatalogLayout({ children }) {
                                     className="mega-menu-child"
                                     onClick={() => {
                                       setMegaOpen(false);
-                                      navigate(`/?category=${sub.id}`);
+                                      navigate(`/category/${megaHoveredCat}?sub=${sub.id}`);
                                     }}
                                   >
                                     {sub.name}
@@ -203,7 +203,7 @@ export default function CatalogLayout({ children }) {
                                 className="mega-menu-see-all"
                                 onClick={() => {
                                   setMegaOpen(false);
-                                  navigate(`/?category=${parent.id}`);
+                                  navigate(`/category/${parent.id}`);
                                 }}
                               >
                                 مشاهده همه {parent.name}
@@ -316,7 +316,7 @@ export default function CatalogLayout({ children }) {
                         setMobileExpandedCat(mobileExpandedCat === cat.id ? null : cat.id);
                       } else {
                         closeMenu();
-                        navigate(`/?category=${cat.id}`);
+                        navigate(`/category/${cat.id}`);
                       }
                     }}
                   >
