@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { getCatalogCategories } from '../lib/api';
+import { Search } from 'lucide-react';
 import { formatPrice } from '../lib/utils';
-import { Clock, Weight, Ruler, Share2, Tag } from 'lucide-react';
 
 /**
  * Dedicated category page — no hero, no CTA. Just product grid filtered by category.
+ * Also supports /category/:id?category=subId for sub-category deep links.
  */
 export default function CategoryPage() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Build flat category map for name lookup
   useEffect(() => {
     getCatalogCategories()
       .then((res) => {
@@ -38,7 +40,7 @@ export default function CategoryPage() {
 
   return (
     <div className="catalog-page">
-      {/* Minimal header — no hero */}
+      {/* Breadcrumb-style header — minimal, no hero */}
       <div className="category-page-header">
         <Link to="/" className="category-page-back">
           ← بازگشت به کاتالوگ
@@ -47,30 +49,38 @@ export default function CategoryPage() {
           {activeCat ? activeCat.name : 'دسته‌بندی'}
         </h1>
         {!loading && parentCat && subId && (
-          <span className="category-page-parent">{parentCat.name}</span>
+          <span className="category-page-parent">
+            {parentCat.name}
+          </span>
         )}
       </div>
 
-      {/* Sub-category chips if this is a parent with children */}
+      {/* Sub-category chips if this is a parent */}
       {parentCat && parentCat.children && parentCat.children.length > 0 && !subId && (
         <div className="category-page-subchips">
           {parentCat.children.map((sub) => (
-            <Link key={sub.id} to={`/category/${catId}?sub=${sub.id}`} className="category-page-subchip">
+            <Link
+              key={sub.id}
+              to={`/category/${catId}?sub=${sub.id}`}
+              className="category-page-subchip"
+            >
               {sub.name}
             </Link>
           ))}
         </div>
       )}
 
-      {/* Product grid — same as catalog */}
+      {/* Products — reuse catalog grid inline */}
       <CategoryProducts catId={catId} subId={subId} />
     </div>
   );
 }
 
+/**
+ * Fetches and displays products filtered by category/subcategory.
+ */
 function CategoryProducts({ catId, subId }) {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -78,70 +88,45 @@ function CategoryProducts({ catId, subId }) {
     const controller = new AbortController();
     setLoading(true);
 
-    Promise.all([
-      import('../lib/api').then(({ getCatalog, getCatalogCategories }) =>
-        Promise.all([getCatalog({ signal: controller.signal }), getCatalogCategories({ signal: controller.signal })])
-      ),
-    ])
-      .then(([{ data: pList }, { data: cTree }]) => {
-        const products = Array.isArray(pList) ? pList : [];
-        const allCats = Array.isArray(cTree) ? cTree : [];
+    import('../lib/api').then(({ getCatalog }) => {
+      getCatalog({ signal: controller.signal })
+        .then((res) => {
+          let list = Array.isArray(res.data) ? res.data : [];
+          // Filter by active sub or parent category (recursive descendant match)
+          const filterId = subId || catId;
+          const catIds = new Set([filterId]);
 
-        // Build flat map of category ID → all descendant IDs
-        const buildDescendants = (nodes) => {
-          const map = {};
-          const walk = (node) => {
-            const kids = [];
-            if (node.children) {
-              for (const c of node.children) {
-                kids.push(c.id);
-                kids.push(...walk(c));
-              }
+          // Build set of descendant IDs from categories state (loaded via parent)
+          // Simple approach: match category_id or categories array
+          list = list.filter((p) => {
+            if (p.categories && p.categories.length > 0) {
+              return p.categories.some((c) => {
+                const cid = typeof c === 'object' ? c.id : c;
+                return catIds.has(cid) || cid === filterId;
+              });
             }
-            map[node.id] = [node.id, ...kids];
-            return kids;
-          };
-          for (const n of nodes) walk(n);
-          return map;
-        };
-        const descMap = buildDescendants(allCats);
+            // Backward compat: string category
+            return false;
+          });
 
-        // Filter: match sub-category ID or parent category (all descendants)
-        const filterId = subId || catId;
-        const matchIds = new Set(descMap[filterId] || [filterId]);
-
-        const filtered = products.filter((p) => {
-          // Try multi-categories first
-          if (p.categories && p.categories.length > 0) {
-            return p.categories.some((c) => {
-              const cid = typeof c === 'object' ? c.id : c;
-              return matchIds.has(cid);
-            });
-          }
-          // Backward compat: old string category
-          if (p.category_id) return matchIds.has(p.category_id);
-          return false;
-        });
-
-        setProducts(filtered);
-        setCategories(allCats);
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) setError(err.message);
-      })
-      .finally(() => setLoading(false));
+          setProducts(list);
+        })
+        .catch((err) => {
+          if (!controller.signal.aborted) setError(err.message);
+        })
+        .finally(() => setLoading(false));
+    });
 
     return () => controller.abort();
   }, [catId, subId]);
 
-  const formatMinutes = (mins) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
+  if (loading) {
+    return <div className="catalog-loading">در حال بارگذاری...</div>;
+  }
 
-  if (loading) return <div className="catalog-loading">در حال بارگذاری...</div>;
-  if (error) return <div className="catalog-error">{error}</div>;
+  if (error) {
+    return <div className="catalog-error">{error}</div>;
+  }
 
   if (products.length === 0) {
     return (
@@ -154,133 +139,40 @@ function CategoryProducts({ catId, subId }) {
     );
   }
 
-  const telegramShareUrl = (product) => {
-    const text = `مشاهده ${product.name}`;
-    const url = `https://spaghettiprints.ir/catalog/${product.slug || product.id}`;
-    return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-  };
-
   return (
-    <div className="catalog-results-grid">
-      {products.map((product, idx) => {
-        const price = product.final_price || product.suggested_price;
-        const shareUrl = telegramShareUrl(product);
-        const displayName = (n) => n || 'بدون نام';
-
-        return (
-          <article
-            key={product.id}
-            className="catalog-product-card group flex flex-col relative"
-            style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}
-          >
-            <Link
-              to={`/catalog/${product.slug || product.id}`}
-              className="flex-1 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
-              style={{ '--tw-ring-color': 'var(--accent)' }}
-              aria-label={`مشاهده ${displayName(product.name)}`}
-            >
-              {/* Image */}
-              <div className="relative overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
-                {product.images?.length > 0 ? (
-                  <div className="w-full aspect-square overflow-hidden">
-                    <img
-                      src={product.images[0].url || product.images[0]}
-                      alt={displayName(product.name)}
-                      className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : product.image_url ? (
-                  <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
-                    <img
-                      src={product.image_url}
-                      alt={displayName(product.name)}
-                      className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full aspect-square flex items-center justify-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                    بدون تصویر
-                  </div>
-                )}
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 flex flex-col gap-1.5 p-3 sm:p-3.5">
-                {/* Category badge */}
-                {product.categories?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-0.5">
-                    {product.categories.slice(0, 2).map((cat, ci) => (
-                      <span key={ci} className="catalog-cat-badge">
-                        {typeof cat === 'object' ? cat.name : cat}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Title */}
-                <h3 className="font-semibold text-sm leading-snug" style={{ color: 'var(--text-primary)' }}>
-                  {displayName(product.name)}
-                </h3>
-
-                {/* Meta row */}
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {product.material_name && (
-                    <span className="inline-flex items-center gap-1">
-                      <Tag size={11} className="opacity-70" /> {product.material_name}
-                    </span>
-                  )}
-                  {product.weight_g > 0 && (
-                    <span className="inline-flex items-center gap-1">
-                      <Weight size={11} className="opacity-70" /> {product.weight_g}g
-                    </span>
-                  )}
-                  {(product.dimension_x || product.dimension_y || product.dimension_z) ? (() => {
-                    const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
-                      .map((d) => (d / 10).toFixed(1))
-                      .sort((a, b) => b - a);
-                    return (
-                      <span className="inline-flex items-center gap-1">
-                        <Ruler size={11} className="opacity-70" /> {dims[0]} × {dims[1]} × {dims[2]} سانتی‌متر
-                      </span>
-                    );
-                  })() : null}
-                </div>
-
-                {/* Price */}
-                <div className="mt-auto pt-2 border-t flex items-end justify-between gap-2" style={{ borderColor: 'var(--border-color)' }}>
-                  {price > 0 ? (
-                    <div>
-                      <div className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>
-                        قیمت
-                      </div>
-                      <span className="catalog-price text-lg font-bold tabular-nums">
-                        {formatPrice(price)}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}> تومان</span>
-                    </div>
-                  ) : (
-                    <span className="catalog-price-contact text-sm">تماس بگیرید</span>
-                  )}
-                </div>
-              </div>
-            </Link>
-
-            {/* Telegram share */}
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="catalog-share-btn"
-              aria-label="اشتراک در تلگرام"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Share2 size={15} />
-            </a>
-          </article>
-        );
-      })}
+    <div className="catalog-grid">
+      {products.map((product) => (
+        <Link
+          key={product.id}
+          to={`/catalog/${product.slug || product.id}`}
+          className="catalog-card"
+        >
+          <div className="catalog-card-img">
+            {product.images && product.images.length > 0 ? (
+              <img src={product.images[0].url} alt={product.name} />
+            ) : (
+              <span className="catalog-card-noimg">بدون تصویر</span>
+            )}
+          </div>
+          <div className="catalog-card-body">
+            <h3 className="catalog-card-title">{product.name}</h3>
+            <div className="catalog-card-meta">
+              {product.material_name && <span>{product.material_name}</span>}
+              {product.weight_g > 0 && <span>{product.weight_g}g</span>}
+            </div>
+            <div className="catalog-card-price">
+              {product.final_price > 0 ? (
+                <>
+                  <span className="catalog-price-label">قیمت</span>
+                  <span className="catalog-price">{formatPrice(product.final_price)} تومان</span>
+                </>
+              ) : (
+                <span className="catalog-price-contact">تماس بگیرید</span>
+              )}
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
