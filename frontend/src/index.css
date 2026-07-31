@@ -682,6 +682,7 @@ body {
 
 /* Mobile category accordion */
 .catalog-drawer-cat-btn {
+  width: 100%;
   justify-content: space-between;
 }
 .catalog-drawer-cat-btn--open {
