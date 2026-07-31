@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { getCatalogCategories } from '../lib/api';
+import { getCatalogCategories, getCatalog } from '../lib/api';
 import { formatPrice } from '../lib/utils';
-import { Clock, Weight, Ruler, Share2, Tag } from 'lucide-react';
+import { Weight, Ruler, Share2, Tag } from 'lucide-react';
 
 /**
  * Dedicated category page — no hero, no CTA. Just product grid filtered by category.
@@ -37,13 +37,13 @@ export default function CategoryPage() {
   const parentCat = categories.find((c) => c.id === catId);
 
   return (
-    <div className="catalog-page">
+    <div className="catalog-page" style={{ color: 'var(--text-primary)' }}>
       {/* Minimal header — no hero */}
       <div className="category-page-header">
         <Link to="/" className="category-page-back">
           ← بازگشت به کاتالوگ
         </Link>
-        <h1 className="category-page-title">
+        <h1 className="category-page-title" style={{ color: '#ffffff' }}>
           {activeCat ? activeCat.name : 'دسته‌بندی'}
         </h1>
         {!loading && parentCat && subId && (
@@ -70,22 +70,17 @@ export default function CategoryPage() {
 
 function CategoryProducts({ catId, subId }) {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
     setLoading(true);
+    setError(null);
 
-    Promise.all([
-      import('../lib/api').then(({ getCatalog, getCatalogCategories }) =>
-        Promise.all([getCatalog({ signal: controller.signal }), getCatalogCategories({ signal: controller.signal })])
-      ),
-    ])
-      .then(([{ data: pList }, { data: cTree }]) => {
-        const products = Array.isArray(pList) ? pList : [];
-        const allCats = Array.isArray(cTree) ? cTree : [];
+    Promise.all([getCatalog(), getCatalogCategories()])
+      .then(([pRes, cRes]) => {
+        const products = Array.isArray(pRes.data) ? pRes.data : [];
+        const allCats = Array.isArray(cRes.data) ? cRes.data : [];
 
         // Build flat map of category ID → all descendant IDs
         const buildDescendants = (nodes) => {
@@ -111,34 +106,20 @@ function CategoryProducts({ catId, subId }) {
         const matchIds = new Set(descMap[filterId] || [filterId]);
 
         const filtered = products.filter((p) => {
-          // Try multi-categories first
           if (p.categories && p.categories.length > 0) {
             return p.categories.some((c) => {
               const cid = typeof c === 'object' ? c.id : c;
               return matchIds.has(cid);
             });
           }
-          // Backward compat: old string category
-          if (p.category_id) return matchIds.has(p.category_id);
           return false;
         });
 
         setProducts(filtered);
-        setCategories(allCats);
       })
-      .catch((err) => {
-        if (!controller.signal.aborted) setError(err.message);
-      })
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-
-    return () => controller.abort();
   }, [catId, subId]);
-
-  const formatMinutes = (mins) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
 
   if (loading) return <div className="catalog-loading">در حال بارگذاری...</div>;
   if (error) return <div className="catalog-error">{error}</div>;
@@ -146,7 +127,7 @@ function CategoryProducts({ catId, subId }) {
   if (products.length === 0) {
     return (
       <div className="catalog-empty">
-        <p>محصولی در این دسته‌بندی یافت نشد.</p>
+        <p style={{ color: 'var(--text-primary)' }}>محصولی در این دسته‌بندی یافت نشد.</p>
         <Link to="/" className="category-page-back" style={{ marginTop: 12, display: 'inline-block' }}>
           ← مشاهده همه محصولات
         </Link>
@@ -154,18 +135,12 @@ function CategoryProducts({ catId, subId }) {
     );
   }
 
-  const telegramShareUrl = (product) => {
-    const text = `مشاهده ${product.name}`;
-    const url = `https://spaghettiprints.ir/catalog/${product.slug || product.id}`;
-    return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-  };
-
   return (
     <div className="catalog-results-grid">
       {products.map((product, idx) => {
         const price = product.final_price || product.suggested_price;
-        const shareUrl = telegramShareUrl(product);
         const displayName = (n) => n || 'بدون نام';
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(`https://spaghettiprints.ir/catalog/${product.slug || product.id}`)}&text=${encodeURIComponent(`مشاهده ${product.name}`)}`;
 
         return (
           <article
@@ -191,7 +166,7 @@ function CategoryProducts({ catId, subId }) {
                     />
                   </div>
                 ) : product.image_url ? (
-                  <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
+                  <div className="w-full aspect-square overflow-hidden">
                     <img
                       src={product.image_url}
                       alt={displayName(product.name)}
@@ -208,7 +183,6 @@ function CategoryProducts({ catId, subId }) {
 
               {/* Body */}
               <div className="flex-1 flex flex-col gap-1.5 p-3 sm:p-3.5">
-                {/* Category badge */}
                 {product.categories?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-0.5">
                     {product.categories.slice(0, 2).map((cat, ci) => (
@@ -219,12 +193,10 @@ function CategoryProducts({ catId, subId }) {
                   </div>
                 )}
 
-                {/* Title */}
-                <h3 className="font-semibold text-sm leading-snug" style={{ color: 'var(--text-primary)' }}>
+                <h3 className="font-semibold text-sm leading-snug" style={{ color: '#ffffff' }}>
                   {displayName(product.name)}
                 </h3>
 
-                {/* Meta row */}
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
                   {product.material_name && (
                     <span className="inline-flex items-center gap-1">
@@ -248,26 +220,24 @@ function CategoryProducts({ catId, subId }) {
                   })() : null}
                 </div>
 
-                {/* Price */}
                 <div className="mt-auto pt-2 border-t flex items-end justify-between gap-2" style={{ borderColor: 'var(--border-color)' }}>
                   {price > 0 ? (
                     <div>
                       <div className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>
                         قیمت
                       </div>
-                      <span className="catalog-price text-lg font-bold tabular-nums">
+                      <span className="catalog-price text-lg font-bold tabular-nums" style={{ color: '#ffffff' }}>
                         {formatPrice(price)}
                       </span>
                       <span className="text-xs" style={{ color: 'var(--text-muted)' }}> تومان</span>
                     </div>
                   ) : (
-                    <span className="catalog-price-contact text-sm">تماس بگیرید</span>
+                    <span className="catalog-price-contact text-sm" style={{ color: '#ffffff' }}>تماس بگیرید</span>
                   )}
                 </div>
               </div>
             </Link>
 
-            {/* Telegram share */}
             <a
               href={shareUrl}
               target="_blank"
