@@ -195,6 +195,25 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
     return Response(content=body, media_type="application/xml")
 
 
+@router.get("/robots.txt", response_class=Response)
+def get_robots_txt(request: Request):
+    """Dynamic robots.txt referencing sitemap.xml."""
+    base = _public_base_url(request)
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin/\n"
+        "Disallow: /dashboard\n"
+        "Disallow: /login\n"
+        "Disallow: /settings\n"
+        "Disallow: /orders\n"
+        "Disallow: /users\n"
+        "Disallow: /api/\n"
+        f"\nSitemap: {base}/sitemap.xml\n"
+    )
+    return Response(content=body, media_type="text/plain")
+
+
 
 @router.get("/catalog/by-slug/{slug}")
 @limiter.limit("60/minute")
