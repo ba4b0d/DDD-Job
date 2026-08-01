@@ -35,7 +35,7 @@
 - 📏 **Auto 3D Mesh Extraction** — Automatically computes X/Y/Z dimensions directly from uploaded 3MF or STL files.
 - 💾 **WAL-Safe Database Backup & Restore** — One-click database export (`.db`), instant backup upload & restore in UI, plus an automated daily 14-day rolling backup script for production.
 - 🤖 **Telegram Order Bot** — Lightweight polling bot with SOCKS5 proxy, inline keyboards, multi-item order wizard with dynamic pricing, and multi-admin support via comma-separated chat IDs.
-- 🛡️ **Hardened Security** — `httpOnly` cookie JWT auth, `slowapi` rate limiting on all mutating endpoints, magic-byte validation for uploaded images, `COOKIE_SECURE` env var, `SENSITIVE_SETTING_KEYS` RBAC filtering, and Farsi slug generation.
+- 🛡️ **Hardened Security & RBAC** — `httpOnly` cookie JWT auth, `slowapi` rate limiting on all mutating endpoints, `require_admin` enforcement on product/material/machine/settings mutations, SVG stored XSS sanitization, magic-byte validation for uploaded images, `COOKIE_SECURE` env var, `SENSITIVE_SETTING_KEYS` RBAC filtering, and Farsi slug generation.
 - 📝 **Writer Role** — Blog-only access role for content creators; sidebar shows only "وبلاگ" for writers.
 - 🇮🇷 **Native Persian / RTL UI** — Vazirmatn typography, responsive Tailwind layout, and soft-blue / brand-orange dark theme.
 
@@ -141,9 +141,9 @@ Copy `.env.example` to `.env` and configure:
 
 ## 🛡️ Security & Backup Architecture
 
-- **Auth Storage**: JWT issued via `httpOnly`, `SameSite=Lax` cookies — immune to XSS token theft.
+- **Auth Storage & Role Enforcement**: JWT issued via `httpOnly`, `SameSite=Lax` cookies — immune to XSS token theft. Strict `require_admin` role checks enforced across products, materials, machines, settings, users, and backup endpoints.
 - **Rate Limiting**: `slowapi` on all mutating endpoints — login (5/min), orders (20/min), settings (20/min), blog (10/min), backup (5/min).
-- **Image Inspection**: Validates binary magic-byte signatures (`\x89PNG`, `\xff\xd8\xff`, `RIFF` WEBP) for all uploads including branding assets.
+- **Image Inspection & SVG Sanitization**: Validates binary magic-byte signatures (`\x89PNG`, `\xff\xd8\xff`, `RIFF` WEBP) for all uploads. Rejects executable `<script>` tags or event handlers in SVG branding assets.
 - **Sensitive Settings RBAC**: Credential fields (JWT_SECRET, passwords, Telegram tokens) hidden from non-admin roles.
 - **Backup Integrity**: Upload size limit (10MB) and SQLite header validation on backup import.
 - **Logging Framework**: Structured logging via `logging` module with configurable `LOG_LEVEL` env var.
