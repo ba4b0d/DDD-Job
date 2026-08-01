@@ -34,90 +34,17 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
       rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
     />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
     <!-- Default title before React hydrate — matches Catalog useSEO -->
     <title>اسپاگتی پرینت — چاپ سه‌بعدی | Spaghetti Print</title>
     <style>
-      :root {
-        --bg-primary: #dfe4f2;
-        --bg-secondary: #eef1f9;
-        --bg-tertiary: #d0d7ea;
-        --bg-card: #ffffff;
-        --bg-sidebar: #2a3148;
-        --text-primary: #1a1f32;
-        --text-secondary: #4a5270;
-        --text-muted: #7a849e;
-        --border-color: #c0c8dc;
-        --accent: #6366f1;
-        --brand-orange: #ff9a3d;
-      }
       body {
         font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        margin: 0;
-        padding: 0;
-      }
-      .shell-header {
-        background: linear-gradient(90deg, #2a3350 0%, #3e4458 80%, #ff9a3d 100%);
-        color: #fff;
-        padding: 0.75rem 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .shell-hero {
-        padding: 1.5rem 1rem;
-        max-width: 1280px;
-        margin: 0 auto;
-      }
-      .shell-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 1rem;
-        max-width: 1280px;
-        margin: 1rem auto;
-        padding: 0 1rem;
-      }
-      .shell-card {
-        background: var(--bg-card);
-        border-radius: 1.25rem;
-        border: 1px solid var(--border-color);
-        overflow: hidden;
-        aspect-ratio: 1 / 1.3;
-      }
-      .shell-img {
-        background: var(--bg-tertiary);
-        width: 100%;
-        aspect-ratio: 1 / 1;
       }
     </style>
   </head>
-  <body dir="rtl">
-    <div id="root">
-      <header class="shell-header">
-        <div style="font-weight:700;font-size:1.125rem">اسپاگتی پرینت</div>
-        <div style="font-size:0.875rem;opacity:0.85">کاتالوگ آنلاین</div>
-      </header>
-      <main class="shell-hero">
-        <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:0.25rem">Spaghetti · FDM</div>
-        <h1 style="font-size:1.5rem;font-weight:700;margin:0 0 0.5rem 0">کاتالوگ محصولات پیشنهادی</h1>
-        <div class="shell-grid">
-          <div class="shell-card"><div class="shell-img"></div></div>
-          <div class="shell-card"><div class="shell-img"></div></div>
-          <div class="shell-card"><div class="shell-img"></div></div>
-          <div class="shell-card"><div class="shell-img"></div></div>
-        </div>
-      </main>
-    </div>
+  <body class="bg-slate-900 text-white" dir="rtl">
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
