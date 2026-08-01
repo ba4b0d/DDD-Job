@@ -30,9 +30,6 @@ export default function CatalogLayout({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getBlogPosts()
-      .then(() => setBlogEnabled(true))
-      .catch(() => setBlogEnabled(false));
     getCatalogCategories()
       .then((res) => setCatTree(Array.isArray(res.data) ? res.data : []))
       .catch(() => {});
