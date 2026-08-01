@@ -18,62 +18,7 @@ from app.calculator import calculate_product_costs, calculate_product_costs_from
 from app.cache import get_settings_dict
 from app.routers.stats import invalidate_stats
 from app.routers.auth import require_admin
-
-# Magic byte signatures for image validation
-IMAGE_MAGIC_BYTES = {
-    ".jpg": [(b"\xff\xd8\xff", "image/jpeg")],
-    ".jpeg": [(b"\xff\xd8\xff", "image/jpeg")],
-    ".png": [(b"\x89PNG\r\n\x1a\n", "image/png")],
-    ".gif": [(b"GIF87a", "image/gif"), (b"GIF89a", "image/gif")],
-    ".webp": [(b"RIFF", "image/webp")],  # RIFF....WEBP
-}
-
-
-def _validate_image_bytes(content: bytes, content_type: str) -> str | None:
-    """Validate image by magic bytes. Returns extension or None."""
-    if len(content) < 12:
-        return None
-    for ext, signatures in IMAGE_MAGIC_BYTES.items():
-        for magic, _ in signatures:
-            if content.startswith(magic):
-                # Special check for WEBP: RIFF header + WEBP fourcc
-                if ext == ".webp":
-                    if content[8:12] == b"WEBP":
-                        return ext
-                    break
-                return ext
-    return None
-
-
-def _process_and_save_image(content: bytes, orig_ext: str, upload_dir: str) -> str:
-    """Save image as optimized WebP (or GIF) resized to max 1200px. Returns filename."""
-    if orig_ext == ".gif":
-        filename = f"{uuid.uuid4().hex}.gif"
-        filepath = os.path.join(upload_dir, filename)
-        with open(filepath, "wb") as f:
-            f.write(content)
-        return filename
-
-    try:
-        from PIL import Image
-        im = Image.open(io.BytesIO(content))
-        if im.mode in ("RGBA", "P"):
-            im = im.convert("RGBA")
-        else:
-            im = im.convert("RGB")
-        im.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
-        filename = f"{uuid.uuid4().hex}.webp"
-        filepath = os.path.join(upload_dir, filename)
-        im.save(filepath, "WEBP", quality=82, optimize=True)
-        return filename
-    except Exception as err:
-        logger.warning("Pillow WebP conversion failed, falling back to original: %s", err)
-        filename = f"{uuid.uuid4().hex}{orig_ext}"
-        filepath = os.path.join(upload_dir, filename)
-        with open(filepath, "wb") as f:
-            f.write(content)
-        return filename
-
+from app.services.image import validate_image_bytes as _validate_image_bytes, process_and_save_image as _process_and_save_image
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)

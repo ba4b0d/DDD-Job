@@ -499,21 +499,8 @@ export default function Catalog() {
                     className="relative overflow-hidden"
                     style={{ background: 'var(--bg-tertiary)' }}
                   >
-                    {product.images?.length > 0 ? (
-                      <CatalogImageCarousel images={product.images} name={product.name} priority={idx < 2} />
-                    ) : product.image_url ? (
-                      <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
-                        <img
-                          src={product.image_url}
-                          alt={displayName(product.name)}
-                          width={320}
-                          height={320}
-                          decoding="async"
-                          className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-                          loading={idx < 2 ? 'eager' : 'lazy'}
-                          fetchPriority={idx < 2 ? 'high' : 'auto'}
-                        />
-                      </div>
+                    {product.images?.length > 0 || product.image_url ? (
+                      <CatalogImageCarousel images={product.images} imageUrl={product.image_url} name={product.name} priority={idx < 2} />
                     ) : (
                       <div className="w-full aspect-square flex flex-col items-center justify-center gap-2 catalog-img-placeholder">
                         <Package size={32} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
