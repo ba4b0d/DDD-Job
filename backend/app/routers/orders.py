@@ -339,10 +339,10 @@ def update_order(request: Request,
             data["quoted_price"] = round(data["unit_cost"] * markup, 2)
 
     # Validate paid_amount ≤ total
-    qty = data.get("qty", order.qty) or 1
-    quoted = data.get("quoted_price", order.quoted_price) or 0
+    qty = data["qty"] if "qty" in data and data["qty"] is not None else (order.qty or 1)
+    quoted = data["quoted_price"] if "quoted_price" in data and data["quoted_price"] is not None else (order.quoted_price or 0.0)
     total = round(quoted * qty, 2)
-    paid = data.get("paid_amount", order.paid_amount) or 0
+    paid = data["paid_amount"] if "paid_amount" in data and data["paid_amount"] is not None else (order.paid_amount or 0.0)
     if paid > total:
         raise HTTPException(status_code=400, detail=f"مبلغ پرداختی ({paid}) از کل سفارش ({total}) بیشتر است")
 

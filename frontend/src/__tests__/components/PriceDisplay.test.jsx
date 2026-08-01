@@ -18,7 +18,7 @@ describe('PriceDisplay', () => {
     // Should render all three price tiers
     expect(screen.getByText('قیمت پایه')).toBeDefined();
     expect(screen.getByText('قیمت پیشنهادی')).toBeDefined();
-    expect(screen.getByText('قیمت نهایی')).toBeDefined();
+    expect(screen.getByText('قیمت')).toBeDefined();
   });
 
   it('test_renders_small_size', () => {

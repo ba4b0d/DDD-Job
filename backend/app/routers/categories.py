@@ -110,8 +110,10 @@ def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_any_
     if body.sort_order is not None:
         cat.sort_order = body.sort_order
 
-    # Handle parent_id: None = top-level, int = set parent
-    if body.parent_id is not None:
+    # Handle parent_id: 0 = top-level (None), >0 = set parent
+    if body.parent_id == 0:
+        cat.parent_id = None
+    elif body.parent_id is not None and body.parent_id > 0:
         # Prevent setting self as parent
         if body.parent_id == cat_id:
             raise HTTPException(status_code=400, detail="یک دسته‌بندی نمی‌تواند والد خودش باشد")
@@ -119,8 +121,6 @@ def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_any_
         if not parent:
             raise HTTPException(status_code=400, detail="دسته‌بندی والد یافت نشد")
         cat.parent_id = body.parent_id
-    elif body.parent_id is not None and body.parent_id == 0:
-        cat.parent_id = None  # 0 means top-level
 
     db.commit()
     return {"message": "دسته‌بندی به‌روزرسانی شد"}
