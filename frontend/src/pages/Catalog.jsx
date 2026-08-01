@@ -5,7 +5,7 @@ import { getCatalog, getCatalogCategories } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd } from '../lib/seo';
 
-function CatalogImageCarousel({ images, name }) {
+function CatalogImageCarousel({ images, name, priority = false }) {
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -46,7 +46,8 @@ function CatalogImageCarousel({ images, name }) {
           src={sorted[0].image_url}
           alt={name || ''}
           className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
         />
       </div>
     );
@@ -63,7 +64,8 @@ function CatalogImageCarousel({ images, name }) {
         src={sorted[current].image_url}
         alt={name || ''}
         className="w-full h-full object-contain transition-transform duration-700"
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
       />
       <button
               type="button"
@@ -492,14 +494,15 @@ export default function Catalog() {
                     style={{ background: 'var(--bg-tertiary)' }}
                   >
                     {product.images?.length > 0 ? (
-                      <CatalogImageCarousel images={product.images} name={product.name} />
+                      <CatalogImageCarousel images={product.images} name={product.name} priority={idx < 2} />
                     ) : product.image_url ? (
                       <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
                         <img
                           src={product.image_url}
                           alt={displayName(product.name)}
                           className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
-                          loading="lazy"
+                          loading={idx < 2 ? 'eager' : 'lazy'}
+                          fetchPriority={idx < 2 ? 'high' : 'auto'}
                         />
                       </div>
                     ) : (
