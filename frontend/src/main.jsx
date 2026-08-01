@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { applyDynamicBranding } from './lib/branding';
+import './fonts.css';
 import './index.css';
 
 // Apply favicon/logo from backend settings (if set) — public endpoint, no auth required

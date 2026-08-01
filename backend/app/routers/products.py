@@ -45,6 +45,36 @@ def _validate_image_bytes(content: bytes, content_type: str) -> str | None:
     return None
 
 
+def _process_and_save_image(content: bytes, orig_ext: str, upload_dir: str) -> str:
+    """Save image as optimized WebP (or GIF) resized to max 1200px. Returns filename."""
+    if orig_ext == ".gif":
+        filename = f"{uuid.uuid4().hex}.gif"
+        filepath = os.path.join(upload_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        return filename
+
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(content))
+        if im.mode in ("RGBA", "P"):
+            im = im.convert("RGBA")
+        else:
+            im = im.convert("RGB")
+        im.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+        filename = f"{uuid.uuid4().hex}.webp"
+        filepath = os.path.join(upload_dir, filename)
+        im.save(filepath, "WEBP", quality=82, optimize=True)
+        return filename
+    except Exception as err:
+        logger.warning("Pillow WebP conversion failed, falling back to original: %s", err)
+        filename = f"{uuid.uuid4().hex}{orig_ext}"
+        filepath = os.path.join(upload_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        return filename
+
+
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -474,10 +504,7 @@ async def upload_product_images(
         if not ext:
             raise HTTPException(status_code=400, detail="فایل نامعتبر است. فقط JPEG, PNG, WebP, GIF مجاز است")
 
-        filename = f"{uuid.uuid4().hex}{ext}"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        with open(filepath, "wb") as buffer:
-            buffer.write(content)
+        filename = _process_and_save_image(content, ext, UPLOAD_DIR)
 
         max_order = db.query(ProductImage).filter(ProductImage.product_id == product_id).count()
         img = ProductImage(

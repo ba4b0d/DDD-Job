@@ -10,3 +10,4 @@ python-dotenv>=1.0.0
 slowapi>=0.1.9
 requests>=2.31.0
 PySocks>=1.7.1
+Pillow>=10.0.0

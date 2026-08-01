@@ -205,9 +205,7 @@ async def upload_blog_cover(
         raise HTTPException(status_code=400, detail="حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد")
 
     real_ext = validate_image_magic_bytes(contents)
-    filename = f"{uuid.uuid4().hex}{real_ext}"
-    filepath = os.path.join(BLOG_UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(contents)
+    from app.routers.products import _process_and_save_image
+    filename = _process_and_save_image(contents, real_ext, BLOG_UPLOAD_DIR)
 
     return {"url": f"/uploads/blog/{filename}"}

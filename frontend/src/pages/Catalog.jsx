@@ -319,15 +319,18 @@ export default function Catalog() {
       <div className="catalog-hero-row">
         <section className="catalog-hero catalog-hero--main overflow-hidden rounded-[1.35rem]">
               <div className="catalog-hero-media">
-                <img
-                  src="/catalog-hero.jpg"
-                  alt=""
-                  className="catalog-hero-photo"
-                  width={1024}
-                  height={572}
-                  decoding="async"
-                  fetchPriority="high"
-                />
+                <picture>
+                  <source srcSet="/catalog-hero.webp" type="image/webp" />
+                  <img
+                    src="/catalog-hero.jpg"
+                    alt=""
+                    className="catalog-hero-photo"
+                    width={1024}
+                    height={572}
+                    decoding="async"
+                    fetchPriority="high"
+                  />
+                </picture>
                 <div className="catalog-hero-scrim" aria-hidden="true" />
               </div>
 
