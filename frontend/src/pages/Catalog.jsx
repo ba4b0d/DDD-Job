@@ -45,6 +45,9 @@ function CatalogImageCarousel({ images, name, priority = false }) {
         <img
           src={sorted[0].image_url}
           alt={name || ''}
+          width={320}
+          height={320}
+          decoding="async"
           className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
@@ -63,6 +66,9 @@ function CatalogImageCarousel({ images, name, priority = false }) {
       <img
         src={sorted[current].image_url}
         alt={name || ''}
+        width={320}
+        height={320}
+        decoding="async"
         className="w-full h-full object-contain transition-transform duration-700"
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
@@ -500,6 +506,9 @@ export default function Catalog() {
                         <img
                           src={product.image_url}
                           alt={displayName(product.name)}
+                          width={320}
+                          height={320}
+                          decoding="async"
                           className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
                           loading={idx < 2 ? 'eager' : 'lazy'}
                           fetchPriority={idx < 2 ? 'high' : 'auto'}
