@@ -4,6 +4,7 @@ from app.database import get_db
 from app.models import Machine
 from app.schemas import MachineCreate, MachineUpdate, MachineResponse
 from app.routers.stats import invalidate_stats
+from app.routers.auth import require_admin
 
 router = APIRouter(prefix="/api/v1/machines", tags=["machines"])
 
@@ -21,7 +22,7 @@ def get_active_machines(db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=MachineResponse, status_code=201)
-def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
+def create_machine(machine: MachineCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
     data = machine.model_dump()
     if data.get("is_default"):
         db.query(Machine).update({"is_default": False})
@@ -34,7 +35,7 @@ def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{machine_id}", response_model=MachineResponse)
-def update_machine(machine_id: int, machine: MachineUpdate, db: Session = Depends(get_db)):
+def update_machine(machine_id: int, machine: MachineUpdate, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Machine).filter(Machine.id == machine_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Machine not found")
@@ -50,7 +51,7 @@ def update_machine(machine_id: int, machine: MachineUpdate, db: Session = Depend
 
 
 @router.post("/{machine_id}/set-default", response_model=MachineResponse)
-def set_default_machine(machine_id: int, db: Session = Depends(get_db)):
+def set_default_machine(machine_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Machine).filter(Machine.id == machine_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Machine not found")
@@ -63,7 +64,7 @@ def set_default_machine(machine_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{machine_id}")
-def delete_machine(machine_id: int, db: Session = Depends(get_db)):
+def delete_machine(machine_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Machine).filter(Machine.id == machine_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Machine not found")

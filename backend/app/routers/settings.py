@@ -61,7 +61,7 @@ def get_public_settings(db: Session = Depends(get_db)):
 
 @router.put("")
 @limiter.limit("20/minute")
-def update_settings(request: Request, payload: SettingsBulkUpdate, db: Session = Depends(get_db)):
+def update_settings(request: Request, payload: SettingsBulkUpdate, user=Depends(require_admin), db: Session = Depends(get_db)):
     """Update one or more settings by key."""
     updated = []
     for item in payload.settings:
@@ -104,8 +104,12 @@ def _is_valid_image_header(contents: bytes, ext: str) -> bool:
     elif ext in (".ico",):
         return contents.startswith(b"\x00\x00\x01\x00") or contents.startswith(b"\x00\x00\x02\x00")
     elif ext in (".svg",):
-        snippet = contents[:500].decode("utf-8", errors="ignore").lower()
-        return "<svg" in snippet
+        snippet = contents.decode("utf-8", errors="ignore").lower()
+        if "<svg" not in snippet[:1000]:
+            return False
+        # Reject executable scripts or event handlers in SVG to prevent Stored XSS
+        disallowed = ("<script", "javascript:", "onload=", "onerror=", "onclick=", "onmouseover=", "onfocus=")
+        return not any(tag in snippet for tag in disallowed)
     return False
 
 

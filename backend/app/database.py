@@ -15,6 +15,11 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 # Enable WAL mode for better concurrent reads + writes.
 # Tolerate permission errors (e.g. mounted volume owned by a different
 # user) so the app still boots — WAL is an optimization, not a hard
@@ -26,7 +31,7 @@ def _enable_wal():
             conn.execute(text("PRAGMA synchronous=NORMAL"))
             conn.execute(text("PRAGMA foreign_keys=ON"))
     except Exception as exc:
-        print(f"[WARN] Could not enable SQLite WAL mode: {exc}")
+        logger.warning("Could not enable SQLite WAL mode: %s", exc)
 
 _enable_wal()
 
@@ -39,20 +44,20 @@ def _migrate_orders():
             cols = {row[1] for row in conn.execute(text("PRAGMA table_info(orders)"))}
             if "qty" not in cols:
                 conn.execute(text("ALTER TABLE orders ADD COLUMN qty INTEGER NOT NULL DEFAULT 1"))
-                print("[MIGRATE] Added orders.qty")
+                logger.info("Added orders.qty column")
             if "unit_cost" not in cols:
                 conn.execute(text("ALTER TABLE orders ADD COLUMN unit_cost FLOAT"))
-                print("[MIGRATE] Added orders.unit_cost")
+                logger.info("Added orders.unit_cost column")
             if "delivered_at" not in cols:
                 conn.execute(text("ALTER TABLE orders ADD COLUMN delivered_at DATETIME"))
-                print("[MIGRATE] Added orders.delivered_at")
+                logger.info("Added orders.delivered_at column")
             # Add index on customer_name if missing
             indexes = {row[1] for row in conn.execute(text("PRAGMA index_list(orders)"))}
             if "ix_orders_customer_name" not in indexes:
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_customer_name ON orders (customer_name)"))
-                print("[MIGRATE] Added ix_orders_customer_name")
+                logger.info("Added ix_orders_customer_name index")
     except Exception as exc:
-        print(f"[WARN] Order migration skipped: {exc}")
+        logger.warning("Order migration skipped: %s", exc)
 
 _migrate_orders()
 

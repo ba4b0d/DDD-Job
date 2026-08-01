@@ -184,12 +184,16 @@ export default function Orders() {
   }, [load]);
 
   useEffect(() => {
-    getProductsAll({ signal: new AbortController().signal })
+    const controller = new AbortController();
+    getProductsAll({ signal: controller.signal })
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : res.data?.items ?? res.data?.products ?? [];
         setProducts(list.filter((p) => p.is_active));
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') return;
+      });
+    return () => controller.abort();
   }, []);
 
   const openCreate = () => {

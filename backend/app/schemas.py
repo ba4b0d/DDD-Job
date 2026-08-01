@@ -367,7 +367,7 @@ class OrderUpdate(BaseModel):
     qty: Optional[int] = Field(default=None, ge=1)
     quoted_price: Optional[float] = Field(default=None, ge=0)
     paid_amount: Optional[float] = Field(default=None, ge=0)
-    status: Optional[str] = Field(default=None, exclude=True)
+    status: Optional[str] = None
     notes: Optional[str] = None
     started_at: Optional[date] = None
     ready_by: Optional[date] = None
@@ -391,12 +391,6 @@ class OrderUpdate(BaseModel):
         if v not in ORDER_STATUS_VALUES:
             raise ValueError("وضعیت نامعتبر است")
         return v
-
-    @model_validator(mode="after")
-    def ensure_status_present(self):
-        if self.status is None:
-            self.status = "new"
-        return self
 
     @field_validator("started_at", "ready_by", mode="before")
     @classmethod

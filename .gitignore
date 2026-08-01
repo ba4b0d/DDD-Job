@@ -18,6 +18,13 @@ debug*.py
 
 # Database
 data/*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Temporary / scratch directories
+tmp/
+scratch/
 
 # Uploads
 backend/uploads/*

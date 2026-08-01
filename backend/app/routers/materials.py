@@ -21,7 +21,7 @@ def get_active_materials(db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=MaterialResponse, status_code=201)
-def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
+def create_material(material: MaterialCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
     # Uniqueness check: reject duplicate (name + color) combos
     if (
         db.query(Material)
@@ -41,7 +41,7 @@ def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{material_id}", response_model=MaterialResponse)
-def update_material(material_id: int, material: MaterialUpdate, db: Session = Depends(get_db)):
+def update_material(material_id: int, material: MaterialUpdate, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Material).filter(Material.id == material_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Material not found")
@@ -57,7 +57,7 @@ def update_material(material_id: int, material: MaterialUpdate, db: Session = De
 
 
 @router.post("/{material_id}/set-default", response_model=MaterialResponse)
-def set_default_material(material_id: int, db: Session = Depends(get_db)):
+def set_default_material(material_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Material).filter(Material.id == material_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Material not found")
@@ -70,7 +70,7 @@ def set_default_material(material_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{material_id}")
-def delete_material(material_id: int, db: Session = Depends(get_db)):
+def delete_material(material_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     existing = db.query(Material).filter(Material.id == material_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Material not found")

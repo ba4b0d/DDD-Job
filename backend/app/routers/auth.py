@@ -196,11 +196,18 @@ def logout(response: Response):
     return {"message": "خروج انجام شد"}
 
 
-@router.get("/verify")
-def verify(request: Request, db: Session = Depends(get_db)):
+def _extract_token_from_request(request: Request, credentials: HTTPAuthorizationCredentials = None) -> str:
     token = request.cookies.get(AUTH_COOKIE_NAME)
+    if not token and credentials:
+        token = credentials.credentials
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
+    return token
+
+
+@router.get("/verify")
+def verify(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    token = _extract_token_from_request(request, credentials)
     payload = verify_token(token)
     
     # Check if user must change password
@@ -215,11 +222,10 @@ def verify(request: Request, db: Session = Depends(get_db)):
     }
 
 @router.post("/refresh")
-def refresh_token(request: Request, response: Response):
+@limiter.limit("10/minute")
+def refresh_token(request: Request, response: Response, credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Issue a new token if the current one is valid and within REFRESH_WINDOW_HOURS of expiry."""
-    token = request.cookies.get(AUTH_COOKIE_NAME)
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = _extract_token_from_request(request, credentials)
     payload = verify_token(token)
 
     exp = payload.get("exp", 0)
@@ -322,7 +328,8 @@ def change_password(user_id: int, body: ChangePasswordRequest, user=Depends(requ
 
 
 @router.post("/change-my-password")
-def change_my_password(body: ChangePasswordRequest, user=Depends(get_current_user), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def change_my_password(request: Request, body: ChangePasswordRequest, user=Depends(get_current_user), db: Session = Depends(get_db)):
     """Allow any user to change their own password (for forced password change)."""
     target = db.query(User).filter(User.id == int(user["sub"])).first()
     if not target:
