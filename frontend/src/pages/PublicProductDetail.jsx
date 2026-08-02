@@ -195,10 +195,10 @@ export default function PublicProductDetail() {
   }, [product]);
 
   useSEO({
-    title: productName || undefined,
+    title: productName ? `${productName} — خرید و سفارش با اسم و رنگ دلخواه` : undefined,
     description:
       (product?.notes && String(product.notes).trim()) ||
-      (productName ? `مشاهده مشخصات و قیمت ${productName} — چاپ سه‌بعدی اسپاگتی پرینت` : undefined),
+      (productName ? `مشاهده مشخصات، قیمت و سفارش ${productName} با قابلیت شخصی‌سازی رنگ، ابعاد و حک اسم دلخواه در اسپاگتی پرینت` : undefined),
     image: productImage ? absoluteUrl(productImage) : undefined,
     url: product?.slug ? absoluteUrl(`/catalog/${product.slug}`) : undefined,
     jsonLd,
@@ -363,6 +363,21 @@ export default function PublicProductDetail() {
               <div className="text-2xl font-bold tabular-nums" style={{ color: 'var(--accent)' }}>
                 {price ? formatPrice(price) : 'تماس بگیرید'}
               </div>
+            </div>
+          </div>
+
+          {/* Customization Callout */}
+          <div
+            className="p-3.5 rounded-xl border flex items-center gap-3 text-xs leading-relaxed"
+            style={{
+              backgroundColor: 'rgba(99, 102, 241, 0.08)',
+              borderColor: 'rgba(99, 102, 241, 0.25)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <span className="text-base select-none">🎨</span>
+            <div>
+              <strong>امکان شخصی‌سازی سفارش:</strong> این محصول قابلیت تغییر رنگ، ابعاد یا اضافه کردن اسم و متن دلخواه را دارد.
             </div>
           </div>
 

@@ -144,8 +144,8 @@ function displayName(name) {
 
 export default function Catalog() {
   useSEO({
-    title: 'کاتالوگ محصولات',
-    description: 'مشاهده محصولات چاپ سه‌بعدی اسپاگتی پرینت — قیمت، مشخصات و سفارش',
+    title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
+    description: 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سه‌بعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف',
     jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
   });
 
@@ -342,12 +342,15 @@ export default function Catalog() {
                   <Sparkles size={12} />
                   Spaghetti · FDM
                 </div>
-                <h2
+                <h1
                   className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  کاتالوگ محصولات پیشنهادی
-                </h2>
+                  خدمات پرینت سه‌بعدی و کاتالوگ محصولات
+                </h1>
+                <p className="text-xs sm:text-sm opacity-90 mt-1 max-w-lg" style={{ color: 'var(--text-secondary)' }}>
+                  سفارش آنلاین قطعات سفارشی با عکس یا STL + شخصی‌سازی کامل رنگ و ابعاد محصولات کاتالوگ
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
                     {products.length} محصول

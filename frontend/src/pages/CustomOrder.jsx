@@ -50,8 +50,8 @@ const STEPS = [
 
 export default function CustomOrder() {
   useSEO({
-    title: 'سفارش طرح دلخواه',
-    description: 'راهنمای سفارش طرح دلخواه و سفارشی از اسپاگتی پرینت',
+    title: 'سفارش قطعه و طرح دلخواه | پرینت سه بعدی سفارشی',
+    description: 'راهنمای سفارش چاپ سه‌بعدی سفارشی، ارسال فایل STL یا عکس قطعه شکسته و استعلام قیمت پرینت 3 بعدی در اسپاگتی پرینت',
     jsonLd: buildWebSiteJsonLd(),
   });
 
