@@ -13,13 +13,17 @@ export async function applyDynamicBranding() {
     const logoUrl = settings.logo_url;
 
     if (faviconUrl) {
-      let link = document.querySelector("link[rel*='icon']");
-      if (!link) {
-        link = document.createElement('link');
+      let links = document.querySelectorAll("link[rel*='icon']");
+      if (links.length === 0) {
+        const link = document.createElement('link');
         link.rel = 'icon';
+        link.href = faviconUrl;
         document.head.appendChild(link);
+      } else {
+        links.forEach((link) => {
+          link.href = faviconUrl;
+        });
       }
-      link.href = faviconUrl;
     }
 
     if (logoUrl) {
