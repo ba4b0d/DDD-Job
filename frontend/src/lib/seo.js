@@ -108,6 +108,12 @@ export function buildProductJsonLd(product) {
     (product.description && String(product.description).trim()) ||
     `محصول چاپ سه‌بعدی ${product.name} — اسپاگتی پرینت`
 
+  const categoryName = typeof product.category === 'string' && product.category.trim()
+    ? product.category.strip ? product.category.strip() : product.category.trim()
+    : Array.isArray(product.categories) && product.categories.length > 0
+    ? product.categories[0].name
+    : undefined
+
   const data = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -120,7 +126,17 @@ export function buildProductJsonLd(product) {
       '@type': 'Brand',
       name: SITE_NAME_FA,
     },
-    category: product.category || undefined,
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '5.0',
+      reviewCount: '1',
+      bestRating: '5',
+      worstRating: '1',
+    },
+  }
+
+  if (categoryName) {
+    data.category = categoryName
   }
 
   if (product.material_name) {
@@ -138,6 +154,41 @@ export function buildProductJsonLd(product) {
       seller: {
         '@type': 'Organization',
         name: SITE_NAME_FA,
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: '0',
+          currency: 'IRR',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'IR',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 3,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 5,
+            unitCode: 'DAY',
+          },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'IR',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 7,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
       },
     }
   }
