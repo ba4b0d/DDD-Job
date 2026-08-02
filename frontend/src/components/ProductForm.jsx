@@ -262,6 +262,26 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <textarea name="notes" value={form.notes} onChange={handleChange} className="input-field" rows={3} placeholder="توضیحات کامل محصول جهت نمایش در سایت و سئو..." />
       </FormField>
 
+      <FormField label="نام کالکشن / مجموعه" name="collection_tag">
+        <input
+          type="text"
+          value={(() => {
+            const raw = (form.tags || '').split(',').map(s => s.trim()).filter(Boolean);
+            const found = raw.find(t => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
+            return found || '';
+          })()}
+          onChange={(e) => {
+            const val = e.target.value.trim();
+            const raw = (form.tags || '').split(',').map(s => s.trim()).filter(Boolean);
+            const nonColl = raw.filter(t => !t.includes('کالکشن') && !t.includes('مجموعه') && !t.includes('بافتنی') && !t.includes('فلکسی'));
+            const updated = val ? [val, ...nonColl] : nonColl;
+            setForm(prev => ({ ...prev, tags: updated.join(', ') }));
+          }}
+          className="input-field"
+          placeholder="مثلاً: کالکشن حیوانات بافتنی یا کالکشن ارباب حلقه‌ها"
+        />
+      </FormField>
+
       <FormField label="برچسب‌ها (با کاما جدا کنید)" name="tags" value={form.tags || ''} onChange={handleChange}>
         <input type="text" name="tags" value={form.tags || ''} onChange={handleChange} className="input-field" placeholder="مثلاً: keychain, gift, pet" />
       </FormField>
