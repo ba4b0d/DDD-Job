@@ -99,8 +99,8 @@ export default function Collections() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">مدیریت کالکشن‌ها</h2>
-          <p className="text-sm text-gray-400">دسته‌بندی و ایجاد مجموعه‌های اختصاصی برای کاتالوگ</p>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>مدیریت کالکشن‌ها</h2>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>دسته‌بندی و ایجاد مجموعه‌های اختصاصی برای کاتالوگ</p>
         </div>
         <button onClick={openCreate} className="btn-primary flex items-center gap-2">
           <Plus size={18} />
@@ -115,11 +115,11 @@ export default function Collections() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">در حال بارگذاری...</div>
+        <div className="text-center py-12 text-[var(--text-muted)]">در حال بارگذاری...</div>
       ) : collections.length === 0 ? (
-        <div className="card p-12 text-center text-gray-400 space-y-3">
+        <div className="card p-12 text-center text-[var(--text-muted)] space-y-3">
           <Package size={40} className="mx-auto opacity-50" />
-          <p className="font-semibold text-base">هنوز کالکشنی تعریف نشده است</p>
+          <p className="font-semibold text-base text-[var(--text-primary)]">هنوز کالکشنی تعریف نشده است</p>
           <button onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
             <Plus size={16} />
             ایجاد اولین کالکشن
@@ -131,15 +131,15 @@ export default function Collections() {
             <div key={coll.id} className="card p-5 flex flex-col justify-between gap-4">
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-lg font-bold text-white">{coll.name}</h3>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">{coll.name}</h3>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent/20 text-accent">
                     {coll.product_count} محصول
                   </span>
                 </div>
                 {coll.description && (
-                  <p className="text-sm text-gray-400 line-clamp-2">{coll.description}</p>
+                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{coll.description}</p>
                 )}
-                <div className="mt-3 text-xs text-gray-500 font-mono">
+                <div className="mt-3 text-xs text-[var(--text-muted)] font-mono">
                   اسلاگ: /collections/{coll.slug}
                 </div>
               </div>
@@ -178,7 +178,7 @@ export default function Collections() {
             )}
 
             <div>
-              <label className="block text-xs font-medium mb-1 text-gray-300">نام کالکشن</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>نام کالکشن</label>
               <input
                 type="text"
                 required
@@ -190,7 +190,7 @@ export default function Collections() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1 text-gray-300">توضیحات</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>توضیحات</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -202,14 +202,14 @@ export default function Collections() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-medium text-gray-300">
+                <label className="block text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
                   انتخاب محصولات کالکشن ({form.product_ids?.length || 0} انتخاب‌شده)
                 </label>
               </div>
 
               {/* Search filter for products */}
               <div className="relative mb-2">
-                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type="search"
                   value={productSearch}
@@ -219,9 +219,9 @@ export default function Collections() {
                 />
               </div>
 
-              <div className="max-h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl p-2 space-y-1 bg-[var(--bg-secondary)]">
+              <div className="max-h-48 overflow-y-auto border rounded-xl p-2 space-y-1" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
                 {filteredProducts.length === 0 ? (
-                  <p className="text-xs text-gray-500 text-center py-4">محصولی یافت نشد</p>
+                  <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>محصولی یافت نشد</p>
                 ) : (
                   filteredProducts.map((p) => {
                     const isSelected = form.product_ids?.includes(p.id);
@@ -229,18 +229,26 @@ export default function Collections() {
                       <div
                         key={p.id}
                         onClick={() => toggleProductSelection(p.id)}
-                        className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer select-none transition-colors ${
-                          isSelected ? 'bg-accent/20 border border-accent/40 text-white' : 'hover:bg-white/5 text-gray-300'
-                        }`}
+                        className="flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer select-none transition-colors border"
+                        style={{
+                          backgroundColor: isSelected ? 'var(--accent-light)' : 'var(--bg-card)',
+                          borderColor: isSelected ? 'var(--accent)' : 'var(--border-color)',
+                          color: 'var(--text-primary)',
+                        }}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                            isSelected ? 'bg-accent border-accent text-white' : 'border-gray-600'
-                          }`}>
+                          <div
+                            className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
+                            style={{
+                              backgroundColor: isSelected ? 'var(--accent)' : 'transparent',
+                              borderColor: isSelected ? 'var(--accent)' : 'var(--border-color)',
+                              color: '#ffffff',
+                            }}
+                          >
                             {isSelected && <Check size={12} />}
                           </div>
-                          <span className="truncate">{p.name}</span>
-                          {p.product_id && <span className="text-[10px] text-gray-500 font-mono">({p.product_id})</span>}
+                          <span className="truncate font-medium">{p.name}</span>
+                          {p.product_id && <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>({p.product_id})</span>}
                         </div>
                       </div>
                     );

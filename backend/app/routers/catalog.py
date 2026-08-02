@@ -65,6 +65,7 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "name": product.name,
         "category": product.category,  # Keep for backward compat
         "categories": [{"id": c.id, "name": c.name} for c in (product.categories or [])],
+        "collections": [{"id": c.id, "name": c.name, "slug": c.slug} for c in (product.collections or [])],
         "machine_name": machine_name,
         "material_name": material_name,
         "material_color": material_color,
