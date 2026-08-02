@@ -99,7 +99,7 @@ from app.routers.auth import limiter
 @limiter.limit("60/minute")
 def get_catalog(request: Request, db: Session = Depends(get_db)):
     """Public endpoint — return active products for the customer catalog."""
-    products = db.query(Product).options(selectinload(Product.images), selectinload(Product.categories)).filter(Product.is_active == True).all()
+    products = db.query(Product).options(selectinload(Product.images), selectinload(Product.categories), selectinload(Product.collections)).filter(Product.is_active == True).all()
     machines_dict, materials_dict = _batch_load_related(db)
     settings = get_settings_dict(db)
     return [_catalog_product(p, machines_dict, materials_dict, settings) for p in products]
