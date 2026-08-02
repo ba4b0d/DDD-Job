@@ -165,12 +165,12 @@ export default function Collections() {
         </div>
       )}
 
-      {showModal && (
-        <Modal
-          title={editing ? 'ویرایش کالکشن' : 'کالکشن جدید'}
-          onClose={() => setShowModal(false)}
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <Modal
+        isOpen={showModal}
+        title={editing ? 'ویرایش کالکشن' : 'کالکشن جدید'}
+        onClose={() => setShowModal(false)}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444' }}>
                 {error}
@@ -263,7 +263,6 @@ export default function Collections() {
             </div>
           </form>
         </Modal>
-      )}
     </div>
   );
 }
