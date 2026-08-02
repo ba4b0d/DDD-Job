@@ -498,7 +498,7 @@ export default function Catalog() {
 
         {collections.length > 0 && (
           <div className="flex flex-col gap-3">
-            <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#ffffff' }}>
               <span>📦 کالکشن‌ها / مجموعه‌ها</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
