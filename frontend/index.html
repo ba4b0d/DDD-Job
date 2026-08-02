@@ -37,6 +37,37 @@
     <link rel="preload" href="/fonts/vazirmatn-0.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Default title before React hydrate — matches Catalog useSEO -->
     <title>اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سه‌بعدی سفارشی | Spaghetti Print</title>
+
+    <!-- Server-rendered JSON-LD (crawlable without JS) — overridden/merged per-page by useSEO after hydrate -->
+    <script type="application/ld+json" id="json-ld-static">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://spaghettiprints.ir/#organization",
+          "name": "اسپاگتی پرینت",
+          "alternateName": "Spaghetti Print",
+          "url": "https://spaghettiprints.ir/",
+          "logo": "https://spaghettiprints.ir/icon-512.png",
+          "description": "خدمات آنلاین پرینت و چاپ سه‌بعدی سفارشی، ساخت نمونه اولیه، قطعات و محصولات با قیمت شفاف",
+          "sameAs": [
+            "https://t.me/spaghetti_prints",
+            "https://instagram.com/spaghetti_prints"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://spaghettiprints.ir/#website",
+          "url": "https://spaghettiprints.ir/",
+          "name": "اسپاگتی پرینت",
+          "alternateName": "Spaghetti Print",
+          "inLanguage": "fa-IR",
+          "publisher": { "@id": "https://spaghettiprints.ir/#organization" }
+        }
+      ]
+    }
+    </script>
     <style>
       body {
         font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;

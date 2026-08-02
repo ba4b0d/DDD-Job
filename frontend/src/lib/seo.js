@@ -27,6 +27,22 @@ function setMeta(attr, key, content) {
   el.setAttribute('content', content)
 }
 
+function setCanonical(url) {
+  if (!url) return
+  let el = document.querySelector('link[rel="canonical"]')
+  if (!el) {
+    el = document.createElement('link')
+    el.setAttribute('rel', 'canonical')
+    document.head.appendChild(el)
+  }
+  el.setAttribute('href', url)
+}
+
+function clearCanonical() {
+  const el = document.querySelector('link[rel="canonical"]')
+  if (el) el.remove()
+}
+
 /**
  * Inject or replace a single JSON-LD script block in <head>.
  * Pass null/undefined/[] to remove.
@@ -215,6 +231,9 @@ export function useSEO({ title, description, image, url, jsonLd } = {}) {
 
     if (description) setMeta('name', 'description', description)
 
+    // Canonical — point to the clean slug URL passed in (or current URL)
+    setCanonical(ogUrl)
+
     setMeta('property', 'og:title', title || SITE_NAME)
     setMeta('property', 'og:description', description)
     setMeta('property', 'og:type', 'website')
@@ -235,6 +254,7 @@ export function useSEO({ title, description, image, url, jsonLd } = {}) {
     return () => {
       // Clear page-specific JSON-LD on unmount so SPA nav doesn't leak schemas
       if (jsonLd !== undefined) setJsonLd(null)
+      clearCanonical()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- compare jsonLd by value
   }, [title, description, image, url, JSON.stringify(jsonLd ?? null)])

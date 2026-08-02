@@ -197,6 +197,27 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
             f"  </url>"
         )
 
+    # Active collections → catalog tag-filter URLs
+    from app.models import Collection
+    collections = (
+        db.query(Collection)
+        .filter(Collection.is_active == True)
+        .order_by(Collection.sort_order, Collection.name)
+        .all()
+    )
+    for c in collections:
+        active_count = len([p for p in c.products if p.is_active])
+        if active_count == 0:
+            continue
+        urls.append(
+            f"  <url>\n"
+            f"    <loc>{base}/?tag={c.slug}</loc>\n"
+            f"    <lastmod>{now}</lastmod>\n"
+            f"    <changefreq>weekly</changefreq>\n"
+            f"    <priority>0.7</priority>\n"
+            f"  </url>"
+        )
+
     settings = get_settings_dict(db)
     if settings.get("enable_blog", 0.0) > 0:
         from app.models import BlogPost
