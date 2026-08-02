@@ -234,9 +234,28 @@ async def lifespan(app: FastAPI):
                     filled += 1
                 db.commit()
                 print(f"Backfilled slug for {filled} product(s).")
+
+            # Migration: transfer simple quantity notes (e.g. "1 عدد", "6 عدد به همراه نگهدارنده") from notes to package_info
+            products_with_notes = (
+                db.query(Product)
+                .filter(Product.notes != None, Product.notes != "")  # noqa: E711
+                .all()
+            )
+            transferred = 0
+            for p in products_with_notes:
+                val = (p.notes or "").strip()
+                if val and not (p.package_info or "").strip():
+                    import re
+                    if re.match(r"^\d+\s*عدد(\s*به\s*همراه\s*.+)?$", val, flags=re.IGNORECASE):
+                        p.package_info = val
+                        p.notes = ""
+                        transferred += 1
+            if transferred:
+                db.commit()
+                print(f"Transferred quantity notes to package_info for {transferred} product(s).")
         except Exception as e:
             db.rollback()
-            print(f"Slug backfill skipped: {e}")
+            print(f"Migration / backfill skipped: {e}")
 
     finally:
         db.close()
