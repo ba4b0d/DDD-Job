@@ -71,6 +71,14 @@ async def lifespan(app: FastAPI):
         # Ensure default admin exists (one-time, at startup)
         _ensure_default_admin(db)
 
+        inspector = inspect(engine)
+        product_cols = {c["name"] for c in inspector.get_columns("products")} if "products" in inspector.get_table_names() else set()
+        if "products" in inspector.get_table_names() and "package_info" not in product_cols:
+            print("Adding products.package_info column...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN package_info VARCHAR DEFAULT ''"))
+            print("Added products.package_info column.")
+
         # Migration: create product_images table if not exists
         inspector = inspect(engine)
         if "product_images" not in inspector.get_table_names():
@@ -199,11 +207,6 @@ async def lifespan(app: FastAPI):
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE products ADD COLUMN tags VARCHAR DEFAULT ''"))
             print("Added products.tags column.")
-        if "package_info" not in product_cols:
-            print("Adding products.package_info column...")
-            with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE products ADD COLUMN package_info VARCHAR DEFAULT ''"))
-            print("Added products.package_info column.")
 
         # Backfill empty slugs from product names (Persian names → "product", "product-1", …)
         try:
