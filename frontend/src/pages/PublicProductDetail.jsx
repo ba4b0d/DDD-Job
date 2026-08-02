@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Send,
   MessageCircle,
+  Box,
 } from 'lucide-react';
 import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
 import { formatPrice } from '../lib/utils';
@@ -298,7 +299,12 @@ export default function PublicProductDetail() {
   }
 
   const price = product.final_price || product.suggested_price;
-  const hasNotes = product.notes?.trim?.();
+  const rawNotes = product.notes?.trim?.() || '';
+
+  // Extract simple quantity/set notes (e.g. "1 عدد", "6 عدد به همراه نگهدارنده") into a Spec Pill
+  const isSimpleQuantity = /^\d+\s*عدد(\s*به\s*همراه\s*.+)?$/i.test(rawNotes);
+  const packageQuantityNote = isSimpleQuantity ? rawNotes : null;
+  const descriptionText = isSimpleQuantity ? null : (rawNotes || null);
 
   const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
     .map((d) => Math.round(d || 0))
@@ -407,19 +413,22 @@ export default function PublicProductDetail() {
             {product.weight_g > 0 && (
               <InfoItem icon={Weight} label="وزن" value={product.weight_g} suffix="گرم" />
             )}
+            {packageQuantityNote && (
+              <InfoItem icon={Box} label="محتویات بسته" value={packageQuantityNote} />
+            )}
             {dimensionText && (
               <InfoItem icon={Ruler} label="ابعاد (طول × عرض × ارتفاع)" value={dimensionText} />
             )}
           </div>
 
-          {/* Notes */}
-          {hasNotes && (
+          {/* Notes / Description */}
+          {descriptionText && (
             <div className="space-y-3 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               <div>
                 <div className="text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
                   توضیحات
                 </div>
-                <p style={{ whiteSpace: 'pre-line' }}>{product.notes}</p>
+                <p style={{ whiteSpace: 'pre-line' }}>{descriptionText}</p>
               </div>
             </div>
           )}
