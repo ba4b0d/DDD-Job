@@ -85,6 +85,7 @@ class Product(Base):
     model_file = Column(String, nullable=True, default=None)  # 3MF/STL model file path
     category = Column(String, default="", index=True)
     notes = Column(String, default="")
+    package_info = Column(String, default="")
     is_active = Column(Boolean, default=True, index=True)
     slug = Column(String, unique=True, nullable=True, index=True)
     tags = Column(String, nullable=True, default="")  # comma-separated: 'keychain,gift,pet'

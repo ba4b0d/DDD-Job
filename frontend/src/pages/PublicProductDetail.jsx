@@ -300,11 +300,12 @@ export default function PublicProductDetail() {
 
   const price = product.final_price || product.suggested_price;
   const rawNotes = product.notes?.trim?.() || '';
+  const rawPackageInfo = product.package_info?.trim?.() || '';
 
-  // Extract simple quantity/set notes (e.g. "1 عدد", "6 عدد به همراه نگهدارنده") into a Spec Pill
+  // Priority: explicit package_info column, fallback to regex extraction for legacy items
   const isSimpleQuantity = /^\d+\s*عدد(\s*به\s*همراه\s*.+)?$/i.test(rawNotes);
-  const packageQuantityNote = isSimpleQuantity ? rawNotes : null;
-  const descriptionText = isSimpleQuantity ? null : (rawNotes || null);
+  const packageQuantityNote = rawPackageInfo || (isSimpleQuantity ? rawNotes : null);
+  const descriptionText = isSimpleQuantity && !rawPackageInfo ? null : (rawNotes || null);
 
   const dims = [product.dimension_x, product.dimension_y, product.dimension_z]
     .map((d) => Math.round(d || 0))

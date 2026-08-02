@@ -144,6 +144,7 @@ class ProductCreate(BaseModel):
     final_price: Optional[float] = None
     category: str = ""
     notes: str = ""
+    package_info: Optional[str] = ""
     image_url: Optional[str] = None
     is_active: bool = True
     slug: Optional[str] = None
@@ -190,6 +191,7 @@ class ProductUpdate(BaseModel):
     final_price: Optional[float] = None
     category: Optional[str] = None
     notes: Optional[str] = None
+    package_info: Optional[str] = None
     image_url: Optional[str] = None
     is_active: Optional[bool] = None
     slug: Optional[str] = None
@@ -223,6 +225,7 @@ class ProductResponse(BaseModel):
     category: str = ""
     categories: list[dict] = []
     notes: str
+    package_info: Optional[str] = ""
     is_active: bool
     slug: Optional[str] = None
     tags: Optional[str] = None

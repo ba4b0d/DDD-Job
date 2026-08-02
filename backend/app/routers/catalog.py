@@ -78,6 +78,7 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "final_price": product.final_price,
         "image_url": product.image_url,
         "notes": getattr(product, "notes", None) or "",
+        "package_info": getattr(product, "package_info", None) or "",
         "created_at": getattr(product, "created_at", None),
         "slug": getattr(product, "slug", None),
         "tags": getattr(product, "tags", None),

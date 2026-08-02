@@ -55,7 +55,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
     name: '', product_id: '', category: '', material_id: '', machine_id: '',
     weight_g: '', support_g: '', flushed_g: '', post_pro_hours: '',
     dimension_x: '', dimension_y: '', dimension_z: '',
-    extras_cost: '', final_price: '', notes: '', tags: '',
+    extras_cost: '', final_price: '', notes: '', package_info: '', tags: '',
     ...initialData,
     print_time_minutes: initialData?.print_time_hours
       ? String(Math.round(initialData.print_time_hours * 60))
@@ -254,8 +254,12 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <FormField label="قیمت نهایی (تومان)" name="final_price" type="number" value={form.final_price} onChange={handleChange} placeholder="خالی = قیمت پیشنهادی" min="0" />
       </div>
 
-      <FormField label="یادداشت" name="notes" value={form.notes} onChange={handleChange}>
-        <textarea name="notes" value={form.notes} onChange={handleChange} className="input-field" rows={3} placeholder="توضیحات اضافی..." />
+      <FormField label="محتویات بسته (تعداد / اقلام)" name="package_info" value={form.package_info || ''} onChange={handleChange}>
+        <input type="text" name="package_info" value={form.package_info || ''} onChange={handleChange} className="input-field" placeholder="مثلاً: ۱ عدد یا ۶ عدد به همراه نگهدارنده" />
+      </FormField>
+
+      <FormField label="توضیحات و سئو" name="notes" value={form.notes} onChange={handleChange}>
+        <textarea name="notes" value={form.notes} onChange={handleChange} className="input-field" rows={3} placeholder="توضیحات کامل محصول جهت نمایش در سایت و سئو..." />
       </FormField>
 
       <FormField label="برچسب‌ها (با کاما جدا کنید)" name="tags" value={form.tags || ''} onChange={handleChange}>

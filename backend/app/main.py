@@ -199,6 +199,11 @@ async def lifespan(app: FastAPI):
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE products ADD COLUMN tags VARCHAR DEFAULT ''"))
             print("Added products.tags column.")
+        if "package_info" not in product_cols:
+            print("Adding products.package_info column...")
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE products ADD COLUMN package_info VARCHAR DEFAULT ''"))
+            print("Added products.package_info column.")
 
         # Backfill empty slugs from product names (Persian names → "product", "product-1", …)
         try:
