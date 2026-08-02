@@ -17,7 +17,7 @@ from app.schemas import (
 from app.calculator import calculate_product_costs, calculate_product_costs_from_dicts
 from app.cache import get_settings_dict
 from app.routers.stats import invalidate_stats
-from app.routers.auth import require_admin
+from app.routers.auth import require_admin, require_any_role
 from app.services.image import validate_image_bytes as _validate_image_bytes, process_and_save_image as _process_and_save_image
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
