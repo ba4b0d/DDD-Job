@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler, Send } from 'lucide-react';
-import { getCatalog, getCatalogCategories } from '../lib/api';
+import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd } from '../lib/seo';
 
@@ -150,6 +150,7 @@ export default function Catalog() {
   });
 
   const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -175,8 +176,9 @@ export default function Catalog() {
     const controller = new AbortController();
     const load = async () => {
       try {
-        const [pRes, cRes] = await Promise.all([getCatalog(), getCatalogCategories()]);
+        const [pRes, cRes, collRes] = await Promise.all([getCatalog(), getCatalogCategories(), getCatalogCollections()]);
         const pList = Array.isArray(pRes.data) ? pRes.data : [];
+        const collList = Array.isArray(collRes.data) ? collRes.data : [];
         // /catalog/categories returns tree [{id, name, children: [...]}]
         // Flatten tree for filter chips with depth info
         const flattenTree = (nodes, depth = 0) => {
@@ -193,6 +195,7 @@ export default function Catalog() {
         const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, count: null }));
         setProducts(pList);
         setCategories(catsList);
+        setCollections(collList);
         setError(null);
       } catch (err) {
         if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
@@ -490,6 +493,30 @@ export default function Catalog() {
                 {tag}
               </button>
             ))}
+          </div>
+        )}
+
+        {collections.length > 0 && (
+          <div className="flex flex-col gap-2 p-3 rounded-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+            <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+              <span>📦 کالکشن‌ها / مجموعه‌ها</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+              {collections.map((coll) => {
+                const isActive = activeTag === coll.slug || activeTag === coll.name;
+                return (
+                  <button
+                    key={coll.id}
+                    type="button"
+                    onClick={() => setActiveTag(isActive ? null : coll.slug)}
+                    className={`catalog-chip text-xs shrink-0 transition-all ${isActive ? 'catalog-chip-active' : ''}`}
+                  >
+                    <span>{coll.name}</span>
+                    <span className="text-[10px] opacity-75 font-mono">({coll.product_count})</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

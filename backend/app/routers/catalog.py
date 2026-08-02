@@ -105,6 +105,25 @@ def get_catalog(request: Request, db: Session = Depends(get_db)):
     return [_catalog_product(p, machines_dict, materials_dict, settings) for p in products]
 
 
+@router.get("/catalog/collections")
+def get_catalog_collections(db: Session = Depends(get_db)):
+    """Public endpoint — return active collections with product count for the customer catalog."""
+    from app.models import Collection
+    colls = db.query(Collection).filter(Collection.is_active == True).order_by(Collection.sort_order, Collection.name).all()
+    result = []
+    for c in colls:
+        p_count = len([p for p in c.products if p.is_active])
+        if p_count > 0:
+            result.append({
+                "id": c.id,
+                "name": c.name,
+                "slug": c.slug,
+                "description": c.description or "",
+                "product_count": p_count,
+            })
+    return result
+
+
 @router.get("/catalog/categories")
 def get_catalog_categories(db: Session = Depends(get_db)):
     """Public endpoint — return active categories as a tree for the customer catalog."""

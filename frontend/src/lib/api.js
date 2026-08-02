@@ -95,6 +95,7 @@ export const calculate = (data) => api.post('/calculate', data);
 const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
 export const getCatalog = () => publicApi.get('/catalog');
 export const getCatalogCategories = () => publicApi.get('/catalog/categories');
+export const getCatalogCollections = () => publicApi.get('/catalog/collections');
 export const getCatalogProduct = (productId) => publicApi.get(`/catalog/${productId}`);
 export const getCatalogProductBySlug = (slug) => publicApi.get(`/catalog/by-slug/${slug}`);
 export const getBlogPosts = () => publicApi.get('/blog');
