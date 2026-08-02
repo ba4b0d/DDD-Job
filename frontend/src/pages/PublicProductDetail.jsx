@@ -435,22 +435,11 @@ export default function PublicProductDetail() {
           )}
 
           {/* Collection Bundle / Playlist Widget */}
-          {((product.collections && product.collections.length > 0) || product.tags) && (() => {
-            let collName = null;
-            let collSlug = null;
-            let isTagFallback = false;
-
-            if (product.collections && product.collections.length > 0) {
-              collName = product.collections[0].name;
-              collSlug = product.collections[0].slug;
-            } else {
-              const rawTags = (product.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
-              collName = rawTags.find((t) => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
-              isTagFallback = true;
-            }
-
-            if (!collName) return null;
-            const targetLink = isTagFallback ? `/?tag=${encodeURIComponent(collName)}` : `/?collection=${encodeURIComponent(collSlug || collName)}`;
+          {product.collections && product.collections.length > 0 && (() => {
+            const coll = product.collections[0];
+            const collName = coll.name;
+            const collSlug = coll.slug;
+            const targetLink = `/?tag=${encodeURIComponent(collSlug || collName)}`;
 
             return (
               <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
