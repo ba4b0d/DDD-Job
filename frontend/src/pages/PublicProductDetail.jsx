@@ -434,6 +434,25 @@ export default function PublicProductDetail() {
             </div>
           )}
 
+          {/* Collection Bundle / Playlist Widget */}
+          {product.tags && (() => {
+            const rawTags = (product.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+            const collectionTag = rawTags.find((t) => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
+            if (!collectionTag) return null;
+            return (
+              <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                    📦 محصولات این کالکشن ({collectionTag})
+                  </span>
+                  <Link to={`/?tag=${encodeURIComponent(collectionTag)}`} className="text-accent hover:underline font-medium">
+                    مشاهده همه ←
+                  </Link>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* CTAs */}
           <div className="pt-4 mt-auto border-t flex flex-col sm:flex-row gap-3" style={{ borderColor: 'var(--border-color)' }}>
             <Link

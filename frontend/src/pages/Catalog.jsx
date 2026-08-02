@@ -159,14 +159,16 @@ export default function Catalog() {
     const cat = searchParams.get('category');
     return cat ? Number(cat) : null;
   });
-  const [activeTag, setActiveTag] = useState(null);
+  const [activeTag, setActiveTag] = useState(() => searchParams.get('tag') || null);
   const [sortBy, setSortBy] = useState('name');
 
-  // Sync activeCategory when URL ?category= param changes (e.g. from mega-menu navigate)
+  // Sync activeCategory & activeTag when URL params change
   useEffect(() => {
     const cat = searchParams.get('category');
     const num = cat ? Number(cat) : null;
+    const tag = searchParams.get('tag');
     setActiveCategory((prev) => (prev === num ? prev : num));
+    setActiveTag((prev) => (prev === tag ? prev : tag));
   }, [searchParams]);
 
   useEffect(() => {
