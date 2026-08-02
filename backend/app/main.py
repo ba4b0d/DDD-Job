@@ -253,6 +253,10 @@ async def lifespan(app: FastAPI):
             if transferred:
                 db.commit()
                 print(f"Transferred quantity notes to package_info for {transferred} product(s).")
+
+            # Migration: populate SEO descriptions for products without notes
+            from app.seo_descriptions import populate_seo_descriptions
+            populate_seo_descriptions(db)
         except Exception as e:
             db.rollback()
             print(f"Migration / backfill skipped: {e}")
