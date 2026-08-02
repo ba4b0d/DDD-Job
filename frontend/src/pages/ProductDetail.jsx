@@ -225,6 +225,11 @@ export default function ProductDetail() {
       value: product.post_pro_hours ? `${product.post_pro_hours} ساعت` : '—',
     },
     {
+      icon: Box,
+      label: 'محتویات بسته',
+      value: product.package_info || '—',
+    },
+    {
       icon: FileText,
       label: 'هزینه اضافی',
       value: product.extras_cost ? formatPrice(product.extras_cost) : '—',

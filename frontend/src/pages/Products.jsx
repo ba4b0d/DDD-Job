@@ -130,6 +130,7 @@ export default function Products() {
       extras_cost: data.extras_cost || 0,
       final_price: data.final_price || null,
       notes: data.notes || '',
+      package_info: data.package_info || '',
     };
     const res = await createProduct(payload);
     // DON'T close modal here — ProductForm handles image upload after this returns
