@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Package,
-  Clock,
   Weight,
   Layers,
   ChevronLeft,
@@ -13,7 +12,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
-import { formatPrice, formatMinutes } from '../lib/utils';
+import { formatPrice } from '../lib/utils';
 import { useSEO, buildProductJsonLd, buildBreadcrumbJsonLd, absoluteUrl } from '../lib/seo';
 
 function displayName(name) {
@@ -393,13 +392,6 @@ export default function PublicProductDetail() {
             {product.weight_g > 0 && (
               <InfoItem icon={Weight} label="وزن" value={product.weight_g} suffix="گرم" />
             )}
-            {product.print_time_hours > 0 && (
-              <InfoItem
-                icon={Clock}
-                label="زمان چاپ"
-                value={formatMinutes(product.print_time_hours * 60)}
-              />
-            )}
             {dimensionText && (
               <InfoItem icon={Ruler} label="ابعاد (طول × عرض × ارتفاع)" value={dimensionText} />
             )}
@@ -416,19 +408,6 @@ export default function PublicProductDetail() {
               </div>
             </div>
           )}
-
-          {/* Made-to-order note — on details card, above CTAs */}
-          <div
-            className="catalog-disclaimer"
-            role="note"
-            aria-label="توضیح زمان آماده‌سازی"
-          >
-            <Clock size={16} className="flex-shrink-0" aria-hidden="true" />
-            <p>
-              زمان چاپ فقط مدت چاپ سه‌بعدی است؛ محصول از قبل آماده نیست و پس از ثبت
-              سفارش ساخته می‌شود. زمان تحویل نهایی پس از تأیید مشخصات اعلام می‌شود.
-            </p>
-          </div>
 
           {/* CTAs */}
           <div className="pt-4 mt-auto border-t flex flex-col sm:flex-row gap-3" style={{ borderColor: 'var(--border-color)' }}>
