@@ -107,20 +107,31 @@ def get_catalog(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/catalog/collections")
 def get_catalog_collections(db: Session = Depends(get_db)):
-    """Public endpoint — return active collections with product count for the customer catalog."""
+    """Public endpoint — return active collections with product count and representative image for the customer catalog."""
     from app.models import Collection
     colls = db.query(Collection).filter(Collection.is_active == True).order_by(Collection.sort_order, Collection.name).all()
     result = []
     for c in colls:
-        p_count = len([p for p in c.products if p.is_active])
-        if p_count > 0:
-            result.append({
-                "id": c.id,
-                "name": c.name,
-                "slug": c.slug,
-                "description": c.description or "",
-                "product_count": p_count,
-            })
+        active_products = [p for p in c.products if p.is_active]
+        if not active_products:
+            continue
+        # Pick a representative image from the first product with an image
+        rep_image = None
+        for p in active_products:
+            if p.images and p.images[0].image_url:
+                rep_image = p.images[0].image_url
+                break
+            if p.image_url:
+                rep_image = p.image_url
+                break
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "slug": c.slug,
+            "description": c.description or "",
+            "product_count": len(active_products),
+            "image_url": rep_image,
+        })
     return result
 
 

@@ -497,23 +497,50 @@ export default function Catalog() {
         )}
 
         {collections.length > 0 && (
-          <div className="flex flex-col gap-2 p-3 rounded-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
-            <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
               <span>📦 کالکشن‌ها / مجموعه‌ها</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
-              {collections.map((coll) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              {collections.map((coll, idx) => {
                 const isActive = activeTag === coll.slug || activeTag === coll.name;
                 return (
-                  <button
+                  <Link
                     key={coll.id}
-                    type="button"
-                    onClick={() => setActiveTag(isActive ? null : coll.slug)}
-                    className={`catalog-chip text-xs shrink-0 transition-all ${isActive ? 'catalog-chip-active' : ''}`}
+                    to={isActive ? '/' : `/?tag=${encodeURIComponent(coll.slug || coll.name)}`}
+                    className={`group catalog-product-card flex flex-col overflow-hidden transition-all ${
+                      isActive ? 'ring-2 ring-accent border-accent' : ''
+                    }`}
                   >
-                    <span>{coll.name}</span>
-                    <span className="text-[10px] opacity-75 font-mono">({coll.product_count})</span>
-                  </button>
+                    <div className="relative aspect-square overflow-hidden" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                      {coll.image_url ? (
+                        <img
+                          src={coll.image_url}
+                          alt={coll.name}
+                          width={320}
+                          height={320}
+                          loading={idx < 3 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                          <Package size={40} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+                        </div>
+                      )}
+                      <div className="catalog-img-fade pointer-events-none" aria-hidden="true" />
+                      <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-2 z-[1]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                          📦 {coll.product_count} محصول
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 flex-1 flex flex-col justify-center">
+                      <h3 className="font-bold text-sm leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                        {coll.name}
+                      </h3>
+                    </div>
+                  </Link>
                 );
               })}
             </div>
