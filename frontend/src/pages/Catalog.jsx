@@ -408,7 +408,7 @@ export default function Catalog() {
           </select>
         </div>
 
-        {(categories.length > 0 || allTags.length > 1) && (
+        {(categories.length > 0 || allTags.length > 0) && (
           <div
             className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 catalog-filter-row"
             style={{ WebkitOverflowScrolling: 'touch' }}
@@ -439,10 +439,10 @@ export default function Catalog() {
                 بدون دسته
               </button>
             )}
-            {allTags.length > 1 && categories.length > 0 && (
+            {allTags.length > 0 && categories.length > 0 && (
               <span className="catalog-chip-divider" aria-hidden="true">•</span>
             )}
-            {allTags.length > 1 && allTags.map((tag) => (
+            {allTags.length > 0 && allTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
@@ -534,10 +534,16 @@ export default function Catalog() {
                         {(product.categories || []).map((c) => (
                           <span key={c.id} className="catalog-cat-badge">{c.name}</span>
                         ))}
-                        {/* Backward compat: show old string category if no multi-categories */}
-                        {(!product.categories || product.categories.length === 0) && product.category && (
-                          <span className="catalog-cat-badge">{product.category}</span>
-                        )}
+                        {/* Collection Badge */}
+                        {product.tags && (() => {
+                          const rawTags = (product.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+                          const collTag = rawTags.find((t) => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
+                          return collTag ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/20 text-accent border border-accent/30">
+                              📦 {collTag}
+                            </span>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                   </div>
