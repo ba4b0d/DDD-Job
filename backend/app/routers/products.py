@@ -319,7 +319,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/products", response_model=ProductResponse, status_code=201)
-def create_product(product: ProductCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
+def create_product(product: ProductCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
     try:
         data = product.model_dump()
         # Pop category_ids before passing to SQLAlchemy model (it has no such column)
@@ -374,7 +374,7 @@ def _slugify(name: str, product_id: str = "") -> str:
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
-def update_product(product_id: int, product: ProductUpdate, user=Depends(require_admin), db: Session = Depends(get_db)):
+def update_product(product_id: int, product: ProductUpdate, user=Depends(require_any_role), db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     update_data = product.model_dump(exclude_unset=True)
     category_ids = update_data.pop("category_ids", None)
@@ -395,7 +395,7 @@ def update_product(product_id: int, product: ProductUpdate, user=Depends(require
 
 
 @router.delete("/products/{product_id}")
-def delete_product(product_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
+def delete_product(product_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     if not repo.delete(product_id):
         raise HTTPException(status_code=404, detail="Product not found")
@@ -422,7 +422,7 @@ MAX_IMAGES = 5
 async def upload_product_images(
     product_id: int,
     files: list[UploadFile] = File(...),
-    user=Depends(require_admin),
+    user=Depends(require_any_role),
     db: Session = Depends(get_db),
 ):
     """Upload one or more images for a product (max 5 total)."""
@@ -490,7 +490,7 @@ async def upload_product_images(
 
 
 @router.delete("/products/{product_id}/images/{image_id}")
-def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
+def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
     """Delete a specific image from a product."""
     img = db.query(ProductImage).filter(
         ProductImage.id == image_id, ProductImage.product_id == product_id
@@ -537,7 +537,7 @@ def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(requ
 
 
 @router.put("/products/{product_id}/images/{image_id}/primary")
-def set_primary_image(product_id: int, image_id: int, db: Session = Depends(get_db)):
+def set_primary_image(product_id: int, image_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
     """Set an image as the primary (catalog display) image."""
     img = db.query(ProductImage).filter(
         ProductImage.id == image_id, ProductImage.product_id == product_id
@@ -572,7 +572,7 @@ def set_primary_image(product_id: int, image_id: int, db: Session = Depends(get_
 
 
 @router.put("/products/{product_id}/images/reorder")
-def reorder_images(product_id: int, body: ImageReorderRequest, db: Session = Depends(get_db)):
+def reorder_images(product_id: int, body: ImageReorderRequest, user=Depends(require_any_role), db: Session = Depends(get_db)):
     """Reorder images. Body: { "order": [image_id, image_id, ...] }"""
     order = body.order
     if not order:
