@@ -222,6 +222,42 @@ export default function Catalog() {
 
   const filtered = useMemo(() => {
     let list = [...products];
+
+    // Grouping into single Collection Bundle Cards when no tag filter is active
+    if (!activeTag && !search) {
+      const collectionsMap = new Map();
+      const nonCollectionProducts = [];
+
+      for (const p of list) {
+        const rawTags = (p.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+        const collTag = rawTags.find((t) => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
+        if (collTag) {
+          if (!collectionsMap.has(collTag)) {
+            collectionsMap.set(collTag, []);
+          }
+          collectionsMap.get(collTag).push(p);
+        } else {
+          nonCollectionProducts.push(p);
+        }
+      }
+
+      // Rebuild list: 1 Bundle Card per Collection + individual non-collection products
+      const collectionCards = Array.from(collectionsMap.entries()).map(([tag, items]) => {
+        // Pick primary item or first item as representative
+        const rep = items[0];
+        return {
+          ...rep,
+          isCollectionBundle: true,
+          collectionTag: tag,
+          collectionCount: items.length,
+          name: `${tag} (${items.length} آیتم)`,
+          images: items.flatMap(i => i.images || []),
+        };
+      });
+
+      list = [...collectionCards, ...nonCollectionProducts];
+    }
+
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -488,14 +524,17 @@ export default function Catalog() {
             const price = product.final_price || product.suggested_price;
             const isNew = isWithinDays(product.created_at, 14);
             const shareUrl = telegramShareUrl(product);
+            const isBundle = product.isCollectionBundle;
+            const cardLink = isBundle ? `/?tag=${encodeURIComponent(product.collectionTag)}` : `/catalog/${product.slug}`;
+
             return (
               <article
-                key={product.id}
+                key={isBundle ? `bundle-${product.collectionTag}` : product.id}
                 className="catalog-product-card group flex flex-col relative"
                 style={{ animationDelay: `${Math.min(idx, 12) * 40}ms` }}
               >
                 <Link
-                  to={`/catalog/${product.slug}`}
+                  to={cardLink}
                   className="flex-1 flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
                   style={{ '--tw-ring-color': 'var(--accent)' }}
                   aria-label={`مشاهده ${displayName(product.name)}`}
@@ -598,7 +637,19 @@ export default function Catalog() {
                       className="pt-3 mt-auto border-t flex items-end justify-between gap-2"
                       style={{ borderColor: 'var(--border-color)' }}
                     >
-                      {price ? (
+                      {isBundle ? (
+                        <div>
+                          <div
+                            className="text-[10px] uppercase tracking-wide mb-0.5"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            مجموعه کامل
+                          </div>
+                          <span className="catalog-price text-sm font-bold text-accent">
+                            مشاهده {product.collectionCount} آیتم ←
+                          </span>
+                        </div>
+                      ) : price ? (
                         <div>
                           <div
                             className="text-[10px] uppercase tracking-wide mb-0.5"
