@@ -161,6 +161,7 @@ export const deleteCategory = (id) => api.delete(`/categories/${id}`);
 // ===== Collections =====
 export const getCollectionsList = () => api.get('/collections');
 export const getCollectionsFlat = () => api.get('/collections/all');
+export const getCollectionsAll = () => api.get('/collections/all');
 export const getCollection = (id) => api.get(`/collections/${id}`);
 export const getCollectionBySlug = (slug) => api.get(`/collections/by-slug/${slug}`);
 export const createCollection = (data) => api.post('/collections', data);
