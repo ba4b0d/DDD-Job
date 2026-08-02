@@ -9,6 +9,7 @@ import {
   Store,
   Users,
   Tags,
+  FolderHeart,
   ClipboardList,
   BookOpen,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function Sidebar({ onLinkClick }) {
           { path: '/materials', label: 'مواد', icon: Layers },
           { path: '/machines', label: 'ماشین‌ها', icon: Cog },
           { path: '/categories', label: 'دسته‌بندی‌ها', icon: Tags },
+          { path: '/collections', label: 'کالکشن‌ها', icon: FolderHeart },
           { path: '/admin/posts', label: 'وبلاگ', icon: BookOpen },
           { path: '/calculator', label: 'ماشین حساب', icon: Calculator },
           { path: '/', label: 'کاتالوگ', icon: Store },

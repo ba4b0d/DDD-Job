@@ -36,6 +36,7 @@ from app.routers.products import router as products_router
 from app.routers.stats import router as stats_router
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
+from app.routers.collections import router as collections_router
 from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
 from app.routers.blog import router as blog_router
@@ -147,10 +148,12 @@ async def lifespan(app: FastAPI):
             db.commit()
             print(f"Imported {imported} product categories into categories table.")
 
-        # Migration: create product_categories junction table
-        if "product_categories" not in inspector.get_table_names():
-            print("Creating product_categories junction table...")
-            ProductCategory.__table__.create(bind=engine)
+        # Migration: create collections and product_collections tables if not exists
+        if "collections" not in inspector.get_table_names():
+            print("Creating collections table...")
+            from app.models import Collection, ProductCollection
+            Collection.__table__.create(bind=engine)
+            ProductCollection.__table__.create(bind=engine)
 
         # Always sync: move any products with old category string but no m2m association
         from app.models import ProductCategory
@@ -307,6 +310,7 @@ app.include_router(products_router, dependencies=[Depends(require_any_role)])
 app.include_router(stats_router, dependencies=[Depends(require_any_role)])
 app.include_router(auth_router)
 app.include_router(categories_router)
+app.include_router(collections_router)
 app.include_router(orders_router)  # Shop ops board B — auth via route Depends
 app.include_router(blog_router)
 app.include_router(backup_router)

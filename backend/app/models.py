@@ -93,6 +93,7 @@ class Product(Base):
     material = relationship("Material", back_populates="products")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan", order_by="ProductImage.sort_order")
     categories = relationship("Category", secondary="product_categories", backref="products")
+    collections = relationship("Collection", secondary="product_collections", back_populates="products")
 
     @staticmethod
     def generate_slug(name: str) -> str:
@@ -137,6 +138,26 @@ class ProductCategory(Base):
     __tablename__ = "product_categories"
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True, index=True)
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False, index=True)
+    slug = Column(String, unique=True, nullable=False, index=True)
+    description = Column(String, default="")
+    is_active = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
+
+    products = relationship("Product", secondary="product_collections", back_populates="collections")
+
+
+class ProductCollection(Base):
+    """Many-to-many junction: Product ↔ Collection"""
+    __tablename__ = "product_collections"
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True, index=True)
+    collection_id = Column(Integer, ForeignKey("collections.id", ondelete="CASCADE"), primary_key=True, index=True)
 
 
 # Fixed shop-ops statuses (B board) — keep list short for ADHD/OCD-friendly UI

@@ -158,6 +158,15 @@ export const createCategory = (data) => api.post('/categories', data);
 export const updateCategory = (id, data) => api.put(`/categories/${id}`, data);
 export const deleteCategory = (id) => api.delete(`/categories/${id}`);
 
+// ===== Collections =====
+export const getCollectionsList = () => api.get('/collections');
+export const getCollectionsFlat = () => api.get('/collections/all');
+export const getCollection = (id) => api.get(`/collections/${id}`);
+export const getCollectionBySlug = (slug) => api.get(`/collections/by-slug/${slug}`);
+export const createCollection = (data) => api.post('/collections', data);
+export const updateCollection = (id, data) => api.put(`/collections/${id}`, data);
+export const deleteCollection = (id) => api.delete(`/collections/${id}`);
+
 // ===== Orders (shop ops board B) =====
 export const getOrders = (params, config) => api.get('/orders', { params, ...config });
 export const getOrderStatuses = (config) => api.get('/orders/statuses', config);

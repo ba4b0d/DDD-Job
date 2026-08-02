@@ -88,6 +88,7 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
     }
     enriched = {**data, **costs}
     enriched["categories"] = [{"id": c.id, "name": c.name} for c in (product.categories or []) if hasattr(product, "categories")]
+    enriched["collections"] = [{"id": c.id, "name": c.name, "slug": c.slug} for c in (product.collections or []) if hasattr(product, "collections")]
     return enriched
 
 
@@ -322,8 +323,9 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 def create_product(product: ProductCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
     try:
         data = product.model_dump()
-        # Pop category_ids before passing to SQLAlchemy model (it has no such column)
+        # Pop category_ids & collection_ids before passing to SQLAlchemy model
         category_ids = data.pop("category_ids", None)
+        collection_ids = data.pop("collection_ids", None)
         # Auto-generate slug from name if not provided
         if not data.get("slug") and data.get("name"):
             data["slug"] = _slugify(data["name"], data.get("product_id", ""))
@@ -346,6 +348,14 @@ def create_product(product: ProductCreate, user=Depends(require_any_role), db: S
                 cat = db.query(Category).filter(Category.id == cat_id).first()
                 if cat:
                     db.add(PC(product_id=new_prod.id, category_id=cat_id))
+
+        # Add collection associations
+        if collection_ids:
+            from app.models import Collection, ProductCollection as PColl
+            for coll_id in collection_ids:
+                coll = db.query(Collection).filter(Collection.id == coll_id).first()
+                if coll:
+                    db.add(PColl(product_id=new_prod.id, collection_id=coll_id))
         
         # Commit everything together
         db.commit()
@@ -378,6 +388,7 @@ def update_product(product_id: int, product: ProductUpdate, user=Depends(require
     repo = ProductRepository(db)
     update_data = product.model_dump(exclude_unset=True)
     category_ids = update_data.pop("category_ids", None)
+    collection_ids = update_data.pop("collection_ids", None)
     updated = repo.update(product_id, update_data)
     if not updated:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -388,6 +399,14 @@ def update_product(product_id: int, product: ProductUpdate, user=Depends(require
             cat = db.query(Category).filter(Category.id == cat_id).first()
             if cat:
                 db.add(PC(product_id=product_id, category_id=cat_id))
+    if collection_ids is not None:
+        from app.models import Collection, ProductCollection as PColl
+        db.query(PColl).filter(PColl.product_id == product_id).delete()
+        for coll_id in collection_ids:
+            coll = db.query(Collection).filter(Collection.id == coll_id).first()
+            if coll:
+                db.add(PColl(product_id=product_id, collection_id=coll_id))
+    if category_ids is not None or collection_ids is not None:
         db.commit()
         db.refresh(updated)
     invalidate_stats()

@@ -150,6 +150,7 @@ class ProductCreate(BaseModel):
     slug: Optional[str] = None
     tags: Optional[str] = None
     category_ids: Optional[list[int]] = None
+    collection_ids: Optional[list[int]] = None
 
     @field_validator('name')
     @classmethod
@@ -197,6 +198,7 @@ class ProductUpdate(BaseModel):
     slug: Optional[str] = None
     tags: Optional[str] = None
     category_ids: Optional[list[int]] = None
+    collection_ids: Optional[list[int]] = None
 
 
 
@@ -224,6 +226,7 @@ class ProductResponse(BaseModel):
     final_price: Optional[float]
     category: str = ""
     categories: list[dict] = []
+    collections: list[dict] = []
     notes: str
     package_info: Optional[str] = ""
     is_active: bool
@@ -291,6 +294,45 @@ class CategoryUpdate(BaseModel):
     description: Optional[str] = None
     sort_order: Optional[int] = None
     parent_id: Optional[int] = None
+
+
+# ── Collection ─────────────────────────────────────────────────────────────
+
+class CollectionCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    slug: Optional[str] = None
+    sort_order: Optional[int] = 0
+    product_ids: Optional[list[int]] = []
+
+    @field_validator('name')
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('نام کالکشن الزامی است')
+        return v.strip()
+
+
+class CollectionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    slug: Optional[str] = None
+    is_active: Optional[bool] = None
+    sort_order: Optional[int] = None
+    product_ids: Optional[list[int]] = None
+
+
+class CollectionResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+    description: str = ""
+    is_active: bool = True
+    sort_order: int = 0
+    product_count: int = 0
+    product_ids: list[int] = []
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── Order (shop ops board B) ──────────────────────────────────────────────

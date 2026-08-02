@@ -24,6 +24,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const UsersPage = lazy(() => import('./pages/Users'));
 const Categories = lazy(() => import('./pages/Categories'));
+const Collections = lazy(() => import('./pages/Collections'));
 const Orders = lazy(() => import('./pages/Orders'));
 const BlogList = lazy(() => import('./pages/BlogList'));
 const BlogPostDetail = lazy(() => import('./pages/BlogPostDetail'));
@@ -83,6 +84,7 @@ function AppRoutes() {
         <Route path="/products/:id/edit" element={<ProtectedRoute><Layout><ProductDetail /></Layout></ProtectedRoute>} />
         <Route path="/calculator" element={<ProtectedRoute><Layout><Calculator /></Layout></ProtectedRoute>} />
         <Route path="/categories" element={<ProtectedRoute><Layout><Categories /></Layout></ProtectedRoute>} />
+        <Route path="/collections" element={<ProtectedRoute><Layout><Collections /></Layout></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
 
         {/* Protected admin only */}

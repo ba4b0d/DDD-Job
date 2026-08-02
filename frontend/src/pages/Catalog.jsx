@@ -229,8 +229,14 @@ export default function Catalog() {
       const nonCollectionProducts = [];
 
       for (const p of list) {
-        const rawTags = (p.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
-        const collTag = rawTags.find((t) => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
+        let collTag = null;
+        if (p.collections && p.collections.length > 0) {
+          collTag = p.collections[0].name;
+        } else {
+          const rawTags = (p.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+          collTag = rawTags.length > 0 ? rawTags[0] : null;
+        }
+
         if (collTag) {
           if (!collectionsMap.has(collTag)) {
             collectionsMap.set(collTag, []);
@@ -241,19 +247,24 @@ export default function Catalog() {
         }
       }
 
-      // Rebuild list: 1 Bundle Card per Collection + individual non-collection products
-      const collectionCards = Array.from(collectionsMap.entries()).map(([tag, items]) => {
-        // Pick primary item or first item as representative
-        const rep = items[0];
-        return {
-          ...rep,
-          isCollectionBundle: true,
-          collectionTag: tag,
-          collectionCount: items.length,
-          name: `${tag} (${items.length} آیتم)`,
-          images: items.flatMap(i => i.images || []),
-        };
-      });
+      // Only turn into a Bundle Card if there are 2 or more products sharing that tag
+      const collectionCards = [];
+      for (const [tag, items] of collectionsMap.entries()) {
+        if (items.length > 1) {
+          const rep = items[0];
+          collectionCards.push({
+            ...rep,
+            isCollectionBundle: true,
+            collectionTag: tag,
+            collectionCount: items.length,
+            name: `کالکشن ${tag} (${items.length} آیتم)`,
+            images: items.flatMap(i => i.images || []),
+          });
+        } else {
+          // Single product tag — keep as normal individual product card
+          nonCollectionProducts.push(items[0]);
+        }
+      }
 
       list = [...collectionCards, ...nonCollectionProducts];
     }
@@ -304,8 +315,9 @@ export default function Catalog() {
     if (activeTag) {
       list = list.filter((p) => {
         const raw = (p.tags || '').trim();
-        if (!raw) return false;
-        return raw.split(',').map((s) => s.trim()).includes(activeTag);
+        const tagMatch = raw ? raw.split(',').map((s) => s.trim()).includes(activeTag) : false;
+        const collMatch = p.collections?.some((c) => c.name === activeTag || c.slug === activeTag);
+        return tagMatch || collMatch;
       });
     }
     switch (sortBy) {

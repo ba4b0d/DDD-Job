@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, X, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { getMaterialsAll, getMachinesAll, getCategoriesList, uploadProductImages, deleteProductImage, setPrimaryImage } from '../lib/api';
+import { getMaterialsAll, getMachinesAll, getCategoriesList, getCollectionsAll, uploadProductImages, deleteProductImage, setPrimaryImage } from '../lib/api';
 import CostBreakdown from './CostBreakdown';
 import FormField from './FormField';
 import MultiImageUpload from './MultiImageUpload';
@@ -27,7 +27,9 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const [materials, setMaterials] = useState([]);
   const [machines, setMachines] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState(initialData?.images || []);
   const [pendingFiles, setPendingFiles] = useState([]);
@@ -65,25 +67,29 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
   const { calcResult, calculating } = useProductCalculation(form);
 
   useEffect(() => {
-    Promise.all([getMaterialsAll(), getMachinesAll(), getCategoriesList()])
-      .then(([matRes, machRes, catRes]) => {
+    Promise.all([getMaterialsAll(), getMachinesAll(), getCategoriesList(), getCollectionsAll()])
+      .then(([matRes, machRes, catRes, collRes]) => {
         const matList = matRes.data || [];
         const machList = machRes.data || [];
-        // /categories now returns tree [{id, name, children: [...]}]
         const treeData = Array.isArray(catRes.data) ? catRes.data : [];
+        const collList = Array.isArray(collRes.data) ? collRes.data : [];
 
         setMaterials(matList);
         setMachines(machList);
         setCategories(treeData);
+        setCollections(collList);
 
-        // Pre-select category IDs from initialData
+        // Pre-select category IDs & collection IDs from initialData
         if (initialData?.categories && Array.isArray(initialData.categories)) {
           setSelectedCategoryIds(initialData.categories.map(c => c.id));
         } else if (initialData?.category) {
-          // Backward compat: match string category name in flat tree
           const flat = flattenCatTree(treeData);
           const found = flat.find(c => c.name === initialData.category);
           if (found) setSelectedCategoryIds([found.id]);
+        }
+
+        if (initialData?.collections && Array.isArray(initialData.collections)) {
+          setSelectedCollectionIds(initialData.collections.map(c => c.id));
         }
 
         // Auto-select default printer and default filament if adding a new product
@@ -168,6 +174,7 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         extras_cost: parseFloat(form.extras_cost) || 0,
         final_price: parseFloat(form.final_price) || 0,
         category_ids: selectedCategoryIds,
+        collection_ids: selectedCollectionIds,
       });
       const productId = result?.id || initialData?.id;
 
@@ -262,25 +269,38 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
         <textarea name="notes" value={form.notes} onChange={handleChange} className="input-field" rows={3} placeholder="توضیحات کامل محصول جهت نمایش در سایت و سئو..." />
       </FormField>
 
-      <FormField label="نام کالکشن / مجموعه" name="collection_tag">
-        <input
-          type="text"
-          value={(() => {
-            const raw = (form.tags || '').split(',').map(s => s.trim()).filter(Boolean);
-            const found = raw.find(t => t.includes('کالکشن') || t.includes('مجموعه') || t.includes('بافتنی') || t.includes('فلکسی'));
-            return found || '';
-          })()}
-          onChange={(e) => {
-            const val = e.target.value.trim();
-            const raw = (form.tags || '').split(',').map(s => s.trim()).filter(Boolean);
-            const nonColl = raw.filter(t => !t.includes('کالکشن') && !t.includes('مجموعه') && !t.includes('بافتنی') && !t.includes('فلکسی'));
-            const updated = val ? [val, ...nonColl] : nonColl;
-            setForm(prev => ({ ...prev, tags: updated.join(', ') }));
-          }}
-          className="input-field"
-          placeholder="مثلاً: کالکشن حیوانات بافتنی یا کالکشن ارباب حلقه‌ها"
-        />
-      </FormField>
+        <FormField label="کالکشن‌ها" name="collection_ids">
+          <div className="flex flex-wrap gap-2 p-3 rounded-lg border min-h-[42px] items-center" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+            {collections.length === 0 ? (
+              <span className="text-xs p-1" style={{ color: 'var(--text-muted)' }}>هیچ کالکشنی تعریف نشده است</span>
+            ) : (
+              collections.map((coll) => {
+                const isSelected = selectedCollectionIds.includes(coll.id);
+                return (
+                  <button
+                    key={coll.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCollectionIds(prev =>
+                        isSelected ? prev.filter(id => id !== coll.id) : [...prev, coll.id]
+                      );
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 cursor-pointer select-none"
+                    style={{
+                      backgroundColor: isSelected ? 'var(--accent)' : 'var(--bg-secondary)',
+                      color: isSelected ? '#ffffff' : 'var(--text-primary)',
+                      borderColor: isSelected ? 'var(--accent)' : 'var(--border-color)',
+                      boxShadow: isSelected ? '0 2px 4px rgba(255, 154, 61, 0.25)' : 'none',
+                    }}
+                  >
+                    <span>{coll.name}</span>
+                    {isSelected && <span className="text-[10px] font-bold">✓</span>}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </FormField>
 
       <FormField label="برچسب‌ها (با کاما جدا کنید)" name="tags" value={form.tags || ''} onChange={handleChange}>
         <input type="text" name="tags" value={form.tags || ''} onChange={handleChange} className="input-field" placeholder="مثلاً: keychain, gift, pet" />
