@@ -41,6 +41,9 @@ from app.routers.catalog import router as catalog_router
 from app.routers.orders import router as orders_router
 from app.routers.blog import router as blog_router
 from app.routers.backup import router as backup_router
+from app.routers.custom_orders import router as custom_orders_router
+from app.routers.customers import router as customers_router
+from app.routers.audit_logs import router as audit_router
 from app.telegram_bot import start_telegram_bot_thread, send_telegram_notification
 
 from sqlalchemy import inspect, text
@@ -154,6 +157,20 @@ async def lifespan(app: FastAPI):
             from app.models import Collection, ProductCollection
             Collection.__table__.create(bind=engine)
             ProductCollection.__table__.create(bind=engine)
+
+        # Migration: create custom_order_requests, product_views, audit_logs tables
+        if "custom_order_requests" not in inspector.get_table_names():
+            print("Creating custom_order_requests table...")
+            from app.models import CustomOrderRequest
+            CustomOrderRequest.__table__.create(bind=engine)
+        if "product_views" not in inspector.get_table_names():
+            print("Creating product_views table...")
+            from app.models import ProductView
+            ProductView.__table__.create(bind=engine)
+        if "audit_logs" not in inspector.get_table_names():
+            print("Creating audit_logs table...")
+            from app.models import AuditLog
+            AuditLog.__table__.create(bind=engine)
 
         # Always sync: move any products with old category string but no m2m association
         from app.models import ProductCategory
@@ -314,6 +331,9 @@ app.include_router(collections_router)
 app.include_router(orders_router)  # Shop ops board B — auth via route Depends
 app.include_router(blog_router)
 app.include_router(backup_router)
+app.include_router(custom_orders_router)
+app.include_router(customers_router)
+app.include_router(audit_router)
 app.include_router(catalog_router)  # No auth — public catalog
 
 # ── Static files for uploads ────────────────────────────────────────

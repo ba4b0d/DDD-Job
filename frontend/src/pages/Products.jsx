@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff, Trash2 } from 'lucide-react';
-import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, createProduct, exportProducts, importProducts, updateProduct, deleteProduct, permanentDeleteProduct } from '../lib/api';
+import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff, Trash2, CheckSquare, XSquare } from 'lucide-react';
+import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, getCollectionsAll, createProduct, exportProducts, importProducts, updateProduct, deleteProduct, permanentDeleteProduct, bulkProductAction } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -23,6 +23,10 @@ export default function Products() {
   const [filterMachine, setFilterMachine] = useState(null);
   const [sortBy, setSortBy] = useState('created_at');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkForm, setBulkForm] = useState({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '' });
   const fileInputRef = useRef(null);
 
   const loadProducts = async () => {
@@ -41,11 +45,12 @@ export default function Products() {
     const controller = new AbortController();
     const load = async () => {
       try {
-        const [pRes, mRes, machRes, cRes] = await Promise.all([
+        const [pRes, mRes, machRes, cRes, collRes] = await Promise.all([
           getProductsAll({ signal: controller.signal }),
           getMaterialsAll({ signal: controller.signal }),
           getMachinesAll({ signal: controller.signal }),
           getCategoriesList({ signal: controller.signal }),
+          getCollectionsAll({ signal: controller.signal }),
         ]);
         const pList = Array.isArray(pRes.data)
           ? pRes.data
@@ -57,6 +62,7 @@ export default function Products() {
         setMaterials(mRes.data || []);
         setMachines(machRes.data || []);
         setCategories(catsList);
+        setCollections(Array.isArray(collRes.data) ? collRes.data : []);
         setError(null);
       } catch (err) {
         if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
@@ -216,6 +222,44 @@ export default function Products() {
     }
   };
 
+  // ── Bulk actions ──────────────────────────────────────────────
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filtered.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtered.map((p) => p.id));
+    }
+  };
+
+  const openBulkModal = () => {
+    setBulkForm({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '' });
+    setShowBulkModal(true);
+  };
+
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedIds.length === 0) return;
+    const payload = { ids: selectedIds };
+    if (bulkForm.set_active !== '') payload.set_active = bulkForm.set_active === 'active';
+    if (bulkForm.set_collection_id) payload.set_collection_id = parseInt(bulkForm.set_collection_id);
+    if (bulkForm.clear_collections) payload.clear_collections = true;
+    if (bulkForm.set_tags) payload.set_tags = bulkForm.set_tags;
+    if (bulkForm.set_notes) payload.set_notes = bulkForm.set_notes;
+    try {
+      const res = await bulkProductAction(payload);
+      alert(`${res.data?.updated ?? selectedIds.length} محصول به‌روزرسانی شد.`);
+      setShowBulkModal(false);
+      setSelectedIds([]);
+      await loadProducts();
+    } catch (err) {
+      alert('خطا: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -302,11 +346,33 @@ export default function Products() {
         </div>
       ) : (
         <>
+          {/* Bulk selection bar */}
+          {selectedIds.length > 0 && (
+            <div className="card p-3 flex flex-wrap items-center justify-between gap-3" style={{ borderColor: 'var(--accent)' }}>
+              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <CheckSquare size={16} style={{ color: 'var(--accent)' }} />
+                {selectedIds.length} محصول انتخاب شده
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={openBulkModal} className="btn-primary p-2 text-xs flex items-center gap-1.5">
+                  عملیات گروهی
+                </button>
+                <button type="button" onClick={() => setSelectedIds([])} className="btn-secondary p-2 text-xs flex items-center gap-1.5">
+                  <XSquare size={14} />
+                  لغو
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Desktop table — matches dashboard language */}
           <div className="hidden md:block card overflow-hidden">
             <table className="w-full text-sm" dir="rtl">
               <thead>
                 <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={toggleSelectAll} className="accent-[var(--accent)]" />
+                  </th>
                   <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>کد</th>
                   <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>نام</th>
                   <th className="px-4 py-3 text-right font-medium" style={{ color: 'var(--text-muted)' }}>ماده</th>
@@ -321,8 +387,12 @@ export default function Products() {
                   <tr
                     key={product.id}
                     className="table-row cursor-pointer"
+                    style={{ backgroundColor: selectedIds.includes(product.id) ? 'var(--accent-light)' : undefined }}
                     onClick={() => navigate(`/products/${product.id}`)}
                   >
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selectedIds.includes(product.id)} onChange={() => toggleSelect(product.id)} className="accent-[var(--accent)]" />
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
                       {product.product_id || `P${product.id}`}
                     </td>
@@ -464,6 +534,45 @@ export default function Products() {
           onCancel={() => setShowAddModal(false)}
           submitLabel="ایجاد محصول"
         />
+      </Modal>
+
+      <Modal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} title={`عملیات گروهی (${selectedIds.length} محصول)`}>
+        <form onSubmit={handleBulkSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>وضعیت نمایش</label>
+            <select value={bulkForm.set_active} onChange={(e) => setBulkForm({ ...bulkForm, set_active: e.target.value })} className="select-field">
+              <option value="">بدون تغییر</option>
+              <option value="active">فعال (نمایش در کاتالوگ)</option>
+              <option value="inactive">مخفی</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>کالکشن</label>
+            <select value={bulkForm.set_collection_id} onChange={(e) => setBulkForm({ ...bulkForm, set_collection_id: e.target.value })} className="select-field">
+              <option value="">بدون تغییر</option>
+              <option value="clear">حذف از همه کالکشن‌ها</option>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>برچسب‌ها (جایگزین می‌شود)</label>
+            <input value={bulkForm.set_tags} onChange={(e) => setBulkForm({ ...bulkForm, set_tags: e.target.value })} className="input-field" placeholder="مثلاً: keychain, gift" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>توضیحات سئو (جایگزین می‌شود)</label>
+            <textarea value={bulkForm.set_notes} onChange={(e) => setBulkForm({ ...bulkForm, set_notes: e.target.value })} className="input-field" rows={3} placeholder="توضیحات یکسان برای همه محصولات انتخاب‌شده" />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <button type="button" onClick={() => setShowBulkModal(false)} className="btn-secondary">انصراف</button>
+            <button type="submit" className="btn-primary">اعمال روی {selectedIds.length} محصول</button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

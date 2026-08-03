@@ -26,6 +26,9 @@ const UsersPage = lazy(() => import('./pages/Users'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Collections = lazy(() => import('./pages/Collections'));
 const Orders = lazy(() => import('./pages/Orders'));
+const CustomOrders = lazy(() => import('./pages/CustomOrders'));
+const Customers = lazy(() => import('./pages/Customers'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const BlogList = lazy(() => import('./pages/BlogList'));
 const BlogPostDetail = lazy(() => import('./pages/BlogPostDetail'));
 const AdminBlog = lazy(() => import('./pages/AdminBlog'));
@@ -86,12 +89,15 @@ function AppRoutes() {
         <Route path="/categories" element={<ProtectedRoute><Layout><Categories /></Layout></ProtectedRoute>} />
         <Route path="/collections" element={<ProtectedRoute><Layout><Collections /></Layout></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
+        <Route path="/custom-orders" element={<ProtectedRoute><Layout><CustomOrders /></Layout></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
 
         {/* Protected admin only */}
         <Route path="/materials" element={<AdminRoute><Layout><Materials /></Layout></AdminRoute>} />
         <Route path="/machines" element={<AdminRoute><Layout><Machines /></Layout></AdminRoute>} />
         <Route path="/settings" element={<AdminRoute><Layout><Settings /></Layout></AdminRoute>} />
         <Route path="/users" element={<AdminRoute><Layout><UsersPage /></Layout></AdminRoute>} />
+        <Route path="/audit" element={<AdminRoute><Layout><AuditLogs /></Layout></AdminRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

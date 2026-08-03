@@ -29,6 +29,7 @@ from app.routers.stats import invalidate_stats
 from app.cache import get_settings_dict
 from app.calculator import calculate_product_costs_from_dicts
 from app.telegram_bot import send_telegram_notification
+from app.audit import log_user
 
 router = APIRouter(prefix="/api/v1/orders", tags=["orders"])
 
@@ -383,6 +384,7 @@ def update_order(request: Request,
     db.commit()
     db.refresh(order)
     invalidate_stats()
+    log_user(user, db, "update", "order", order_id, f"ویرایش سفارش #{order_id} ({order.customer_name})")
     return _serialize(order)
 
 
@@ -398,6 +400,7 @@ def soft_delete_order(request: Request, order_id: int, user=Depends(require_any_
     order.updated_at = datetime.now(timezone.utc)
     db.commit()
     invalidate_stats()
+    log_user(user, db, "delete", "order", order_id, f"بایگانی سفارش #{order_id}")
     return {"message": "سفارش بایگانی شد", "id": order_id}
 
 

@@ -8,7 +8,7 @@ from openpyxl import Workbook, load_workbook
 logger = logging.getLogger(__name__)
 
 from app.database import get_db
-from app.models import Product, Machine, Material, ProductImage
+from app.models import Product, Machine, Material, ProductImage, Collection, ProductCollection
 from app.repositories.products import ProductRepository, batch_load_machines_and_materials as _batch_load_related
 from app.schemas import (
     ProductCreate, ProductUpdate, ProductResponse, ImageReorderRequest,
@@ -18,6 +18,8 @@ from app.calculator import calculate_product_costs, calculate_product_costs_from
 from app.cache import get_settings_dict
 from app.routers.stats import invalidate_stats
 from app.routers.auth import require_admin, require_any_role
+from app.audit import log_user
+from pydantic import BaseModel
 from app.services.image import validate_image_bytes as _validate_image_bytes, process_and_save_image as _process_and_save_image
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
@@ -364,6 +366,7 @@ def create_product(product: ProductCreate, user=Depends(require_any_role), db: S
         db.rollback()
         raise HTTPException(status_code=500, detail="خطا در ایجاد محصول")
     invalidate_stats()
+    log_user(user, db, "create", "product", new_prod.id, f"ایجاد محصول «{new_prod.name}»")
     return _enrich_product(new_prod, db)
 
 
@@ -410,7 +413,17 @@ def update_product(product_id: int, product: ProductUpdate, user=Depends(require
         db.commit()
         db.refresh(updated)
     invalidate_stats()
+    log_user(user, db, "update", "product", product_id, f"ویرایش محصول «{updated.name}»")
     return _enrich_product(updated, db)
+
+
+class BulkProductAction(BaseModel):
+    ids: list[int]
+    set_active: bool | None = None
+    set_collection_id: int | None = None
+    clear_collections: bool = False
+    set_tags: str | None = None
+    set_notes: str | None = None
 
 
 @router.delete("/products/{product_id}")
@@ -420,6 +433,42 @@ def delete_product(product_id: int, user=Depends(require_any_role), db: Session 
         raise HTTPException(status_code=404, detail="Product not found")
     invalidate_stats()
     return {"message": "Product deactivated", "id": product_id}
+
+
+@router.post("/products/bulk")
+def bulk_product_action(body: BulkProductAction, user=Depends(require_any_role), db: Session = Depends(get_db)):
+    """Apply a single operation across many products at once."""
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="هیچ محصولی انتخاب نشده است")
+
+    products = db.query(Product).filter(Product.id.in_(body.ids)).all()
+    changed = 0
+
+    for p in products:
+        if body.set_active is not None and p.is_active != body.set_active:
+            p.is_active = body.set_active
+            changed += 1
+        if body.set_tags is not None:
+            p.tags = body.set_tags
+            changed += 1
+        if body.set_notes is not None:
+            p.notes = body.set_notes
+            changed += 1
+
+    # Collection assignment — replace all collection links for selected products
+    if body.set_collection_id is not None or body.clear_collections:
+        for p in products:
+            db.query(ProductCollection).filter(ProductCollection.product_id == p.id).delete()
+            if body.set_collection_id:
+                coll = db.query(Collection).filter(Collection.id == body.set_collection_id).first()
+                if coll:
+                    db.add(ProductCollection(product_id=p.id, collection_id=coll.id))
+        changed += len(products)
+
+    db.commit()
+    invalidate_stats()
+    log_user(user, db, "bulk", "product", summary=f"اعمال عملیات گروهی روی {len(products)} محصول")
+    return {"updated": len(products), "changed": changed}
 
 
 @router.delete("/products/{product_id}/permanent")

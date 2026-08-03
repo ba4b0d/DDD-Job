@@ -97,6 +97,81 @@ def _order_ops_stats(db: Session) -> dict:
     }
 
 
+def _insights(db: Session) -> dict:
+    """Top-selling products, most-viewed products, orders-by-status, revenue-by-month."""
+    # Orders by status
+    status_rows = (
+        db.query(Order.status, func.count(Order.id))
+        .filter(Order.is_active == True)  # noqa: E712
+        .group_by(Order.status)
+        .all()
+    )
+    orders_by_status = {s: c for s, c in status_rows}
+
+    # Top selling products (from orders that reference a product_id)
+    top_selling = (
+        db.query(Order.product_id, func.count(Order.id).label("cnt"), func.coalesce(func.sum(Order.quoted_price * Order.qty), 0.0).label("total"))
+        .filter(Order.is_active == True, Order.product_id.isnot(None))  # noqa: E712
+        .group_by(Order.product_id)
+        .order_by(func.count(Order.id).desc())
+        .limit(8)
+        .all()
+    )
+    top_products = []
+    for pid, cnt, total in top_selling:
+        p = db.query(Product).filter(Product.id == pid).first()
+        top_products.append({
+            "product_id": p.product_id if p else str(pid),
+            "name": p.name if p else "—",
+            "orders": int(cnt),
+            "total": round(float(total), 2),
+        })
+
+    # Most viewed products
+    from app.models import ProductView
+    view_rows = (
+        db.query(ProductView.product_id, ProductView.views)
+        .order_by(ProductView.views.desc())
+        .limit(8)
+        .all()
+    )
+    top_views = []
+    for pid, views in view_rows:
+        p = db.query(Product).filter(Product.id == pid).first()
+        top_views.append({
+            "product_id": p.product_id if p else str(pid),
+            "name": p.name if p else "—",
+            "views": int(views),
+        })
+
+    # Revenue by month (last 6 months, quoted not cancelled)
+    from sqlalchemy import extract
+    month_rows = (
+        db.query(
+            extract("year", Order.created_at).label("y"),
+            extract("month", Order.created_at).label("m"),
+            func.coalesce(func.sum(Order.quoted_price * Order.qty), 0.0).label("total"),
+        )
+        .filter(Order.is_active == True, Order.status != "cancelled")  # noqa: E712
+        .group_by(extract("year", Order.created_at), extract("month", Order.created_at))
+        .order_by(extract("year", Order.created_at).desc(), extract("month", Order.created_at).desc())
+        .limit(6)
+        .all()
+    )
+    revenue_by_month = [
+        {"year": int(y), "month": int(m), "total": round(float(total), 2)}
+        for y, m, total in month_rows
+    ]
+    revenue_by_month.reverse()
+
+    return {
+        "orders_by_status": orders_by_status,
+        "top_selling_products": top_products,
+        "most_viewed_products": top_views,
+        "revenue_by_month": revenue_by_month,
+    }
+
+
 @router.get("")
 def get_stats(db: Session = Depends(get_db)):
     """Aggregate stats across products — O(1) DB reads for settings."""
@@ -151,6 +226,7 @@ def get_stats(db: Session = Depends(get_db)):
     price_max = round(max(prices), 2) if prices else None
 
     order_ops = _order_ops_stats(db)
+    insights = _insights(db)
 
     result = {
         "total_products": total_products,
@@ -162,6 +238,7 @@ def get_stats(db: Session = Depends(get_db)):
         "price_max": price_max,
         "products_per_category": categories,
         **order_ops,
+        **insights,
     }
 
     _stats_cache["stats"] = {"data": result, "ts": now}

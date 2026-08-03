@@ -241,6 +241,89 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Insights — top selling, most viewed, revenue, status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top selling */}
+        <section className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>پرفروش‌ترین محصولات</h3>
+          {stats?.top_selling_products?.length ? (
+            <div className="space-y-2">
+              {stats.top_selling_products.map((p, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="flex items-center gap-2 min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-xs font-bold w-5 text-center" style={{ color: 'var(--accent)' }}>{i + 1}</span>
+                    <span className="truncate">{p.name}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {p.orders} سفارش · {formatPrice(p.total)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+          )}
+        </section>
+
+        {/* Most viewed */}
+        <section className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>پربازدیدترین محصولات</h3>
+          {stats?.most_viewed_products?.length ? (
+            <div className="space-y-2">
+              {stats.most_viewed_products.map((p, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="flex items-center gap-2 min-w-0 truncate" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-xs font-bold w-5 text-center" style={{ color: 'var(--accent)' }}>{i + 1}</span>
+                    <span className="truncate">{p.name}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{p.views} بازدید</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+          )}
+        </section>
+      </div>
+
+      {/* Orders by status + revenue by month */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>سفارش‌ها بر اساس وضعیت</h3>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(stats?.orders_by_status || {}).map(([status, count]) => {
+              const labels = { new: 'جدید', quoted: 'قیمت‌داده‌شده', printing: 'در حال چاپ', ready: 'آماده', delivered: 'تحویل‌شده', cancelled: 'لغو' };
+              const colors = { new: '#6366f1', quoted: '#0891b2', printing: '#d97706', ready: '#16a34a', delivered: '#64748b', cancelled: '#ef4444' };
+              return (
+                <div key={status} className="px-3 py-2 rounded-xl border flex items-center gap-2" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[status] || '#94a3b8' }} />
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{labels[status] || status}</span>
+                  <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="card p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>درآمد ماهانه</h3>
+          {stats?.revenue_by_month?.length ? (
+            <div className="space-y-2">
+              {stats.revenue_by_month.map((m, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    {m.year} / {m.month}
+                  </span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{formatPrice(m.total)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+          )}
+        </section>
+      </div>
+
       {/* Quick actions + recent products */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
         {/* Quick actions — mock left panel */}

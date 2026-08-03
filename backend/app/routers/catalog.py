@@ -278,6 +278,18 @@ def get_robots_txt(request: Request):
 
 
 
+def _increment_view(db: Session, product_id: int):
+    """Increment the view counter for a product (for most-viewed dashboard)."""
+    from app.models import ProductView
+    row = db.query(ProductView).filter(ProductView.product_id == product_id).first()
+    if row:
+        row.views += 1
+    else:
+        row = ProductView(product_id=product_id, views=1)
+        db.add(row)
+    db.commit()
+
+
 @router.get("/catalog/by-slug/{slug}")
 @limiter.limit("60/minute")
 def get_catalog_product_by_slug(request: Request, slug: str, db: Session = Depends(get_db)):
@@ -290,6 +302,7 @@ def get_catalog_product_by_slug(request: Request, slug: str, db: Session = Depen
     )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    _increment_view(db, product.id)
     machines_dict, materials_dict = _batch_load_related(db)
     settings = get_settings_dict(db)
     return _catalog_product(product, machines_dict, materials_dict, settings)
@@ -307,6 +320,7 @@ def get_catalog_product(request: Request, product_id: int, db: Session = Depends
     )
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    _increment_view(db, product.id)
     machines_dict, materials_dict = _batch_load_related(db)
     settings = get_settings_dict(db)
     return _catalog_product(product, machines_dict, materials_dict, settings)

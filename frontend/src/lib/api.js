@@ -179,4 +179,19 @@ export const deleteOrder = (id) => api.delete(`/orders/${id}`);
 export const getOrderSummary = (month, config) => api.get('/orders/summary/monthly', { params: { month }, ...config });
 export const exportOrdersCsv = (params, config) => api.get('/orders/export/csv', { params, responseType: 'blob', ...config });
 
+// ===== Custom Order Requests (public submit + admin inbox) =====
+export const submitCustomOrder = (data) => api.post('/custom-orders', data);
+export const getRequests = (status) => api.get('/admin/requests', { params: { status } });
+export const updateRequest = (id, data) => api.put(`/admin/requests/${id}`, data);
+export const deleteRequest = (id) => api.delete(`/admin/requests/${id}`);
+
+// ===== Customers (CRM) =====
+export const getCustomers = () => api.get('/customers');
+
+// ===== Audit Log =====
+export const getAuditLogs = (limit = 100) => api.get('/audit', { params: { limit } });
+
+// ===== Bulk Product Actions =====
+export const bulkProductAction = (data) => api.post('/products/bulk', data);
+
 export default api;

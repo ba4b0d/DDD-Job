@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardList, Plus, Archive, Edit2, Download, Trash2 } from 'lucide-react';
+import { ClipboardList, Plus, Archive, Edit2, Download, Trash2, LayoutGrid, List } from 'lucide-react';
 import { getOrders, createOrder, updateOrder, deleteOrder, getOrderStatuses, exportOrdersCsv, getProductsAll } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import {
@@ -147,6 +147,7 @@ export default function Orders() {
   const [items, setItems] = useState([emptyItem()]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [viewMode, setViewMode] = useState('table'); // table | board
 
   const todayIso = todayGregorianIso();
 
@@ -406,6 +407,32 @@ export default function Orders() {
           </p>
         </div>
         <div className="flex gap-2">
+          <div className="flex items-center rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className="p-2 transition-colors"
+              style={{
+                backgroundColor: viewMode === 'table' ? 'var(--accent)' : 'var(--bg-card)',
+                color: viewMode === 'table' ? '#fff' : 'var(--text-secondary)',
+              }}
+              title="نمای جدولی"
+            >
+              <List size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('board')}
+              className="p-2 transition-colors"
+              style={{
+                backgroundColor: viewMode === 'board' ? 'var(--accent)' : 'var(--bg-card)',
+                color: viewMode === 'board' ? '#fff' : 'var(--text-secondary)',
+              }}
+              title="نمای برد"
+            >
+              <LayoutGrid size={16} />
+            </button>
+          </div>
           <button type="button" onClick={handleExportCsv} className="btn-secondary text-xs">
             <Download size={14} /> CSV
           </button>
@@ -463,7 +490,70 @@ export default function Orders() {
         ))}
       </div>
 
-      {orders.length === 0 ? (
+      {viewMode === 'board' ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 overflow-x-auto" style={{ gridAutoFlow: 'column', gridAutoColumns: 'minmax(220px, 1fr)' }}>
+          {statusOptions.map((st) => {
+            const colOrders = orders.filter((o) => o.status === st.value);
+            const sc = STATUS_COLORS[st.value] || STATUS_COLORS.new;
+            return (
+              <div key={st.value} className="rounded-xl flex flex-col min-h-[300px]" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                <div className="flex items-center justify-between px-3 py-2.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <span className="text-xs font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sc.color }} />
+                    {st.label}
+                  </span>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: sc.bg, color: sc.color }}>
+                    {colOrders.length}
+                  </span>
+                </div>
+                <div className="p-2 space-y-2 flex-1 overflow-y-auto">
+                  {colOrders.length === 0 ? (
+                    <p className="text-[10px] text-center py-6" style={{ color: 'var(--text-muted)' }}>خالی</p>
+                  ) : (
+                    colOrders.map((o) => {
+                      const urg = readyUrgency(o, todayIso);
+                      const readyStyle = READY_STYLES[urg] || READY_STYLES.none;
+                      const itemNames = o.items?.length
+                        ? o.items.map((i) => i.product_label || '—').join(', ')
+                        : (o.product_label || '—');
+                      return (
+                        <div key={o.id} className="card p-3 space-y-2 cursor-pointer hover:shadow-md transition-shadow" onClick={() => openEdit(o)}>
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{o.customer_name}</span>
+                            <span className="text-[10px] shrink-0" style={{ color: 'var(--text-muted)' }}>#{o.id}</span>
+                          </div>
+                          <p className="text-xs line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{itemNames}</p>
+                          <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>
+                              {formatPrice(o.total_quoted ?? o.quoted_price)}
+                            </span>
+                            {o.ready_by ? (
+                              <span className="text-[10px]" style={readyStyle}>{formatShamsiDate(o.ready_by)}</span>
+                            ) : null}
+                          </div>
+                          <div className="flex gap-1">
+                            {statusOptions.filter((s) => s.value !== o.status).slice(0, 2).map((s) => (
+                              <button
+                                key={s.value}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleStatusQuick(o, s.value); }}
+                                className="flex-1 text-[10px] py-1 rounded-lg border transition-colors"
+                                style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+                              >
+                                ← {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : orders.length === 0 ? (
         <div className="card p-12 text-center">
           <ClipboardList size={48} className="mx-auto mb-4" style={{ color: 'var(--border-color)' }} />
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>

@@ -246,3 +246,41 @@ class BlogPost(Base):
         slug = re.sub(r"[-\s]+", "-", slug)
         return slug or "post"
 
+
+class CustomOrderRequest(Base):
+    """Lead captured from the public /custom-order form (no auth needed to submit)."""
+    __tablename__ = "custom_order_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, default="")
+    contact = Column(String, default="")          # phone / Telegram handle
+    channel = Column(String, default="telegram") # preferred channel
+    description = Column(String, default="")      # what they want printed
+    reference_product = Column(String, default="") # optional product code / slug
+    image_url = Column(String, nullable=True)     # optional attached photo
+    status = Column(String, default="new", index=True)  # new | contacted | closed
+    notes = Column(String, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ProductView(Base):
+    """Increments when a public product page is viewed (for 'most viewed' dashboard)."""
+    __tablename__ = "product_views"
+
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), primary_key=True, index=True)
+    views = Column(Integer, default=0)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class AuditLog(Base):
+    """Who changed what — products, orders, settings, collections."""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user = Column(String, default="")       # username or 'system'
+    action = Column(String, default="")     # create | update | delete
+    entity = Column(String, default="")     # product | order | collection | settings | customer
+    entity_id = Column(Integer, nullable=True)
+    summary = Column(String, default="")    # human-readable description
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
