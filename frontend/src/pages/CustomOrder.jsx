@@ -168,13 +168,9 @@ export default function CustomOrder() {
         <p className="public-page-kicker">راهنما</p>
         <h1 className="public-page-title public-page-title--white">نحوه سفارش</h1>
         <p className="public-page-lead">
-          سفارش طرح دلخواه از طریق فرم زیر یا پیام رسانها انجام میشود.
+          سفارش طرح دلخواه از طریق پیام رسانها انجام میشود.
         </p>
       </header>
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <CustomOrderForm />
-      </div>
 
       <ol className="order-steps">
         {STEPS.map((s) => {
@@ -198,6 +194,10 @@ export default function CustomOrder() {
         <Link to="/contact" className="public-btn public-btn-primary">
           تماس با ما
         </Link>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <CustomOrderForm />
       </div>
     </div>
   );
