@@ -196,7 +196,7 @@ export default function CustomOrder() {
         </Link>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-16">
         <CustomOrderForm />
       </div>
     </div>
