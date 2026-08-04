@@ -55,7 +55,7 @@ function ProductImageGallery({ images, name }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="w-full aspect-square flex flex-col items-center justify-center gap-3 catalog-img-placeholder rounded-[1.25rem]">
+      <div className="w-full aspect-square flex flex-col items-center justify-center gap-3 catalog-img-placeholder">
         <Package size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
           بدون تصویر
@@ -66,7 +66,7 @@ function ProductImageGallery({ images, name }) {
 
   if (sorted.length === 1) {
     return (
-      <div className="w-full aspect-square overflow-hidden rounded-[1.25rem]">
+      <div className="w-full aspect-square overflow-hidden">
         <img
           src={sorted[0].image_url}
           alt={name || ''}
@@ -80,7 +80,7 @@ function ProductImageGallery({ images, name }) {
   return (
     <div className="space-y-3">
       <div
-        className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-transparent"
+        className="relative w-full aspect-square overflow-hidden bg-transparent"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -132,7 +132,7 @@ function ProductImageGallery({ images, name }) {
             key={i}
             type="button"
             onClick={() => setCurrent(i)}
-            className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
+            className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 border-2 transition-all ${
               i === current ? 'border-accent ring-2 ring-accent/20' : 'border-transparent opacity-75 hover:opacity-100'
             }`}
             style={i === current ? { borderColor: 'var(--accent)' } : undefined}
@@ -258,7 +258,7 @@ export default function PublicProductDetail() {
       <div className="max-w-5xl mx-auto animate-fade-in">
         <div className="skeleton-pulse h-5 w-32 rounded mb-6" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="skeleton-pulse aspect-square rounded-[1.25rem]" />
+          <div className="skeleton-pulse aspect-square" />
           <div className="space-y-4">
             <div className="skeleton-pulse h-8 w-3/4 rounded" />
             <div className="skeleton-pulse h-4 w-1/3 rounded" />
