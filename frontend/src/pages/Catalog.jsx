@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Sparkles, Ruler, Send } from 'lucide-react';
+import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
 import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd } from '../lib/seo';
@@ -381,10 +381,6 @@ export default function Catalog() {
               </div>
 
               <div className="catalog-hero-copy">
-                <div className="catalog-fdm-badge">
-                  <Sparkles size={12} />
-                  Spaghetti · FDM
-                </div>
                 <h1
                   className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
@@ -449,7 +445,7 @@ export default function Catalog() {
           </select>
         </div>
 
-        {(categories.length > 0 || allTags.length > 0) && (
+        {categories.length > 0 && (
           <div
             className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 catalog-filter-row"
             style={{ WebkitOverflowScrolling: 'touch' }}
@@ -480,19 +476,6 @@ export default function Catalog() {
                 بدون دسته
               </button>
             )}
-            {allTags.length > 0 && categories.length > 0 && (
-              <span className="catalog-chip-divider" aria-hidden="true">•</span>
-            )}
-            {allTags.length > 0 && allTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={`catalog-chip catalog-chip-tag ${activeTag === tag ? 'catalog-chip-active' : ''}`}
-              >
-                {tag}
-              </button>
-            ))}
           </div>
         )}
 
