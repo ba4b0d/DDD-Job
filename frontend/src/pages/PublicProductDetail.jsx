@@ -70,7 +70,7 @@ function ProductImageGallery({ images, name }) {
         <img
           src={sorted[0].image_url}
           alt={name || ''}
-          className="w-full h-full object-contain rounded-[1.25rem]"
+          className="w-full h-full object-cover rounded-[1.25rem]"
           loading="eager"
         />
       </div>
@@ -88,7 +88,7 @@ function ProductImageGallery({ images, name }) {
         <img
           src={sorted[current].image_url}
           alt={name || ''}
-          className="w-full h-full object-contain rounded-[1.25rem] transition-transform duration-700"
+          className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700"
           loading={current === 0 ? 'eager' : 'lazy'}
         />
         <button
@@ -141,7 +141,7 @@ function ProductImageGallery({ images, name }) {
             <img
               src={img.image_url}
               alt={`${name || ''} ${i + 1}`}
-              className="w-full h-full object-contain rounded-lg"
+              className="w-full h-full object-cover rounded-lg"
               loading="lazy"
             />
           </button>

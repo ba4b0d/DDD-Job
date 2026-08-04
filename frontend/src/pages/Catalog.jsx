@@ -48,7 +48,7 @@ function CatalogImageCarousel({ images, name, priority = false }) {
           width={320}
           height={320}
           decoding="async"
-          className="w-full h-full object-contain rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
+          className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
         />
@@ -69,7 +69,7 @@ function CatalogImageCarousel({ images, name, priority = false }) {
         width={320}
         height={320}
         decoding="async"
-        className="w-full h-full object-contain rounded-[1.25rem] transition-transform duration-700"
+        className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700"
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
       />
