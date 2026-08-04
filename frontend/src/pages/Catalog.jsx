@@ -41,14 +41,14 @@ function CatalogImageCarousel({ images, name, priority = false }) {
 
   if (sorted.length === 1) {
     return (
-      <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]">
+      <div className="w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)] rounded-[1.25rem]">
         <img
           src={sorted[0].image_url}
           alt={name || ''}
           width={320}
           height={320}
           decoding="async"
-          className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110"
+          className="w-full h-full object-contain rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
         />
@@ -58,7 +58,7 @@ function CatalogImageCarousel({ images, name, priority = false }) {
 
   return (
     <div
-      className="relative w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)]"
+      className="relative w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)] rounded-[1.25rem]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -69,7 +69,7 @@ function CatalogImageCarousel({ images, name, priority = false }) {
         width={320}
         height={320}
         decoding="async"
-        className="w-full h-full object-contain transition-transform duration-700"
+        className="w-full h-full object-contain rounded-[1.25rem] transition-transform duration-700"
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
       />
@@ -495,7 +495,7 @@ export default function Catalog() {
                       isActive ? 'ring-2 ring-accent border-accent' : ''
                     }`}
                   >
-                    <div className="relative aspect-square overflow-hidden" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                    <div className="relative aspect-square overflow-hidden rounded-[1.25rem]" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
                       {coll.image_url ? (
                         <img
                           src={coll.image_url}
@@ -504,7 +504,7 @@ export default function Catalog() {
                           height={320}
                           loading={idx < 3 ? 'eager' : 'lazy'}
                           decoding="async"
-                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                          className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
