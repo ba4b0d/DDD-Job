@@ -587,6 +587,42 @@ def _headers(token: str) -> dict:
     return {}
 
 
+def api_ensure_category(api: str, token: str, category_name: str) -> int | None:
+    """Check if category exists in DB (or create it if missing). Returns category_id."""
+    if not category_name:
+        return None
+
+    # List all categories (flat)
+    try:
+        r = _session.get(f"{api}/api/v1/categories/all", headers=_headers(token))
+        if r.status_code == 200:
+            for c in r.json():
+                if c.get("name", "").strip().lower() == category_name.strip().lower():
+                    return c.get("id")
+    except Exception:
+        pass
+
+    # Create category if missing
+    try:
+        r = _session.post(
+            f"{api}/api/v1/categories",
+            json={"name": category_name.strip()},
+            headers=_headers(token),
+        )
+        if r.status_code in (200, 201):
+            return r.json().get("id")
+        elif r.status_code == 400 and "قبلاً وجود دارد" in r.text:
+            # Race condition / existing category fetch again
+            r2 = _session.get(f"{api}/api/v1/categories/all", headers=_headers(token))
+            if r2.status_code == 200:
+                for c in r2.json():
+                    if c.get("name", "").strip().lower() == category_name.strip().lower():
+                        return c.get("id")
+    except Exception as e:
+        print(f"   ⚠ Failed to create/resolve category '{category_name}': {e}")
+    return None
+
+
 def api_create(api: str, token: str, data: dict) -> dict:
     r = _session.post(f"{api}/api/v1/products", json=data, headers=_headers(token))
     r.raise_for_status()
@@ -723,6 +759,11 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
     if args.existing_id:
         pid = args.existing_id
     else:
+        # Resolve / auto-create category in DB and link via category_ids
+        cat_id = None
+        if args.category:
+            cat_id = api_ensure_category(args.api, token, args.category)
+
         data = {
             "product_id": info["product_id"],
             "name": info["name"],
@@ -732,6 +773,9 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
             "machine_id": args.machine_id,
             "material_id": args.material_id,
         }
+        if cat_id:
+            data["category_ids"] = [cat_id]
+
         if info.get("bbox"):
             data.update(info["bbox"])
         try:
@@ -767,7 +811,7 @@ def main():
     ap.add_argument("--existing-id", type=int, default=None, help="Upload images to existing product")
     ap.add_argument("--no-slice", action="store_true", help="Skip OrcaSlicer slicing")
     ap.add_argument("--pattern", default=None, help="Filter folders by substring in folder name")
-    ap.add_argument("--scale", type=float, default=1.0, help="Scale factor for the model (e.g. 0.5 to scale by 50%)")
+    ap.add_argument("--scale", type=float, default=1.0, help="Scale factor for the model (e.g. 0.5 to scale by 50%%)")
     args = ap.parse_args()
 
     folder = Path(args.folder)
