@@ -483,7 +483,7 @@ def permanent_delete_product(product_id: int, user=Depends(require_admin), db: S
     return {"message": "Product permanently deleted", "id": product_id}
 
 
-MAX_IMAGES = 5
+MAX_IMAGES = 6
 
 
 @router.post("/products/{product_id}/images")

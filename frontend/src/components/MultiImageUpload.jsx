@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Plus, Trash2, Star, StarOff, GripVertical } from 'lucide-react';
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 6;
 
 export default function MultiImageUpload({ images = [], onChange }) {
   const [dragOver, setDragOver] = useState(false);
@@ -123,7 +123,7 @@ export default function MultiImageUpload({ images = [], onChange }) {
       </div>
 
       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-        {totalCount}/{MAX_IMAGES} تصویر • تصویر اصلی با ⭐ نمایش داده می‌شود
+        {totalCount}/{MAX_IMAGES} تصویر (شامل گیف) • تصویر اصلی با ⭐ نمایش داده می‌شود
       </p>
     </div>
   );

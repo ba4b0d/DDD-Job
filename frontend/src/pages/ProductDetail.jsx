@@ -356,7 +356,7 @@ export default function ProductDetail() {
                 <Upload size={28} style={{ color: 'var(--text-muted)' }} />
                 <span className="text-sm">تصاویر را بکشید یا کلیک کنید</span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  حداکثر ۵ تصویر • JPEG, PNG, WebP, GIF
+                  حداکثر ۶ تصویر (۵ عکس + ۱ گیف) • JPEG, PNG, WebP, GIF
                 </span>
               </label>
             )}
