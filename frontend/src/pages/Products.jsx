@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Clock, Weight, ArrowUpLeft, Download, Upload, Eye, EyeOff, Trash2, CheckSquare, XSquare } from 'lucide-react';
-import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, getCollectionsAll, createProduct, exportProducts, importProducts, updateProduct, deleteProduct, permanentDeleteProduct, bulkProductAction } from '../lib/api';
+import { getProductsAll, getMaterialsAll, getMachinesAll, getCategoriesList, getCategoriesFlat, getCollectionsAll, createProduct, exportProducts, importProducts, updateProduct, deleteProduct, permanentDeleteProduct, bulkProductAction } from '../lib/api';
 import SearchBar from '../components/SearchBar';
 import FilterBar from '../components/FilterBar';
 import PriceDisplay from '../components/PriceDisplay';
@@ -26,7 +26,8 @@ export default function Products() {
   const [collections, setCollections] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [bulkForm, setBulkForm] = useState({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '' });
+  const [bulkForm, setBulkForm] = useState({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '', add_category_ids: [], remove_category_ids: [] });
+  const [flatCategories, setFlatCategories] = useState([]);
   const fileInputRef = useRef(null);
 
   const loadProducts = async () => {
@@ -45,12 +46,13 @@ export default function Products() {
     const controller = new AbortController();
     const load = async () => {
       try {
-        const [pRes, mRes, machRes, cRes, collRes] = await Promise.all([
+        const [pRes, mRes, machRes, cRes, collRes, fcRes] = await Promise.all([
           getProductsAll({ signal: controller.signal }),
           getMaterialsAll({ signal: controller.signal }),
           getMachinesAll({ signal: controller.signal }),
           getCategoriesList({ signal: controller.signal }),
           getCollectionsAll({ signal: controller.signal }),
+          getCategoriesFlat({ signal: controller.signal }),
         ]);
         const pList = Array.isArray(pRes.data)
           ? pRes.data
@@ -63,6 +65,7 @@ export default function Products() {
         setMachines(machRes.data || []);
         setCategories(catsList);
         setCollections(Array.isArray(collRes.data) ? collRes.data : []);
+        setFlatCategories(Array.isArray(fcRes.data) ? fcRes.data : []);
         setError(null);
       } catch (err) {
         if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED') {
@@ -236,7 +239,7 @@ export default function Products() {
   };
 
   const openBulkModal = () => {
-    setBulkForm({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '' });
+    setBulkForm({ set_active: '', set_collection_id: '', clear_collections: false, set_tags: '', set_notes: '', add_category_ids: [], remove_category_ids: [] });
     setShowBulkModal(true);
   };
 
@@ -249,6 +252,8 @@ export default function Products() {
     if (bulkForm.clear_collections) payload.clear_collections = true;
     if (bulkForm.set_tags) payload.set_tags = bulkForm.set_tags;
     if (bulkForm.set_notes) payload.set_notes = bulkForm.set_notes;
+    if (bulkForm.add_category_ids.length > 0) payload.add_category_ids = bulkForm.add_category_ids;
+    if (bulkForm.remove_category_ids.length > 0) payload.remove_category_ids = bulkForm.remove_category_ids;
     try {
       const res = await bulkProductAction(payload);
       alert(`${res.data?.updated ?? selectedIds.length} محصول به‌روزرسانی شد.`);
@@ -566,6 +571,58 @@ export default function Products() {
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>توضیحات سئو (جایگزین می‌شود)</label>
             <textarea value={bulkForm.set_notes} onChange={(e) => setBulkForm({ ...bulkForm, set_notes: e.target.value })} className="input-field" rows={3} placeholder="توضیحات یکسان برای همه محصولات انتخاب‌شده" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>افزودن به دسته‌بندی</label>
+            <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-1" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+              {flatCategories.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={bulkForm.add_category_ids.includes(c.id)}
+                    onChange={(e) => {
+                      const ids = e.target.checked
+                        ? [...bulkForm.add_category_ids, c.id]
+                        : bulkForm.add_category_ids.filter((x) => x !== c.id);
+                      setBulkForm({ ...bulkForm, add_category_ids: ids });
+                    }}
+                    className="accent-[var(--accent)]"
+                  />
+                  <span style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                  {c.parent_id && <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>(زیرمجموعه)</span>}
+                </label>
+              ))}
+              {flatCategories.length === 0 && (
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ای وجود ندارد</div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>حذف از دسته‌بندی</label>
+            <div className="max-h-40 overflow-y-auto border rounded-lg p-2 space-y-1" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+              {flatCategories.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-xs cursor-pointer py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={bulkForm.remove_category_ids.includes(c.id)}
+                    onChange={(e) => {
+                      const ids = e.target.checked
+                        ? [...bulkForm.remove_category_ids, c.id]
+                        : bulkForm.remove_category_ids.filter((x) => x !== c.id);
+                      setBulkForm({ ...bulkForm, remove_category_ids: ids });
+                    }}
+                    className="accent-[var(--accent)]"
+                  />
+                  <span style={{ color: 'var(--text-primary)' }}>{c.name}</span>
+                  {c.parent_id && <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>(زیرمجموعه)</span>}
+                </label>
+              ))}
+              {flatCategories.length === 0 && (
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>دسته‌بندی‌ای وجود ندارد</div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>

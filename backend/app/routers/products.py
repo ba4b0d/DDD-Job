@@ -424,6 +424,8 @@ class BulkProductAction(BaseModel):
     clear_collections: bool = False
     set_tags: str | None = None
     set_notes: str | None = None
+    add_category_ids: list[int] | None = None
+    remove_category_ids: list[int] | None = None
 
 
 @router.delete("/products/{product_id}")
@@ -463,6 +465,22 @@ def bulk_product_action(body: BulkProductAction, user=Depends(require_any_role),
                 coll = db.query(Collection).filter(Collection.id == body.set_collection_id).first()
                 if coll:
                     db.add(ProductCollection(product_id=p.id, collection_id=coll.id))
+        changed += len(products)
+
+    # Category assignment — add/remove categories from selected products
+    if body.add_category_ids or body.remove_category_ids:
+        from app.models import Category, ProductCategory as PC
+        add_ids = set(body.add_category_ids or [])
+        remove_ids = set(body.remove_category_ids or [])
+        for p in products:
+            if add_ids:
+                existing_ids = {pc.category_id for pc in db.query(PC).filter(PC.product_id == p.id).all()}
+                for cat_id in add_ids - existing_ids:
+                    cat = db.query(Category).filter(Category.id == cat_id, Category.is_active == True).first()
+                    if cat:
+                        db.add(PC(product_id=p.id, category_id=cat_id))
+            if remove_ids:
+                db.query(PC).filter(PC.product_id == p.id, PC.category_id.in_(remove_ids)).delete()
         changed += len(products)
 
     db.commit()
