@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import {
   Package,
@@ -11,10 +12,13 @@ import {
   Send,
   MessageCircle,
   Box,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import { useSEO, buildProductJsonLd, buildBreadcrumbJsonLd, absoluteUrl } from '../lib/seo';
+import { Z_INDEX_MODAL_PORTAL } from '../lib/constants';
 
 function displayName(name) {
   if (!name || /^[?\s]+$/.test(name)) return 'بدون نام';
@@ -23,6 +27,7 @@ function displayName(name) {
 
 function ProductImageGallery({ images, name }) {
   const [current, setCurrent] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
@@ -40,6 +45,27 @@ function ProductImageGallery({ images, name }) {
     () => setCurrent((c) => (c - 1 + sorted.length) % sorted.length),
     [sorted.length]
   );
+
+  const openFullscreen = useCallback(() => setFullscreen(true), []);
+  const closeFullscreen = useCallback(() => setFullscreen(false), []);
+
+  // Escape / arrow-key navigation while fullscreen
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') { closeFullscreen(); return; }
+      if (e.key === 'ArrowLeft') next();
+      if (e.key === 'ArrowRight') prev();
+    };
+    document.addEventListener('keydown', onKey);
+    // Lock body scroll behind the overlay
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [fullscreen, next, prev, closeFullscreen]);
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -66,88 +92,195 @@ function ProductImageGallery({ images, name }) {
 
   if (sorted.length === 1) {
     return (
-      <div className="w-full aspect-square overflow-hidden rounded-[1.25rem]">
-        <img
-          src={sorted[0].image_url}
-          alt={name || ''}
-          className="w-full h-full object-cover rounded-[1.25rem]"
-          loading="eager"
+      <>
+        <div className="relative w-full aspect-square overflow-hidden rounded-[1.25rem]">
+          <img
+            src={sorted[0].image_url}
+            alt={name || ''}
+            className="w-full h-full object-cover rounded-[1.25rem]"
+            loading="eager"
+          />
+          <button
+            type="button"
+            onClick={openFullscreen}
+            className="absolute bottom-3 left-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
+            aria-label="تمام صفحه"
+            title="تمام صفحه"
+          >
+            <Maximize2 size={18} />
+          </button>
+        </div>
+        <FullscreenView
+          open={fullscreen}
+          sorted={sorted}
+          current={current}
+          onClose={closeFullscreen}
+          onPrev={prev}
+          onNext={next}
         />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div
-        className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-transparent"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <img
-          src={sorted[current].image_url}
-          alt={name || ''}
-          className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700"
-          loading={current === 0 ? 'eager' : 'lazy'}
-        />
-        <button
-          type="button"
-          onClick={prev}
-          className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
-          aria-label="قبلی"
+    <>
+      <div className="space-y-3">
+        <div
+          className="relative w-full aspect-square overflow-hidden rounded-[1.25rem] bg-transparent"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          type="button"
-          onClick={next}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
-          aria-label="بعدی"
-        >
-          <ChevronRight size={20} />
-        </button>
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {sorted.map((_, i) => (
+          <img
+            src={sorted[current].image_url}
+            alt={name || ''}
+            className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700"
+            loading={current === 0 ? 'eager' : 'lazy'}
+          />
+          <button
+            type="button"
+            onClick={prev}
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
+            aria-label="قبلی"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={next}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
+            aria-label="بعدی"
+          >
+            <ChevronRight size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={openFullscreen}
+            className="absolute bottom-3 left-3 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-opacity"
+            aria-label="تمام صفحه"
+            title="تمام صفحه"
+          >
+            <Maximize2 size={18} />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {sorted.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrent(i)}
+                className="rounded-full transition-all"
+                style={{
+                  width: i === current ? 18 : 7,
+                  height: 7,
+                  backgroundColor: i === current ? '#fff' : 'rgba(255,255,255,0.45)',
+                }}
+                aria-label={`تصویر ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Thumbnails */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+          {sorted.map((img, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setCurrent(i)}
-              className="rounded-full transition-all"
-              style={{
-                width: i === current ? 18 : 7,
-                height: 7,
-                backgroundColor: i === current ? '#fff' : 'rgba(255,255,255,0.45)',
-              }}
+              className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                i === current ? 'border-accent ring-2 ring-accent/20' : 'border-transparent opacity-75 hover:opacity-100'
+              }`}
+              style={i === current ? { borderColor: 'var(--accent)' } : undefined}
               aria-label={`تصویر ${i + 1}`}
-            />
+            >
+              <img
+                src={img.image_url}
+                alt={`${name || ''} ${i + 1}`}
+                className="w-full h-full object-cover rounded-lg"
+                loading="lazy"
+              />
+            </button>
           ))}
         </div>
       </div>
+      <FullscreenView
+        open={fullscreen}
+        sorted={sorted}
+        current={current}
+        onClose={closeFullscreen}
+        onPrev={prev}
+        onNext={next}
+      />
+    </>
+  );
+}
 
-      {/* Thumbnails */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {sorted.map((img, i) => (
+function FullscreenView({ open, sorted, current, onClose, onPrev, onNext }) {
+  if (!open) return null;
+  const img = sorted[current];
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: Z_INDEX_MODAL_PORTAL + 5,
+        backgroundColor: 'rgba(0, 0, 0, 0.94)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }} />
+      <img
+        src={img.image_url}
+        alt={img.alt || ''}
+        className="max-w-[94vw] max-h-[92vh] object-contain rounded-lg shadow-2xl"
+        style={{ position: 'relative', zIndex: 1 }}
+        onClick={(e) => e.stopPropagation()}
+      />
+      {/* Close */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+        aria-label="بستن"
+        title="بستن (Esc)"
+      >
+        <X size={22} />
+      </button>
+      {/* Counter */}
+      <span
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm tabular-nums"
+        style={{ direction: 'ltr' }}
+      >
+        {current + 1} / {sorted.length}
+      </span>
+      {/* Nav */}
+      {sorted.length > 1 && (
+        <>
           <button
-            key={i}
             type="button"
-            onClick={() => setCurrent(i)}
-            className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all ${
-              i === current ? 'border-accent ring-2 ring-accent/20' : 'border-transparent opacity-75 hover:opacity-100'
-            }`}
-            style={i === current ? { borderColor: 'var(--accent)' } : undefined}
-            aria-label={`تصویر ${i + 1}`}
+            onClick={(e) => { e.stopPropagation(); onPrev(); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+            aria-label="قبلی"
           >
-            <img
-              src={img.image_url}
-              alt={`${name || ''} ${i + 1}`}
-              className="w-full h-full object-cover rounded-lg"
-              loading="lazy"
-            />
+            <ChevronLeft size={26} />
           </button>
-        ))}
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onNext(); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+            aria-label="بعدی"
+          >
+            <ChevronRight size={26} />
+          </button>
+        </>
+      )}
+    </div>,
+    document.body
   );
 }
 
