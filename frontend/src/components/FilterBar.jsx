@@ -11,6 +11,20 @@ export default function FilterBar({
   onMaterialChange,
   onMachineChange,
 }) {
+  // Build parent map to compute nesting depth for subcategory indentation
+  const catById = new Map(categories.map((c) => [c.id, c]));
+  const depthOf = (cat) => {
+    let depth = 0;
+    let cur = cat;
+    const seen = new Set();
+    while (cur && cur.parent_id != null && catById.has(cur.parent_id) && !seen.has(cur.id)) {
+      seen.add(cur.id);
+      depth += 1;
+      cur = catById.get(cur.parent_id);
+    }
+    return depth;
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Filter size={18} style={{ color: 'var(--text-muted)' }} />
@@ -26,9 +40,13 @@ export default function FilterBar({
       >
         <option value="">همه دسته‌ها</option>
         <option value="uncategorized">بدون دسته‌بندی</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.id}>{cat.name}</option>
-        ))}
+        {categories.map((cat) => {
+          const depth = depthOf(cat);
+          const label = depth > 0 ? `${'\u00A0'.repeat(depth * 3)}└ ${cat.name}` : cat.name;
+          return (
+            <option key={cat.id} value={cat.id}>{label}</option>
+          );
+        })}
       </select>
 
       <select

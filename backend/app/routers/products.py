@@ -86,6 +86,7 @@ def _enrich_product(product: Product, db: Session, machines_dict: dict = None, m
         "final_price": product.final_price,
         "category": product.category,
         "notes": product.notes,
+        "package_info": product.package_info or "",
         "is_active": product.is_active,
     }
     enriched = {**data, **costs}

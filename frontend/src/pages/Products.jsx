@@ -333,7 +333,7 @@ export default function Products() {
           </select>
         </div>
         <FilterBar
-          categories={categories}
+          categories={flatCategories}
           materials={materials}
           machines={machines}
           selectedCategory={filterCategory}
