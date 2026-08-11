@@ -162,11 +162,12 @@ export default function Materials() {
   }
 
   async function handleDelete(m) {
-    if (!confirm(`"${m.name} ${m.color || ''}" حذف شود؟`)) return
+    if (!confirm(`"${m.name} ${m.color || ''}" مخفی شود؟`)) return
     try {
       await deleteMaterial(m.id)
       loadMaterials()
     } catch (e) {
+      alert('خطا: ' + (e.response?.data?.detail || e.message))
       console.error('Failed to delete material:', e)
     }
   }
@@ -178,6 +179,7 @@ export default function Materials() {
       await permanentDeleteMaterial(m.id)
       loadMaterials()
     } catch (e) {
+      alert(e.response?.data?.detail || 'خطا: ' + e.message)
       console.error('Failed to permanently delete material:', e)
     }
   }
@@ -355,7 +357,15 @@ export default function Materials() {
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}
                   >
-                    <Trash2 size={12} /> حذف
+                    <Trash2 size={12} /> مخفی
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePermanentDelete(m)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                    style={{ background: 'rgba(220,38,38,0.14)', color: '#dc2626' }}
+                  >
+                    <Trash2 size={12} /> حذف دائمی
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Check, Zap, Star } from 'lucide-react'
-import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine, setDefaultMachine } from '../lib/api'
+import { getMachinesAll, getSettings, createMachine, updateMachine, deleteMachine, permanentDeleteMachine, setDefaultMachine } from '../lib/api'
 import Modal from '../components/Modal'
 import { formatPrice, formatNumber, ERROR_STYLE, getInputStyle } from '../lib/constants'
 import { validateField } from '../lib/validation'
@@ -146,11 +146,25 @@ export default function Machines() {
   }
 
   async function handleDelete(m) {
+    if (!confirm(`"${m.name}" مخفی شود؟`)) return
     try {
       await deleteMachine(m.id)
       reload()
     } catch (e) {
+      alert('خطا: ' + (e.response?.data?.detail || e.message))
       console.error('Failed to delete machine:', e)
+    }
+  }
+
+  async function handlePermanentDelete(m) {
+    if (!confirm(`"${m.name}" برای همیشه حذف شود؟ این عملیات غیرقابل بازگشت است!`)) return
+    if (!confirm('مطمئن هستید؟')) return
+    try {
+      await permanentDeleteMachine(m.id)
+      reload()
+    } catch (e) {
+      alert(e.response?.data?.detail || 'خطا: ' + e.message)
+      console.error('Failed to permanently delete machine:', e)
     }
   }
 
@@ -290,9 +304,18 @@ export default function Machines() {
                           onClick={() => handleDelete(m)}
                           className="p-2 rounded-lg"
                           style={{ backgroundColor: 'rgba(239,68,68,0.12)', color: '#f87171' }}
-                          title="حذف"
+                          title="مخفی کردن"
                         >
                           <Trash2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePermanentDelete(m)}
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: 'rgba(127,29,29,0.35)', color: '#fca5a5' }}
+                          title="حذف دائمی"
+                        >
+                          <Trash2 size={14} className="opacity-80" />
                         </button>
                       </div>
                     </td>
@@ -342,7 +365,15 @@ export default function Machines() {
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
                     style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}
                   >
-                    <Trash2 size={12} /> حذف
+                    <Trash2 size={12} /> مخفی
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handlePermanentDelete(m)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                    style={{ background: 'rgba(127,29,29,0.35)', color: '#fca5a5' }}
+                  >
+                    <Trash2 size={12} /> حذف دائمی
                   </button>
                 </div>
               </div>

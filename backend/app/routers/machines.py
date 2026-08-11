@@ -72,3 +72,23 @@ def delete_machine(machine_id: int, user=Depends(require_admin), db: Session = D
     db.commit()
     invalidate_stats()
     return {"message": "Machine deactivated", "id": machine_id}
+
+
+@router.delete("/{machine_id}/permanent")
+def permanent_delete_machine(machine_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
+    existing = db.query(Machine).filter(Machine.id == machine_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Machine not found")
+    from app.models import Product
+    in_use = db.query(Product).filter(Product.machine_id == machine_id).count()
+    if in_use:
+        raise HTTPException(
+            status_code=400,
+            detail=f"این ماشین توسط {in_use} محصول استفاده می‌شود و نمی‌توان آن را برای همیشه حذف کرد. ابتدا محصولات را به ماشین دیگری تغییر دهید، یا فقط آن را مخفی کنید.",
+        )
+    # If the deleted machine was the default printer, fall back to none so the
+    # form auto-select simply skips until the user picks one.
+    db.delete(existing)
+    db.commit()
+    invalidate_stats()
+    return {"message": "Machine permanently deleted", "id": machine_id}

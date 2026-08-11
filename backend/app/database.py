@@ -16,20 +16,38 @@ engine = create_engine(
 )
 
 import logging
+from sqlalchemy import event
 
 logger = logging.getLogger(__name__)
+
+
+# SQLite pragmas are PER-CONNECTION. Previously they were set on one ad-hoc
+# connection (below) and pooled request sessions never enforced foreign_keys —
+# a permanent delete of a referenced material/machine silently succeeded and
+# SQLAlchemy nulled the FK on loaded children (all products lost material_id).
+# Listen on every new pooled connection so FKs are always enforced.
+def _on_connect(dbapi_conn, connection_record):  # noqa: ARG001
+    try:
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA synchronous=NORMAL")
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+    except Exception:
+        pass
+
+
+event.listen(engine, "connect", _on_connect)
 
 
 # Enable WAL mode for better concurrent reads + writes.
 # Tolerate permission errors (e.g. mounted volume owned by a different
 # user) so the app still boots — WAL is an optimization, not a hard
-# requirement.
+# requirement. journal_mode persists in the DB file; pragmas that must be
+# per-connection live in _on_connect above.
 def _enable_wal():
     try:
         with engine.connect() as conn:
             conn.execute(text("PRAGMA journal_mode=WAL"))
-            conn.execute(text("PRAGMA synchronous=NORMAL"))
-            conn.execute(text("PRAGMA foreign_keys=ON"))
     except Exception as exc:
         logger.warning("Could not enable SQLite WAL mode: %s", exc)
 

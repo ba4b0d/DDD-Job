@@ -85,6 +85,13 @@ def permanent_delete_material(material_id: int, user=Depends(require_admin), db:
     existing = db.query(Material).filter(Material.id == material_id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="Material not found")
+    from app.models import Product
+    in_use = db.query(Product).filter(Product.material_id == material_id).count()
+    if in_use:
+        raise HTTPException(
+            status_code=400,
+            detail=f"این ماده توسط {in_use} محصول استفاده می‌شود و نمی‌توان آن را برای همیشه حذف کرد. ابتدا محصولات را به مادهٔ دیگری تغییر دهید، یا فقط آن را مخفی کنید.",
+        )
     db.delete(existing)
     db.commit()
     invalidate_stats()

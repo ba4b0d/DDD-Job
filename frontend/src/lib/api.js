@@ -49,6 +49,7 @@ export const getMachinesAll = (config) => api.get('/machines/all', config);
 export const createMachine = (data) => api.post('/machines', data);
 export const updateMachine = (id, data) => api.put(`/machines/${id}`, data);
 export const deleteMachine = (id) => api.delete(`/machines/${id}`);
+export const permanentDeleteMachine = (id) => api.delete(`/machines/${id}/permanent`);
 export const setDefaultMachine = (id) => api.post(`/machines/${id}/set-default`);
 
 // ===== Products =====
