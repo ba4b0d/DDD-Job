@@ -8,6 +8,14 @@ import {
   Store,
   ArrowUpLeft,
   ClipboardList,
+  TrendingUp,
+  Printer,
+  Boxes,
+  Inbox,
+  BarChart3,
+  Wallet,
+  ShoppingBag,
+  Eye,
 } from 'lucide-react';
 import { getStats, getProducts, getSettings } from '../lib/api';
 import { formatPrice } from '../lib/utils';
@@ -18,33 +26,51 @@ const QUICK_ACTIONS = [
     title: 'محصول جدید',
     subtitle: 'وزن · زمان · قیمت پیشنهادی',
     icon: Package,
+    tint: 'rgba(99, 102, 241, 0.13)',
+    color: '#6366f1',
   },
   {
     path: '/materials',
     title: 'ماده جدید',
     subtitle: 'قیمت هر کیلو · ضایعات',
     icon: Layers,
+    tint: 'rgba(8, 145, 178, 0.13)',
+    color: '#0891b2',
   },
   {
     path: '/machines',
     title: 'ماشین جدید',
     subtitle: 'ولت · عمر · نگهداری',
     icon: Cog,
+    tint: 'rgba(217, 119, 6, 0.13)',
+    color: '#d97706',
   },
   {
     path: '/calculator',
     title: 'ماشین حساب',
     subtitle: 'محاسبه سریع بدون ذخیره',
     icon: Calculator,
+    tint: 'rgba(22, 163, 74, 0.13)',
+    color: '#16a34a',
   },
 ];
 
-function KpiCard({ label, value, hint }) {
+function KpiCard({ label, value, hint, icon: Icon }) {
   return (
-    <div className="card p-5 flex flex-col gap-1.5 min-h-[112px]">
-      <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </span>
+    <div className="card p-5 flex flex-col gap-2 min-h-[118px]">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+          {label}
+        </span>
+        {Icon ? (
+          <span
+            className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center"
+            style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}
+          >
+            <Icon size={17} />
+          </span>
+        ) : null}
+      </div>
       <span
         className="text-3xl font-bold tracking-tight leading-none"
         style={{ color: 'var(--text-primary)' }}
@@ -52,7 +78,8 @@ function KpiCard({ label, value, hint }) {
         {value}
       </span>
       {hint ? (
-        <span className="text-xs mt-auto" style={{ color: 'var(--accent-2, #22d3ee)' }}>
+        <span className="text-xs mt-auto flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+          <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: 'var(--accent)' }} />
           {hint}
         </span>
       ) : null}
@@ -60,21 +87,34 @@ function KpiCard({ label, value, hint }) {
   );
 }
 
+function EmptyState({ icon: Icon, text = 'هنوز داده‌ای نیست', sub }) {
+  return (
+    <div className="py-6 flex flex-col items-center gap-2 text-center">
+      <span
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}
+      >
+        <Icon size={18} />
+      </span>
+      <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{text}</p>
+      {sub ? <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{sub}</p> : null}
+    </div>
+  );
+}
+
 function StatusBadge({ active }) {
   if (active) {
     return (
-      <span
-        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-        style={{ backgroundColor: 'rgba(34, 197, 94, 0.18)', color: '#4ade80' }}
-      >
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium" style={{ color: '#16a34a' }}>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
         فعال
       </span>
     );
   }
   return (
     <span
-      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ backgroundColor: 'rgba(245, 158, 11, 0.18)', color: '#fbbf24' }}
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+      style={{ backgroundColor: 'rgba(245, 158, 11, 0.16)', color: '#b45309' }}
     >
       پیش‌نویس
     </span>
@@ -157,7 +197,10 @@ export default function Dashboard() {
     );
   }
 
-  const markupLabel = `x${Number(markup).toFixed(1).replace(/\.0$/, '')}`;
+  const markupLabel = `x${Number(markup).toFixed(1).replace(/\\.0$/, '')}`;
+  // Backend /products ignores the limit param — cap client-side so the
+  // dashboard shows a summary, not the full catalog
+  const recent = recentProducts.slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -174,21 +217,25 @@ export default function Dashboard() {
           label="میانگین ضریب"
           value={markupLabel}
           hint="هدف ۳.۲"
+          icon={TrendingUp}
         />
         <KpiCard
           label="ماشین‌ها"
           value={stats?.total_machines ?? 0}
           hint="همه آنلاین"
+          icon={Printer}
         />
         <KpiCard
           label="مواد اولیه"
           value={stats?.total_materials ?? 0}
           hint={`${stats?.total_materials ?? 0} نوع فعال`}
+          icon={Boxes}
         />
         <KpiCard
           label="محصولات فعال"
           value={stats?.active_products ?? stats?.total_products ?? 0}
           hint={`${stats?.total_products ?? 0} کل`}
+          icon={Package}
         />
       </div>
 
@@ -218,20 +265,24 @@ export default function Dashboard() {
             label="تعداد سفارش"
             value={stats?.orders_this_month ?? 0}
             hint="بدون لغو · همین ماه"
+            icon={ShoppingBag}
           />
           <KpiCard
             label="دریافتی"
             value={formatPrice(stats?.orders_paid_this_month ?? 0)}
             hint="جمع مبلغ پرداخت‌شده"
+            icon={Wallet}
           />
           <KpiCard
             label="مبلغ کل (نقل‌قول)"
             value={formatPrice(stats?.orders_quoted_this_month ?? 0)}
             hint="جمع قیمت اعلام‌شده"
+            icon={BarChart3}
           />
           <KpiCard
             label="باز · در جریان"
             value={stats?.orders_open ?? 0}
+            icon={ClipboardList}
             hint={
               stats?.orders_remaining_this_month != null
                 ? `مانده ماه: ${formatPrice(stats.orders_remaining_this_month)}`
@@ -261,7 +312,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+            <EmptyState icon={ShoppingBag} sub="بعد از ثبت اولین سفارش، پرفروش‌ترین‌ها اینجا نمایش داده می‌شوند" />
           )}
         </section>
 
@@ -281,15 +332,18 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+            <EmptyState icon={Eye} sub="بازدید هر محصول پس از انتشار در کاتالوگ شمارش می‌شود" />
           )}
         </section>
       </div>
 
-      {/* Orders by status + revenue by month */}
+      {/* Orders by status + revenue */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="card p-5">
           <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>سفارش‌ها بر اساس وضعیت</h3>
+          {Object.entries(stats?.orders_by_status || {}).length === 0 ? (
+            <EmptyState icon={Inbox} sub="وضعیت سفارش‌های این ماه اینجا نمایش داده می‌شود" />
+          ) : (
           <div className="flex flex-wrap gap-2">
             {Object.entries(stats?.orders_by_status || {}).map(([status, count]) => {
               const labels = { new: 'جدید', quoted: 'قیمت‌داده‌شده', printing: 'در حال چاپ', ready: 'آماده', delivered: 'تحویل‌شده', cancelled: 'لغو' };
@@ -303,6 +357,7 @@ export default function Dashboard() {
               );
             })}
           </div>
+          )}
         </section>
 
         <section className="card p-5">
@@ -319,7 +374,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>هنوز داده‌ای نیست</p>
+            <EmptyState icon={BarChart3} sub="درآمد ماهانه پس از ثبت سفارش‌ها محاسبه می‌شود" />
           )}
         </section>
       </div>
@@ -359,11 +414,7 @@ export default function Dashboard() {
               >
                 <div
                   className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #22d3ee))',
-                    boxShadow: '0 0 14px rgba(129, 140, 248, 0.35)',
-                    color: '#fff',
-                  }}
+                  style={{ backgroundColor: item.tint, color: item.color }}
                 >
                   <item.icon size={18} />
                 </div>
@@ -413,7 +464,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {recentProducts.length === 0 ? (
+          {recent.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               هنوز محصولی ثبت نشده است
             </div>
@@ -431,7 +482,7 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentProducts.map((p) => (
+                    {recent.map((p) => (
                       <tr
                         key={p.id}
                         className="table-row cursor-pointer"
@@ -459,7 +510,7 @@ export default function Dashboard() {
               </div>
 
               <div className="sm:hidden divide-y" style={{ borderColor: 'var(--border-color)' }}>
-                {recentProducts.map((p) => (
+                {recent.map((p) => (
                   <div
                     key={p.id}
                     className="p-4 cursor-pointer active:bg-white/5"
