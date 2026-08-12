@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/api';
@@ -142,6 +142,24 @@ function displayName(name) {
   return name;
 }
 
+/* ─── Collection/category theme banner ─── */
+// Each collection gets a deterministic unique gradient theme (hash of slug/name)
+const BANNER_THEMES = [
+  { from: '#7c3aed', to: '#312e81', accent: '#c4b5fd' },  // بنفش
+  { from: '#0e7490', to: '#164e63', accent: '#67e8f9' },  // فیروزه‌ای
+  { from: '#b45309', to: '#78350f', accent: '#fcd34d' },  // کهربایی
+  { from: '#047857', to: '#064e3b', accent: '#6ee7b7' },  // زمردی
+  { from: '#be123c', to: '#881337', accent: '#fda4af' },  // گلی
+  { from: '#4338ca', to: '#1e1b4b', accent: '#a5b4fc' },  // نیلی
+];
+
+function themeFor(key) {
+  let h = 0;
+  const s = String(key || '');
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return BANNER_THEMES[h % BANNER_THEMES.length];
+}
+
 export default function Catalog() {
   useSEO({
     title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
@@ -163,6 +181,25 @@ export default function Catalog() {
   const [activeTag, setActiveTag] = useState(() => searchParams.get('tag') || null);
   const [sortBy, setSortBy] = useState('name');
 
+  // Products section wrapper — scroll target when a collection/category is selected
+  const productsSectionRef = useRef(null);
+
+  const clearFilters = useCallback(() => {
+    setActiveCategory(null);
+    setActiveTag(null);
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
+
+  // Scroll the page so the products start at the top whenever a filter becomes active
+  useEffect(() => {
+    if (loading) return;
+    if (!activeCategory && !activeTag) return;
+    const id = window.setTimeout(() => {
+      productsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [activeCategory, activeTag, loading]);
+
   // Sync activeCategory & activeTag when URL params change
   useEffect(() => {
     const cat = searchParams.get('category');
@@ -182,17 +219,17 @@ export default function Catalog() {
         // /catalog/categories returns tree [{id, name, children: [...]}]
         // Flatten tree for filter chips with depth info
         const flattenTree = (nodes, depth = 0) => {
-          let result = [];
-          for (const n of nodes) {
-            result.push({ id: n.id, name: n.name, depth });
-            if (n.children && n.children.length > 0) {
-              result = result.concat(flattenTree(n.children, depth + 1));
-            }
-          }
-          return result;
-        };
-        const treeData = Array.isArray(cRes.data) ? cRes.data : [];
-        const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, count: null }));
+                  let result = [];
+                  for (const n of nodes) {
+                    result.push({ id: n.id, name: n.name, depth, description: n.description || '' });
+                    if (n.children && n.children.length > 0) {
+                      result = result.concat(flattenTree(n.children, depth + 1));
+                    }
+                  }
+                  return result;
+                };
+                const treeData = Array.isArray(cRes.data) ? cRes.data : [];
+                const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, count: null, description: c.description }));
         setProducts(pList);
         setCategories(catsList);
         setCollections(collList);
@@ -333,7 +370,37 @@ export default function Catalog() {
         list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fa'));
     }
     return list;
-  }, [products, search, activeCategory, activeTag, sortBy]);
+      }, [products, search, activeCategory, activeTag, sortBy]);
+
+      // Active collection/category info for the themed banner above the products
+      const bannerInfo = useMemo(() => {
+        if (activeTag) {
+          const coll = collections.find((c) => c.slug === activeTag || c.name === activeTag) || null;
+          if (coll) {
+            return {
+              kind: 'کالکشن',
+              title: coll.name,
+              desc: coll.description || '',
+              image: coll.image_url || null,
+              themeKey: coll.slug || coll.name,
+            };
+          }
+          return { kind: 'کالکشن', title: activeTag, desc: '', image: null, themeKey: activeTag };
+        }
+        if (activeCategory === 'uncategorized') {
+          return { kind: 'دسته‌بندی', title: 'بدون دسته', desc: 'محصولاتی که در هیچ دسته‌ای قرار نگرفته‌اند', image: null, themeKey: 'uncategorized' };
+        }
+        if (activeCategory) {
+          const cat = categories.find((c) => c.id === activeCategory) || null;
+          if (cat) {
+            return { kind: 'دسته‌بندی', title: cat.name, desc: cat.description || '', image: null, themeKey: cat.name || String(cat.id) };
+          }
+          return { kind: 'دسته‌بندی', title: String(activeCategory), desc: '', image: null, themeKey: String(activeCategory) };
+        }
+        return null;
+      }, [activeTag, activeCategory, collections, categories]);
+
+      const bannerTheme = bannerInfo ? themeFor(bannerInfo.themeKey) : null;
 
   if (loading) {
     return (
@@ -535,6 +602,16 @@ export default function Catalog() {
         </div>
       </div>
 
+      {/* Products grid sits on one solid themed panel — unique color per collection */}
+      <div
+        ref={productsSectionRef}
+        className={`catalog-products-anchor${bannerInfo && bannerTheme ? ' collection-solid-panel' : ''}`}
+        style={
+          bannerInfo && bannerTheme
+            ? { background: bannerTheme.to, '--banner-accent': bannerTheme.accent }
+            : undefined
+        }
+      >
       {filtered.length === 0 ? (
         <div className="catalog-product-card p-12 sm:p-16 text-center">
           <div
@@ -725,6 +802,7 @@ export default function Catalog() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

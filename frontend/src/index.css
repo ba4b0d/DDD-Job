@@ -1972,3 +1972,42 @@ body {
     display: none !important;
   }
 }
+
+/* Scroll anchor around the products grid (used when Option B has no top banner) */
+.catalog-products-anchor {
+  scroll-margin-top: 8rem;
+}
+
+/* ─── Solid panel — Option B: all product cards sit on one themed box ─── */
+.collection-solid-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 0.9rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4);
+}
+
+.collection-solid-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 90% at 90% 0%, color-mix(in srgb, var(--banner-accent) 30%, transparent) 0%, transparent 55%),
+    radial-gradient(50% 80% at 5% 100%, rgba(0, 0, 0, 0.35) 0%, transparent 65%);
+}
+
+.collection-solid-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 480px) {
+  .collection-solid-panel {
+    padding: 0.6rem;
+    border-radius: 1.25rem;
+  }
+}
+
+
