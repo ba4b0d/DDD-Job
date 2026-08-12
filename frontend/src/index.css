@@ -1982,28 +1982,28 @@ body {
 .collection-panel-wrap {
   position: relative;
   margin-top: 3.75rem !important; /* space between the collections section above and the panel (space-y utility would override without !important) */
-  scroll-margin-top: 8.5rem; /* sticky-header clearance when scrolling to the panel */
+  scroll-margin-top: 10rem; /* sticky-header clearance for the label standing on top of the box */
 }
 
-/* Folder-style label merged into the panel's top edge — reads as part of the box */
+/* Folder-style label — classic folder tab silhouette (mirrored for RTL):
+   sticks up from the box's top edge, right edge flush, left side slopes down
+   into the box edge; lighter shade than the box so it doesn't blend in. */
 .collection-panel-tab {
   position: absolute;
-  top: 0; /* flush with the panel's top edge — merged, not floating above */
-  right: 1.1rem;
+  top: -1.15rem;
+  right: 0.9rem;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   max-width: 92%;
-  padding: 0.55rem 1.05rem 0.6rem;
-  border-radius: 0 0 0.9rem 0.9rem; /* only bottom corners rounded — top merges with the box edge */
+  padding: 0.5rem 1.05rem 0.55rem 1.35rem;
   color: #fff;
   font-size: 0.85rem;
   font-weight: 800;
   white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-top: none; /* no seam at the box edge */
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 38% 0); /* classic folder-tab silhouette */
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.35));
 }
 
 .collection-panel-tab-name {
@@ -2054,10 +2054,10 @@ body {
     border-radius: 1.25rem;
   }
   .collection-panel-tab {
-    right: 0.6rem;
-    padding: 0.45rem 0.8rem 0.5rem;
+    top: -1rem;
+    right: 0.5rem;
+    padding: 0.42rem 0.8rem 0.48rem 1.1rem;
     font-size: 0.78rem;
-    border-radius: 0 0 0.75rem 0.75rem;
   }
   .collection-panel-tab-count {
     font-size: 0.66rem;
@@ -2065,6 +2065,6 @@ body {
   }
   .collection-panel-wrap {
     margin-top: 2.5rem !important;
-    scroll-margin-top: 8.5rem;
+    scroll-margin-top: 9.5rem;
   }
 }

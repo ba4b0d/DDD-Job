@@ -613,7 +613,7 @@ export default function Catalog() {
         {bannerInfo && bannerTheme && (
           <div
             className="collection-panel-tab"
-            style={{ background: bannerTheme.to }}
+            style={{ background: bannerTheme.from }}
           >
             <span className="collection-panel-tab-name">{bannerInfo.title}</span>
             <span className="collection-panel-tab-count">{filtered.length} محصول</span>
