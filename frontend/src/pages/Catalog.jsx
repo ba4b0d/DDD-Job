@@ -142,15 +142,15 @@ function displayName(name) {
   return name;
 }
 
-/* ─── Collection/category theme banner ─── */
-// Each collection gets a deterministic unique gradient theme (hash of slug/name)
+/* ─── Collection/category theme ─── */
+// Each collection gets a deterministic unique orange shade (site brand-orange family)
 const BANNER_THEMES = [
-  { from: '#7c3aed', to: '#312e81', accent: '#c4b5fd' },  // بنفش
-  { from: '#0e7490', to: '#164e63', accent: '#67e8f9' },  // فیروزه‌ای
-  { from: '#b45309', to: '#78350f', accent: '#fcd34d' },  // کهربایی
-  { from: '#047857', to: '#064e3b', accent: '#6ee7b7' },  // زمردی
-  { from: '#be123c', to: '#881337', accent: '#fda4af' },  // گلی
-  { from: '#4338ca', to: '#1e1b4b', accent: '#a5b4fc' },  // نیلی
+  { from: '#ffb35c', to: '#b45309', accent: '#ffd9a8' },  // کهربایی
+  { from: '#ff9a3d', to: '#9a3412', accent: '#ffcf96' },  // نارنجی برند
+  { from: '#f59e0b', to: '#92400e', accent: '#ffe0b8' },  // کهربایی تیره
+  { from: '#fb923c', to: '#c2410c', accent: '#ffd5ad' },  // نارنجی
+  { from: '#fdba74', to: '#a34a14', accent: '#ffe4c4' },  // نارنجی روشن
+  { from: '#f97316', to: '#7c2d12', accent: '#ffcc99' },  // نارنجی سوخته
 ];
 
 function themeFor(key) {
@@ -597,21 +597,36 @@ export default function Catalog() {
           </div>
         )}
 
-        <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-          {filtered.length} نتیجه
-        </div>
+        {!bannerInfo && (
+          <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            {filtered.length} نتیجه
+          </div>
+        )}
       </div>
 
-      {/* Products grid sits on one solid themed panel — unique color per collection */}
+      {/* Products grid sits on one solid themed panel — unique orange shade per collection.
+          Folder-style tab with the collection name is attached to the panel's top edge. */}
       <div
         ref={productsSectionRef}
-        className={`catalog-products-anchor${bannerInfo && bannerTheme ? ' collection-solid-panel' : ''}`}
-        style={
-          bannerInfo && bannerTheme
-            ? { background: bannerTheme.to, '--banner-accent': bannerTheme.accent }
-            : undefined
-        }
+        className={`catalog-products-anchor${bannerInfo && bannerTheme ? ' collection-panel-wrap' : ''}`}
       >
+        {bannerInfo && bannerTheme && (
+          <div
+            className="collection-panel-tab"
+            style={{ background: `linear-gradient(135deg, ${bannerTheme.from} 0%, ${bannerTheme.to} 100%)` }}
+          >
+            <span className="collection-panel-tab-name">{bannerInfo.title}</span>
+            <span className="collection-panel-tab-count">{filtered.length} محصول</span>
+          </div>
+        )}
+        <div
+          className={bannerInfo && bannerTheme ? 'collection-solid-panel' : ''}
+          style={
+            bannerInfo && bannerTheme
+              ? { background: bannerTheme.to, '--banner-accent': bannerTheme.accent }
+              : undefined
+          }
+        >
       {filtered.length === 0 ? (
         <div className="catalog-product-card p-12 sm:p-16 text-center">
           <div
@@ -802,6 +817,7 @@ export default function Catalog() {
           })}
         </div>
       )}
+        </div>
       </div>
     </div>
   );
