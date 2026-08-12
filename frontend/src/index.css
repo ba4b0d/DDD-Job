@@ -1981,28 +1981,29 @@ body {
 /* ─── Solid panel — Option B: all product cards sit on one themed box ─── */
 .collection-panel-wrap {
   position: relative;
-  scroll-margin-top: 10rem; /* extra room for the folder tab sticking above the panel */
+  margin-top: 3.75rem !important; /* space between the collections section above and the panel (space-y utility would override without !important) */
+  scroll-margin-top: 8.5rem; /* sticky-header clearance when scrolling to the panel */
 }
 
-/* Folder-style tab attached to the panel's top edge — bottom edge tangent to the panel */
+/* Folder-style label merged into the panel's top edge — reads as part of the box */
 .collection-panel-tab {
   position: absolute;
-  bottom: 100%; /* tab bottom sits exactly on the panel's top edge */
+  top: 0; /* flush with the panel's top edge — merged, not floating above */
   right: 1.1rem;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   max-width: 92%;
-  padding: 0.5rem 1.05rem;
-  border-radius: 0.9rem 0.9rem 0.4rem 0.4rem;
+  padding: 0.55rem 1.05rem 0.6rem;
+  border-radius: 0 0 0.9rem 0.9rem; /* only bottom corners rounded — top merges with the box edge */
   color: #fff;
   font-size: 0.85rem;
   font-weight: 800;
   white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-bottom: 2px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: none; /* no seam at the box edge */
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
 .collection-panel-tab-name {
@@ -2054,15 +2055,16 @@ body {
   }
   .collection-panel-tab {
     right: 0.6rem;
-    padding: 0.4rem 0.8rem;
+    padding: 0.45rem 0.8rem 0.5rem;
     font-size: 0.78rem;
-    border-radius: 0.75rem 0.75rem 0.35rem 0.35rem;
+    border-radius: 0 0 0.75rem 0.75rem;
   }
   .collection-panel-tab-count {
     font-size: 0.66rem;
     padding: 0.15rem 0.5rem;
   }
   .collection-panel-wrap {
-    scroll-margin-top: 9.5rem;
+    margin-top: 2.5rem !important;
+    scroll-margin-top: 8.5rem;
   }
 }
