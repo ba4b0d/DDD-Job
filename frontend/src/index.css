@@ -1985,25 +1985,25 @@ body {
   scroll-margin-top: 10rem; /* sticky-header clearance for the label standing on top of the box */
 }
 
-/* Folder-style label — classic folder tab silhouette (mirrored for RTL):
-   sticks up from the box's top edge, right edge flush, left side slopes down
-   into the box edge; lighter shade than the box so it doesn't blend in. */
+/* Collection label — simple rounded tag sitting on the box's top edge
+   (half above, half on the box); light orange so it stands out from the panel */
 .collection-panel-tab {
   position: absolute;
-  top: -1.15rem;
-  right: 0.9rem;
+  top: -1.05rem; /* half above the box edge */
+  right: 1.1rem;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   max-width: 92%;
-  padding: 0.5rem 1.05rem 0.55rem 1.35rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 9999px; /* soft pill tag */
   color: #fff;
   font-size: 0.85rem;
   font-weight: 800;
   white-space: nowrap;
-  clip-path: polygon(100% 0, 100% 100%, 0 100%, 38% 0); /* classic folder-tab silhouette */
-  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 }
 
 .collection-panel-tab-name {
@@ -2027,7 +2027,7 @@ body {
 .collection-solid-panel {
   position: relative;
   overflow: hidden;
-  padding: 0.9rem;
+  padding: 2.6rem 0.9rem 0.9rem; /* top padding clears the label tag sitting on the edge */
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4);
@@ -2050,13 +2050,13 @@ body {
 
 @media (max-width: 480px) {
   .collection-solid-panel {
-    padding: 0.6rem;
+    padding: 2.2rem 0.6rem 0.6rem; /* top padding clears the label tag */
     border-radius: 1.25rem;
   }
   .collection-panel-tab {
-    top: -1rem;
-    right: 0.5rem;
-    padding: 0.42rem 0.8rem 0.48rem 1.1rem;
+    top: -0.9rem;
+    right: 0.6rem;
+    padding: 0.4rem 0.85rem;
     font-size: 0.78rem;
   }
   .collection-panel-tab-count {
