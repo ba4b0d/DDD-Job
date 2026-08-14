@@ -2068,3 +2068,22 @@ body {
     scroll-margin-top: 9.5rem;
   }
 }
+
+/* ── Collections: single row, slow auto-scroll loop, manually scrollable ── */
+.catalog-collections-scroller {
+  overflow-x: auto;
+}
+.catalog-collections-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+}
+/* When everything fits (no overflow): show a single static copy */
+.catalog-collections-scroller:not(.is-scrollable) .collection-card-dup {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-collections-scroller.is-scrollable .collection-card-dup {
+    display: none;
+  }
+}

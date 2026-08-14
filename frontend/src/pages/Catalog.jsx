@@ -160,6 +160,50 @@ function themeFor(key) {
   return BANNER_THEMES[h % BANNER_THEMES.length];
 }
 
+/* ─── Collection card (one item of the auto-scroll marquee row) ─── */
+function CollectionCard({ coll, activeTag, duplicate = false }) {
+  const isActive = !duplicate && (activeTag === coll.slug || activeTag === coll.name);
+  return (
+    <Link
+      to={isActive ? '/' : `/?tag=${encodeURIComponent(coll.slug || coll.name)}`}
+      tabIndex={duplicate ? -1 : undefined}
+      aria-hidden={duplicate || undefined}
+      className={`group catalog-product-card flex flex-col overflow-hidden transition-all shrink-0 w-40 sm:w-44 ${
+        duplicate ? 'collection-card-dup' : ''
+      } ${isActive ? 'ring-2 ring-accent border-accent' : ''}`}
+    >
+      <div className="relative aspect-square overflow-hidden rounded-[1.25rem]" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+        {coll.image_url ? (
+          <img
+            src={coll.image_url}
+            alt={coll.name}
+            width={320}
+            height={320}
+            loading="eager"
+            decoding="async"
+            className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+            <Package size={40} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+          </div>
+        )}
+        <div className="catalog-img-fade pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-2 z-[1]">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+            📦 {coll.product_count} محصول
+          </span>
+        </div>
+      </div>
+      <div className="p-3 flex-1 flex flex-col justify-center">
+        <h3 className="font-bold text-sm leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+          {coll.name}
+        </h3>
+      </div>
+    </Link>
+  );
+}
+
 export default function Catalog() {
   useSEO({
     title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
@@ -264,6 +308,97 @@ export default function Catalog() {
     load();
     return () => controller.abort();
   }, []);
+
+  // Collections row: single line, slow auto-scroll loop, manually scrollable.
+  // Auto-scroll pauses while hovering / interacting, resumes after idle.
+  // Row is duplicated (two groups) so the loop rewinds seamlessly.
+  const [collectionsScrollable, setCollectionsScrollable] = useState(false);
+  const collectionsScrollerRef = useRef(null);
+  useEffect(() => {
+    const el = collectionsScrollerRef.current;
+    if (!el) return;
+    let raf = 0;
+    let lastTs = 0;
+    let paused = false;
+    let idleTimer = null;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const overflows = () => el.scrollWidth > el.clientWidth + 1;
+
+    // RTL scroll convention differs across engines: Chromium uses a NEGATIVE
+    // scrollLeft domain for RTL (0 = right/start, -max = left/end), Firefox uses
+    // positive. Detect once so the loop advances in the right direction.
+    el.scrollLeft = 1000000;
+    const negativeDomain = el.scrollLeft <= 0 && overflows();
+    el.scrollLeft = 0;
+    const advance = (step) => { el.scrollLeft += negativeDomain ? -step : step; };
+    const atEnd = (max) => (negativeDomain ? el.scrollLeft <= -max + 1 : el.scrollLeft >= max - 1);
+    const rewind = () => { el.scrollLeft += negativeDomain ? el.scrollWidth / 2 : -el.scrollWidth / 2; };
+
+    const tick = (ts) => {
+      if (paused) { raf = 0; return; }
+      if (lastTs) {
+        const dt = Math.min(ts - lastTs, 500); // time-based: consistent speed even if rAF is throttled
+        advance((dt / 1000) * 25); // ~25px/s — slow loop
+        const max = el.scrollWidth - el.clientWidth;
+        if (atEnd(max)) rewind(); // seamless: second copy ≡ first
+      }
+      lastTs = ts;
+      raf = requestAnimationFrame(tick);
+    };
+
+    const startLoop = () => {
+      if (paused || raf || reducedMotion || !overflows()) return;
+      lastTs = 0;
+      raf = requestAnimationFrame(tick);
+    };
+    const stopLoop = () => { paused = true; if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+    const resumeSoon = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { paused = false; startLoop(); }, 2500);
+    };
+    const pauseForIdle = () => { stopLoop(); resumeSoon(); };
+
+    const update = () => {
+      setCollectionsScrollable(overflows());
+      if (overflows()) startLoop();
+      else { stopLoop(); el.scrollLeft = 0; }
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    // Mouse wheel over the row scrolls it horizontally (instead of the page).
+    // Chromium RTL scrollLeft is negative — direction handled via negativeDomain.
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // horizontal wheel: let native scroll work
+      if (e.deltaY === 0) return;
+      const mult = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
+      const delta = e.deltaY * mult;
+      el.scrollLeft += negativeDomain ? -delta : delta;
+      e.preventDefault(); // don't page-scroll while hovering the row
+      stopLoop();
+      resumeSoon();
+    };
+
+    el.addEventListener('mouseenter', stopLoop);
+    el.addEventListener('mouseleave', resumeSoon);
+    el.addEventListener('pointerdown', pauseForIdle);
+    el.addEventListener('touchstart', pauseForIdle, { passive: true });
+    el.addEventListener('touchend', resumeSoon);
+    el.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(idleTimer);
+      ro.disconnect();
+      el.removeEventListener('mouseenter', stopLoop);
+      el.removeEventListener('mouseleave', resumeSoon);
+      el.removeEventListener('pointerdown', pauseForIdle);
+      el.removeEventListener('touchstart', pauseForIdle);
+      el.removeEventListener('touchend', resumeSoon);
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, [collections]);
 
   // Collect all unique tags from products (tags is comma-separated string)
   const allTags = useMemo(() => {
@@ -573,48 +708,20 @@ export default function Catalog() {
             <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#ffffff' }}>
               <span>📦 کالکشن‌ها / مجموعه‌ها</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-              {collections.map((coll, idx) => {
-                const isActive = activeTag === coll.slug || activeTag === coll.name;
-                return (
-                  <Link
-                    key={coll.id}
-                    to={isActive ? '/' : `/?tag=${encodeURIComponent(coll.slug || coll.name)}`}
-                    className={`group catalog-product-card flex flex-col overflow-hidden transition-all ${
-                      isActive ? 'ring-2 ring-accent border-accent' : ''
-                    }`}
-                  >
-                    <div className="relative aspect-square overflow-hidden rounded-[1.25rem]" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                      {coll.image_url ? (
-                        <img
-                          src={coll.image_url}
-                          alt={coll.name}
-                          width={320}
-                          height={320}
-                          loading={idx < 3 ? 'eager' : 'lazy'}
-                          decoding="async"
-                          className="w-full h-full object-cover rounded-[1.25rem] transition-transform duration-700 ease-out group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                          <Package size={40} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-                        </div>
-                      )}
-                      <div className="catalog-img-fade pointer-events-none" aria-hidden="true" />
-                      <div className="absolute top-2.5 inset-x-2.5 flex items-start justify-between gap-2 z-[1]">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
-                          📦 {coll.product_count} محصول
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-3 flex-1 flex flex-col justify-center">
-                      <h3 className="font-bold text-sm leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
-                        {coll.name}
-                      </h3>
-                    </div>
-                  </Link>
-                );
-              })}
+            {/* One row: slow auto-scroll loop, pauses on hover/interaction, and the
+                user can always scroll it manually (wheel / drag / scrollbar / touch). */}
+            <div
+              ref={collectionsScrollerRef}
+              className={`catalog-collections-scroller${collectionsScrollable ? ' is-scrollable' : ''}`}
+            >
+              <div className="catalog-collections-track">
+                {collections.map((coll) => (
+                  <CollectionCard key={coll.id} coll={coll} activeTag={activeTag} />
+                ))}
+                {collections.map((coll) => (
+                  <CollectionCard key={`dup-${coll.id}`} coll={coll} activeTag={activeTag} duplicate />
+                ))}
+              </div>
             </div>
           </div>
         )}
