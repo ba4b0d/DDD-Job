@@ -203,11 +203,29 @@ export default function Catalog() {
   // Sync activeCategory & activeTag when URL params change
   useEffect(() => {
     const cat = searchParams.get('category');
-    const num = cat ? Number(cat) : null;
+    let num = null;
+    if (cat === 'uncategorized') num = 'uncategorized';
+    else if (cat) num = Number(cat);
     const tag = searchParams.get('tag');
     setActiveCategory((prev) => (prev === num ? prev : num));
     setActiveTag((prev) => (prev === tag ? prev : tag));
   }, [searchParams]);
+
+  // Toggle a category filter: clears any active tag and keeps the URL in sync,
+  // so category + collection filters never silently stack into an empty result.
+  const toggleCategory = useCallback(
+    (id) => {
+      const next = activeCategory === id ? null : id;
+      setActiveCategory(next);
+      setActiveTag(null);
+      const params = new URLSearchParams(searchParams);
+      if (next === null || next === undefined) params.delete('category');
+      else params.set('category', String(next));
+      params.delete('tag');
+      setSearchParams(params, { replace: true });
+    },
+    [activeCategory, searchParams, setSearchParams]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -221,7 +239,7 @@ export default function Catalog() {
         const flattenTree = (nodes, depth = 0) => {
                   let result = [];
                   for (const n of nodes) {
-                    result.push({ id: n.id, name: n.name, depth, description: n.description || '' });
+                    result.push({ id: n.id, name: n.name, depth, parent_id: n.parent_id ?? null, description: n.description || '' });
                     if (n.children && n.children.length > 0) {
                       result = result.concat(flattenTree(n.children, depth + 1));
                     }
@@ -229,7 +247,7 @@ export default function Catalog() {
                   return result;
                 };
                 const treeData = Array.isArray(cRes.data) ? cRes.data : [];
-                const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, count: null, description: c.description }));
+                const catsList = flattenTree(treeData).map((c) => ({ id: c.id, name: c.name, depth: c.depth, parent_id: c.parent_id, count: null, description: c.description }));
         setProducts(pList);
         setCategories(catsList);
         setCollections(collList);
@@ -263,8 +281,10 @@ export default function Catalog() {
   const filtered = useMemo(() => {
     let list = [...products];
 
-    // Grouping into single Collection Bundle Cards when no tag filter is active
-    if (!activeTag && !search) {
+    // Grouping into single Collection Bundle Cards ONLY on the unfiltered homepage.
+    // Once any filter (category / tag / search) is active, show products individually —
+    // otherwise collection members vanish from their category and subcategory listings.
+    if (!activeTag && !search && !activeCategory) {
       const collectionsMap = new Map();
       const nonCollectionProducts = [];
 
@@ -519,16 +539,18 @@ export default function Catalog() {
           >
             <button
               type="button"
-              onClick={() => { setActiveCategory(null); setActiveTag(null); }}
+              onClick={clearFilters}
               className={`catalog-chip ${!activeCategory && !activeTag ? 'catalog-chip-active' : ''}`}
             >
               همه ({products.length})
             </button>
-            {categories.filter((cat) => cat.depth === 0).map((cat) => (
+            {/* All categories incl. subcategories — same bubble style; flat list is in
+                tree order (parent first, then its children) so chips read naturally */}
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                onClick={() => toggleCategory(cat.id)}
                 className={`catalog-chip ${activeCategory === cat.id ? 'catalog-chip-active' : ''}`}
               >
                 {cat.name}
@@ -537,7 +559,7 @@ export default function Catalog() {
             {categories.length > 0 && (
               <button
                 type="button"
-                onClick={() => setActiveCategory(activeCategory === 'uncategorized' ? null : 'uncategorized')}
+                onClick={() => toggleCategory('uncategorized')}
                 className={`catalog-chip ${activeCategory === 'uncategorized' ? 'catalog-chip-active' : ''}`}
               >
                 بدون دسته
