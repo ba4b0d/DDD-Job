@@ -683,9 +683,14 @@ def process_folder(folder_path: str, args, slicer_path: str, token: str = None) 
     slice_data = {}
     mesh = {}
     
-    # Check if we need to scale the model
-    if args.scale != 1.0:
-        print(f"     📐 Scaling model to {args.scale:.2f}x...")
+    # Check if we need to scale the model (scale != 1.0) OR force the
+    # PrusaSlicer path (handles multi-object 3MFs OrcaSlicer CLI rejects)
+    use_prusa = args.scale != 1.0 or args.force_prusaslicer
+    if use_prusa:
+        if args.scale != 1.0:
+            print(f"     📐 Scaling model to {args.scale:.2f}x...")
+        else:
+            print(f"     🔧 PrusaSlicer path (merge to STL @ 1.0x)...")
         temp_stl = extract_and_scale_stl(str(info["model_file"]), args.scale)
         if temp_stl:
             # Slice with PrusaSlicer (since OrcaSlicer has issues with raw multi-part STL/coordinates in CLI)
@@ -812,6 +817,10 @@ def main():
     ap.add_argument("--no-slice", action="store_true", help="Skip OrcaSlicer slicing")
     ap.add_argument("--pattern", default=None, help="Filter folders by substring in folder name")
     ap.add_argument("--scale", type=float, default=1.0, help="Scale factor for the model (e.g. 0.5 to scale by 50%%)")
+    ap.add_argument("--force-prusaslicer", action="store_true",
+                    help="Use PrusaSlicer path even at 1.0 scale (handles multi-object 3MFs "
+                         "that OrcaSlicer CLI rejects). Model is extracted/merged to STL "
+                         "unscaled, then sliced with PrusaSlicer + kobra_s1_pla.ini")
     args = ap.parse_args()
 
     folder = Path(args.folder)
