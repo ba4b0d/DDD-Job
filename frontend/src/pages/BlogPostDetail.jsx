@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Calendar, Clock, Eye, Share2, Copy, Check, ArrowRight, BookOpen, AlertCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getBlogPostBySlug } from '../lib/api';
 import { useSEO } from '../lib/seo';
 
@@ -207,14 +209,68 @@ export default function BlogPostDetail() {
       </header>
 
       {/* Article Body */}
-      <main className="py-4 text-slate-200 text-base sm:text-lg leading-loose space-y-6">
-        {/* Render lines / paragraphs cleanly */}
+      <main className="py-6 text-slate-200 text-base sm:text-lg leading-loose">
         {post.content ? (
-          post.content.split('\n\n').map((paragraph, index) => (
-            <p key={index} className="whitespace-pre-line text-slate-300">
-              {paragraph}
-            </p>
-          ))
+          <div className="blog-content space-y-6">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ node, ...props }) => (
+                  <h2 className="text-2xl sm:text-3xl font-black text-white mt-10 mb-4 pb-2 border-b border-white/10" {...props} />
+                ),
+                h2: ({ node, ...props }) => (
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mt-8 mb-3" {...props} />
+                ),
+                h3: ({ node, ...props }) => (
+                  <h3 className="text-lg sm:text-xl font-bold text-amber-300 mt-6 mb-2" {...props} />
+                ),
+                p: ({ node, ...props }) => (
+                  <p className="text-slate-300 leading-relaxed text-sm sm:text-base mb-4" {...props} />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4" {...props} />
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4" {...props} />
+                ),
+                li: ({ node, ...props }) => (
+                  <li className="leading-relaxed text-slate-300" {...props} />
+                ),
+                a: ({ node, href, ...props }) => (
+                  <Link
+                    to={href || '#'}
+                    className="text-amber-400 font-bold hover:text-amber-300 underline underline-offset-4 decoration-amber-400/50 hover:decoration-amber-300 transition-colors"
+                    {...props}
+                  />
+                ),
+                strong: ({ node, ...props }) => (
+                  <strong className="font-bold text-white" {...props} />
+                ),
+                table: ({ node, ...props }) => (
+                  <div className="overflow-x-auto my-6 rounded-2xl border border-white/10 bg-slate-900/60">
+                    <table className="w-full text-right text-xs sm:text-sm" {...props} />
+                  </div>
+                ),
+                thead: ({ node, ...props }) => (
+                  <thead className="bg-slate-800 text-amber-300 font-bold border-b border-white/10" {...props} />
+                ),
+                th: ({ node, ...props }) => (
+                  <th className="p-3.5 font-bold" {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td className="p-3.5 border-t border-white/5 text-slate-300" {...props} />
+                ),
+                hr: () => (
+                  <hr className="my-8 border-white/10" />
+                ),
+                blockquote: ({ node, ...props }) => (
+                  <blockquote className="p-4 my-4 rounded-2xl border-r-4 border-amber-400 bg-amber-500/10 text-amber-200 text-sm leading-relaxed" {...props} />
+                ),
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
+          </div>
         ) : (
           <p className="text-slate-500 italic text-center py-8">محتوایی برای این مقاله نوشته نشده است.</p>
         )}
