@@ -91,6 +91,21 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ─── Responsive High-Resolution Display Scaling (2K, QHD, 4K & Ultrawide) ───
+   Ensures the site scales proportionally on 1440p (2K) and 4K displays
+   so text, cards, buttons and hero look as rich and large as on 1080p */
+@media (min-width: 1921px) and (max-width: 2560px) {
+  html {
+    font-size: 19px;
+  }
+}
+
+@media (min-width: 2561px) {
+  html {
+    font-size: 22px;
+  }
+}
+
 /* Soft blue page + grain */
 body {
   background-color: var(--bg-primary);
