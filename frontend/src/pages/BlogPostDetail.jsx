@@ -131,7 +131,7 @@ export default function BlogPostDetail() {
   }
 
   return (
-    <article className="max-w-4xl mx-auto space-y-8">
+    <article className="max-w-4xl mx-auto space-y-8 text-right" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
       {/* Breadcrumbs & Navigation */}
       <nav className="flex items-center gap-2 text-xs text-slate-400" aria-label="مسیر صفحه">
         <Link to="/" className="hover:text-amber-400 transition-colors">کاتالوگ</Link>
@@ -142,8 +142,8 @@ export default function BlogPostDetail() {
       </nav>
 
       {/* Article Header */}
-      <header className="space-y-6">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight">
+      <header className="space-y-6 text-right">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight text-right">
           {post.title}
         </h1>
 
@@ -179,7 +179,7 @@ export default function BlogPostDetail() {
             <button
               onClick={handleShareTelegram}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 transition-colors text-xs font-medium border border-sky-500/20"
-              aria-label="اشتراک‌گذاری در تلگرام"
+              aria-label="اشتراکگذاری در تلگرام"
             >
               <Share2 size={14} />
               <span>تلگرام</span>
@@ -189,7 +189,7 @@ export default function BlogPostDetail() {
 
         {/* Summary Box */}
         {post.summary && (
-          <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-amber-200/90 text-sm sm:text-base leading-relaxed">
+          <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/20 text-amber-200/90 text-sm sm:text-base leading-relaxed text-right">
             <p className="font-semibold text-amber-400 mb-1">خلاصه مقاله:</p>
             {post.summary}
           </div>
@@ -209,32 +209,32 @@ export default function BlogPostDetail() {
       </header>
 
       {/* Article Body */}
-      <main className="py-6 text-slate-200 text-base sm:text-lg leading-loose">
+      <main className="py-6 text-slate-200 text-base sm:text-lg leading-loose text-right" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }}>
         {post.content ? (
-          <div className="blog-content space-y-6">
+          <div className="blog-content space-y-6 text-right" dir="rtl">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ node, ...props }) => (
-                  <h2 className="text-2xl sm:text-3xl font-black text-white mt-10 mb-4 pb-2 border-b border-white/10" {...props} />
+                  <h2 className="text-2xl sm:text-3xl font-black text-white mt-10 mb-4 pb-2 border-b border-white/10 text-right" {...props} />
                 ),
                 h2: ({ node, ...props }) => (
-                  <h2 className="text-xl sm:text-2xl font-bold text-white mt-8 mb-3" {...props} />
+                  <h2 className="text-xl sm:text-2xl font-bold text-white mt-8 mb-3 text-right" {...props} />
                 ),
                 h3: ({ node, ...props }) => (
-                  <h3 className="text-lg sm:text-xl font-bold text-amber-300 mt-6 mb-2" {...props} />
+                  <h3 className="text-lg sm:text-xl font-bold text-amber-300 mt-6 mb-2 text-right" {...props} />
                 ),
                 p: ({ node, ...props }) => (
-                  <p className="text-slate-300 leading-relaxed text-sm sm:text-base mb-4" {...props} />
+                  <p className="text-slate-300 leading-relaxed text-sm sm:text-base mb-4 text-right" {...props} />
                 ),
                 ul: ({ node, ...props }) => (
-                  <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4" {...props} />
+                  <ul className="list-disc list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4 text-right" {...props} />
                 ),
                 ol: ({ node, ...props }) => (
-                  <ol className="list-decimal list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4" {...props} />
+                  <ol className="list-decimal list-inside space-y-2 text-sm sm:text-base text-slate-300 pr-2 mb-4 text-right" {...props} />
                 ),
                 li: ({ node, ...props }) => (
-                  <li className="leading-relaxed text-slate-300" {...props} />
+                  <li className="leading-relaxed text-slate-300 text-right" {...props} />
                 ),
                 a: ({ node, href, ...props }) => (
                   <Link
@@ -247,24 +247,24 @@ export default function BlogPostDetail() {
                   <strong className="font-bold text-white" {...props} />
                 ),
                 table: ({ node, ...props }) => (
-                  <div className="overflow-x-auto my-6 rounded-2xl border border-white/10 bg-slate-900/60">
-                    <table className="w-full text-right text-xs sm:text-sm" {...props} />
+                  <div className="overflow-x-auto my-6 rounded-2xl border border-white/10 bg-slate-900/60" dir="rtl">
+                    <table className="w-full text-right text-xs sm:text-sm" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }} {...props} />
                   </div>
                 ),
                 thead: ({ node, ...props }) => (
-                  <thead className="bg-slate-800 text-amber-300 font-bold border-b border-white/10" {...props} />
+                  <thead className="bg-slate-800 text-amber-300 font-bold border-b border-white/10" dir="rtl" {...props} />
                 ),
                 th: ({ node, ...props }) => (
-                  <th className="p-3.5 font-bold" {...props} />
+                  <th className="p-3.5 font-bold text-right text-amber-300" style={{ textAlign: 'right' }} {...props} />
                 ),
                 td: ({ node, ...props }) => (
-                  <td className="p-3.5 border-t border-white/5 text-slate-300" {...props} />
+                  <td className="p-3.5 border-t border-white/5 text-slate-300 text-right" style={{ textAlign: 'right' }} {...props} />
                 ),
                 hr: () => (
                   <hr className="my-8 border-white/10" />
                 ),
                 blockquote: ({ node, ...props }) => (
-                  <blockquote className="p-4 my-4 rounded-2xl border-r-4 border-amber-400 bg-amber-500/10 text-amber-200 text-sm leading-relaxed" {...props} />
+                  <blockquote className="p-4 my-4 rounded-2xl border-r-4 border-amber-400 bg-amber-500/10 text-amber-200 text-sm leading-relaxed text-right" dir="rtl" {...props} />
                 ),
               }}
             >
