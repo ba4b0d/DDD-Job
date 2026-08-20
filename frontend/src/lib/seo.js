@@ -9,9 +9,11 @@ const JSONLD_ID = 'json-ld-structured-data'
  * Resolve absolute URL for OG/JSON-LD (works with any domain on Pi5).
  */
 export function absoluteUrl(pathOrUrl) {
-  if (!pathOrUrl) return typeof window !== 'undefined' ? window.location.origin : ''
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  if (!pathOrUrl) return typeof window !== 'undefined' ? window.location.origin.replace(/^http:\/\//i, 'https://') : ''
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    return pathOrUrl.replace(/^http:\/\//i, 'https://')
+  }
+  const origin = typeof window !== 'undefined' ? window.location.origin.replace(/^http:\/\//i, 'https://') : ''
   const path = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`
   return `${origin}${path}`
 }
@@ -226,13 +228,21 @@ export function useSEO({ title, description, image, url, jsonLd } = {}) {
   useEffect(() => {
     document.title = title ? `${title} | ${SITE_NAME}` : SITE_NAME
 
-    const ogUrl = url || (typeof window !== 'undefined' ? window.location.href : '')
+    let cleanCanonical = ''
+    if (url) {
+      cleanCanonical = absoluteUrl(url)
+    } else if (typeof window !== 'undefined') {
+      const cleanPath = window.location.pathname === '/' ? '' : window.location.pathname.replace(/\/+$/, '')
+      cleanCanonical = `${window.location.origin.replace(/^http:\/\//i, 'https://')}${cleanPath || '/'}`
+    }
+
+    const ogUrl = cleanCanonical
     const ogImage = absoluteUrl(image || DEFAULT_IMAGE)
 
     if (description) setMeta('name', 'description', description)
 
-    // Canonical — point to the clean slug URL passed in (or current URL)
-    setCanonical(ogUrl)
+    // Canonical — points strictly to the clean, parameter-free URL
+    setCanonical(cleanCanonical)
 
     setMeta('property', 'og:title', title || SITE_NAME)
     setMeta('property', 'og:description', description)

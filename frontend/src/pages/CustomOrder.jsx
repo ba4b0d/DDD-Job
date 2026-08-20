@@ -158,7 +158,8 @@ function CustomOrderForm() {
 export default function CustomOrder() {
   useSEO({
     title: 'سفارش قطعه و طرح دلخواه | پرینت سه بعدی سفارشی',
-    description: 'راهنمای سفارش چاپ سه‌بعدی سفارشی، ارسال فایل STL یا عکس قطعه شکسته و استعلام قیمت پرینت 3 بعدی در اسپاگتی پرینت',
+    description: 'راهنمای سفارش چاپ سهبعدی سفارشی، ارسال فایل STL یا عکس قطعه شکسته و استعلام قیمت پرینت 3 بعدی در اسپاگتی پرینت',
+    url: '/custom-order',
     jsonLd: buildWebSiteJsonLd(),
   });
 

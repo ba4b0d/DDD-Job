@@ -5,6 +5,7 @@ export default function Terms() {
     title: 'قوانین و مقررات',
     description:
       'شرایط سفارش، پرداخت، چاپ، تحویل و مرجوعی در اسپاگتی پرینت — به زبان ساده و کوتاه',
+    url: '/terms',
     jsonLd: buildWebSiteJsonLd(),
   })
 

@@ -221,6 +221,7 @@ export default function Catalog() {
   useSEO({
     title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
     description: 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف',
+    url: '/',
     jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
   });
 

@@ -47,7 +47,8 @@ function mergeChannels(api) {
 export default function Contact() {
   useSEO({
     title: 'تماس با ما',
-    description: 'راه‌های ارتباط با اسپاگتی پرینت — تلگرام، واتساپ، اینستاگرام',
+    description: 'راههای ارتباط با اسپاگتی پرینت — تلگرام، واتساپ، اینستاگرام',
+    url: '/contact',
     jsonLd: buildOrganizationJsonLd(),
   });
 

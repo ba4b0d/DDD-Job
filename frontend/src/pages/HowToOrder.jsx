@@ -52,7 +52,8 @@ const STEPS = [
 export default function HowToOrder() {
   useSEO({
     title: 'سفارش از کاتالوگ',
-    description: 'راهنمای سفارش محصولات چاپ سه‌بعدی از کاتالوگ اسپاگتی پرینت',
+    description: 'راهنمای سفارش محصولات چاپ سهبعدی از کاتالوگ اسپاگتی پرینت',
+    url: '/how-to-order',
     jsonLd: buildWebSiteJsonLd(),
   });
 
