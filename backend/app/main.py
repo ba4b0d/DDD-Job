@@ -24,7 +24,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-from fastapi import FastAPI, Depends, APIRouter
+from fastapi import FastAPI, Depends, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -321,6 +321,14 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+# ── Custom CMS Branding Headers (identifies platform as Spaghetti CMS) ──
+@app.middleware("http")
+async def add_cms_branding_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Powered-By"] = "Spaghetti CMS"
+    response.headers["X-CMS"] = "Spaghetti-CMS/1.0"
+    return response
 
 # ── Include routers ──────────────────────────────────────────────────
 app.include_router(settings_router, dependencies=[Depends(require_any_role)])
