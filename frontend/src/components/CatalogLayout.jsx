@@ -4,7 +4,7 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
-import { getBlogPosts, getCatalogCategories } from '../lib/api';
+import { getBlogPosts, getCatalogCategories, getPublicBrand } from '../lib/api';
 
 const navLinkClass = ({ isActive }) =>
   `catalog-nav-link${isActive ? ' catalog-nav-link--active' : ''}`;
@@ -32,6 +32,14 @@ export default function CatalogLayout({ children }) {
   useEffect(() => {
     getCatalogCategories()
       .then((res) => setCatTree(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {});
+
+    getPublicBrand()
+      .then((res) => {
+        if (res.data?.enable_blog != null) {
+          setBlogEnabled(Boolean(res.data.enable_blog));
+        }
+      })
       .catch(() => {});
   }, []);
 

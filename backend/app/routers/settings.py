@@ -16,6 +16,7 @@ ALLOWED_PUBLIC_KEYS = {
     "logo_url",
     "site_name",
     "site_title",
+    "enable_blog",
     "contact_brand",
     "contact_telegram",
     "contact_whatsapp",
@@ -53,10 +54,15 @@ def get_all_settings(user=Depends(get_current_user), db: Session = Depends(get_d
 
 @router.get("/public")
 def get_public_settings(db: Session = Depends(get_db)):
-    """DEPRECATED: This route is currently shadowed by the auth-protected settings router.
-    Use /api/v1/brand (no auth) instead. Kept here for backward reference only."""
+    """Public settings route — /api/v1/brand."""
     settings = db.query(Settings).filter(Settings.key.in_(ALLOWED_PUBLIC_KEYS)).all()
-    return {s.key: s.string_value or "" for s in settings}
+    result = {}
+    for s in settings:
+        if s.key == "enable_blog":
+            result[s.key] = bool(s.value and s.value > 0)
+        else:
+            result[s.key] = s.string_value or ""
+    return result
 
 
 @router.put("")

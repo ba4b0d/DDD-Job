@@ -94,6 +94,7 @@ export const calculate = (data) => api.post('/calculate', data);
 
 // ===== Public Catalog & Blog (no auth) =====
 const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
+export const getPublicBrand = () => publicApi.get('/brand');
 export const getCatalog = () => publicApi.get('/catalog');
 export const getCatalogCategories = () => publicApi.get('/catalog/categories');
 export const getCatalogCollections = () => publicApi.get('/catalog/collections');
