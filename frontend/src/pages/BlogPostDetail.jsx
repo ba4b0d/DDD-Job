@@ -246,19 +246,25 @@ export default function BlogPostDetail() {
                 strong: ({ node, ...props }) => (
                   <strong className="font-bold text-white" {...props} />
                 ),
-                table: ({ node, ...props }) => (
-                  <div className="overflow-x-auto my-6 rounded-2xl border border-white/10 bg-slate-900/60" dir="rtl">
-                    <table className="w-full text-right text-xs sm:text-sm" dir="rtl" style={{ direction: 'rtl', textAlign: 'right' }} {...props} />
+                table: ({ node, style, ...props }) => (
+                  <div className="overflow-x-auto my-6 rounded-2xl border border-white/10 bg-slate-900/60" dir="rtl" style={{ direction: 'rtl' }}>
+                    <table className="w-full text-right text-xs sm:text-sm" dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
                   </div>
                 ),
-                thead: ({ node, ...props }) => (
-                  <thead className="bg-slate-800 text-amber-300 font-bold border-b border-white/10" dir="rtl" {...props} />
+                thead: ({ node, style, ...props }) => (
+                  <thead className="bg-slate-800 text-amber-300 font-bold border-b border-white/10" dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
                 ),
-                th: ({ node, ...props }) => (
-                  <th className="p-3.5 font-bold text-right text-amber-300" style={{ textAlign: 'right' }} {...props} />
+                tbody: ({ node, style, ...props }) => (
+                  <tbody dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
                 ),
-                td: ({ node, ...props }) => (
-                  <td className="p-3.5 border-t border-white/5 text-slate-300 text-right" style={{ textAlign: 'right' }} {...props} />
+                tr: ({ node, style, ...props }) => (
+                  <tr dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
+                ),
+                th: ({ node, style, ...props }) => (
+                  <th className="p-3.5 font-bold text-right text-amber-300" dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
+                ),
+                td: ({ node, style, ...props }) => (
+                  <td className="p-3.5 border-t border-white/5 text-slate-300 text-right" dir="rtl" {...props} style={{ ...style, direction: 'rtl', textAlign: 'right' }} />
                 ),
                 hr: () => (
                   <hr className="my-8 border-white/10" />

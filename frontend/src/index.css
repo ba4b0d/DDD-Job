@@ -2087,3 +2087,47 @@ body {
     display: none;
   }
 }
+
+/* ─── Blog Article Markdown Styles (Strict RTL) ─── */
+.blog-content,
+.blog-content * {
+  box-sizing: border-box;
+}
+
+.blog-content {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.blog-content table {
+  width: 100% !important;
+  direction: rtl !important;
+  border-collapse: collapse !important;
+  text-align: right !important;
+}
+
+.blog-content thead,
+.blog-content tbody,
+.blog-content tr {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.blog-content th,
+.blog-content td {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.blog-content ul,
+.blog-content ol {
+  direction: rtl !important;
+  text-align: right !important;
+  padding-right: 1.5rem !important;
+  padding-left: 0 !important;
+}
+
+.blog-content li {
+  direction: rtl !important;
+  text-align: right !important;
+}
