@@ -15,7 +15,7 @@ import {
   Maximize2,
   X,
 } from 'lucide-react';
-import { getCatalogProductBySlug as getCatalogProduct } from '../lib/api';
+import { getCatalog, getCatalogProductBySlug, getCatalogProduct } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import { useSEO, buildProductJsonLd, buildBreadcrumbJsonLd, absoluteUrl } from '../lib/seo';
 import { Z_INDEX_MODAL_PORTAL } from '../lib/constants';
@@ -312,12 +312,41 @@ export default function PublicProductDetail() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const productName = product?.name;
   const productImage =
     product?.image_url ||
     product?.images?.find((i) => i.is_primary)?.image_url ||
     product?.images?.[0]?.image_url;
+
+  const productPrice = product?.final_price || product?.suggested_price;
+  const priceFormatted = productPrice ? formatPrice(productPrice) : '';
+
+  const categoryOrColl =
+    product?.collections?.[0]?.name ||
+    product?.categories?.[0]?.name ||
+    product?.category ||
+    'پرینت سهبعدی';
+
+  // High-CTR SEO Title Formula: e.g. "خرید فیگور دناتلو لاکپشتهای نینجا ۳ بعدی + انتخاب رنگ"
+  const seoTitle = productName
+    ? `خرید ${productName} (${categoryOrColl}) ۳ بعدی + انتخاب رنگ`
+    : undefined;
+
+  // High-CTR SEO Description: Preserves your custom notes, with rich fallback
+  const seoDims = [product?.dimension_x, product?.dimension_y, product?.dimension_z]
+    .filter(Boolean)
+    .map((d) => (d / 10).toFixed(1));
+  const dimsText = seoDims.length === 3 ? `ابعاد ${seoDims[0]}×${seoDims[1]}×${seoDims[2]} سانتیمتر، ` : '';
+  const priceSnippet = priceFormatted ? `قیمت ${priceFormatted}، ` : '';
+
+  const seoDescription =
+    (product?.notes && String(product.notes).trim()) ||
+    (productName
+      ? `خرید آنلاین ${productName} با چاپ سهبعدی PLA. ${dimsText}${priceSnippet}با قابلیت شخصیسازی رنگ و ارسال سریع در اسپاگتی پرینت.`
+      : undefined);
+
   const jsonLd = useMemo(() => {
     if (!product) return null;
     const productSchema = buildProductJsonLd(product);
@@ -329,10 +358,8 @@ export default function PublicProductDetail() {
   }, [product]);
 
   useSEO({
-    title: productName ? `${productName} — خرید و سفارش با اسم و رنگ دلخواه` : undefined,
-    description:
-      (product?.notes && String(product.notes).trim()) ||
-      (productName ? `مشاهده مشخصات، قیمت و سفارش ${productName} با قابلیت شخصی‌سازی رنگ، ابعاد و حک اسم دلخواه در اسپاگتی پرینت` : undefined),
+    title: seoTitle,
+    description: seoDescription,
     image: productImage ? absoluteUrl(productImage) : undefined,
     url: product?.slug ? absoluteUrl(`/catalog/${product.slug}`) : undefined,
     jsonLd,
@@ -347,7 +374,16 @@ export default function PublicProductDetail() {
         return;
       }
       try {
-        const res = await getCatalogProduct(slug);
+        let res;
+        try {
+          res = await getCatalogProductBySlug(slug);
+        } catch (slugErr) {
+          if (/^\d+$/.test(slug)) {
+            res = await getCatalogProduct(slug);
+          } else {
+            throw slugErr;
+          }
+        }
         setProduct(res.data);
         setError(null);
       } catch (err) {
@@ -366,6 +402,48 @@ export default function PublicProductDetail() {
     load();
     return () => controller.abort();
   }, [slug]);
+
+  // Load related items from same collection/category for SEO internal linking & UX
+  useEffect(() => {
+    if (!product) return;
+    let isMounted = true;
+    getCatalog()
+      .then((res) => {
+        if (!isMounted) return;
+        const allItems = Array.isArray(res.data) ? res.data : [];
+        const currentId = product.id;
+        const currentCollId = product.collections?.[0]?.id;
+        const currentCatId = product.categories?.[0]?.id;
+
+        let matches = [];
+        if (currentCollId) {
+          matches = allItems.filter(
+            (p) => p.id !== currentId && p.collections?.some((c) => c.id === currentCollId)
+          );
+        }
+        if (matches.length < 4 && currentCatId) {
+          const catMatches = allItems.filter(
+            (p) =>
+              p.id !== currentId &&
+              !matches.some((m) => m.id === p.id) &&
+              p.categories?.some((c) => c.id === currentCatId)
+          );
+          matches = [...matches, ...catMatches];
+        }
+        if (matches.length < 4) {
+          const generalMatches = allItems.filter(
+            (p) => p.id !== currentId && !matches.some((m) => m.id === p.id)
+          );
+          matches = [...matches, ...generalMatches];
+        }
+        setRelatedProducts(matches.slice(0, 4));
+      })
+      .catch((err) => console.error('Error loading related products:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [product]);
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -610,6 +688,69 @@ export default function PublicProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Related Products section for SEO Internal Linking & User Discovery */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-12 sm:mt-16 pt-8 border-t" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                محصولات مرتبط و پیشنهادی
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                سایر محصولات محبوب و مشابه از این دسته و کالکشن
+              </p>
+            </div>
+            <Link to="/" className="text-xs font-semibold text-accent hover:underline">
+              مشاهده همه محصولات ←
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {relatedProducts.map((rel) => {
+              const relPrice = rel.final_price || rel.suggested_price;
+              const relImg =
+                rel.image_url ||
+                rel.images?.find((i) => i.is_primary)?.image_url ||
+                rel.images?.[0]?.image_url;
+
+              return (
+                <Link
+                  key={rel.id}
+                  to={`/catalog/${rel.slug || rel.id}`}
+                  className="catalog-product-card group flex flex-col overflow-hidden transition-all hover:scale-[1.02]"
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-[1rem]" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                    {relImg ? (
+                      <img
+                        src={relImg}
+                        alt={rel.name}
+                        width={240}
+                        height={240}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover rounded-[1rem] transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package size={28} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 flex-1 flex flex-col justify-between gap-1.5">
+                    <h3 className="font-bold text-xs leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                      {displayName(rel.name)}
+                    </h3>
+                    <div className="text-[11px] font-bold text-accent">
+                      {relPrice ? formatPrice(relPrice) : 'قیمت تماس بگیرید'}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

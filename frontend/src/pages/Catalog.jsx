@@ -218,13 +218,6 @@ const INITIAL_BATCH = 24;
 const BATCH_SIZE = 24;
 
 export default function Catalog() {
-  useSEO({
-    title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
-    description: 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف',
-    url: '/',
-    jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
-  });
-
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -577,6 +570,23 @@ export default function Catalog() {
       }, [activeTag, activeCategory, collections, categories]);
 
       const bannerTheme = bannerInfo ? themeFor(bannerInfo.themeKey) : null;
+
+  const seoTitle = bannerInfo
+    ? `${bannerInfo.title} (${bannerInfo.kind}) — خرید و سفارش آنلاین`
+    : 'خدمات پرینت سه بعدی و کاتالوگ محصولات';
+
+  const seoDesc =
+    bannerInfo?.desc ||
+    (bannerInfo
+      ? `مشاهده و خرید آنلاین انواع محصولات ${bannerInfo.title} با تکنولوژی پرینت سهبعدی و قیمت شفاف در اسپاگتی پرینت.`
+      : 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف');
+
+  useSEO({
+    title: seoTitle,
+    description: seoDesc,
+    url: '/',
+    jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
+  });
 
   // Infinite scroll observer for progressive product rendering
   useEffect(() => {
