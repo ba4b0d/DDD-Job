@@ -264,6 +264,7 @@ export default function CatalogLayout({ children }) {
         id="catalog-mobile-drawer"
         className={`catalog-drawer${menuOpen ? ' is-open' : ''}`}
         aria-hidden={!menuOpen}
+        inert={!menuOpen ? '' : undefined}
         aria-label="منوی موبایل"
       >
         <div className="catalog-drawer-head">

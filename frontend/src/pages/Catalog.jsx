@@ -5,19 +5,24 @@ import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/
 import { formatPrice, formatMinutes } from '../lib/utils';
 import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd } from '../lib/seo';
 
-function CatalogImageCarousel({ images, name, priority = false }) {
+function CatalogImageCarousel({ images, imageUrl, name, priority = false }) {
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
   const sorted = useMemo(() => {
-    if (!images || images.length === 0) return [];
-    return [...images].sort((a, b) => {
-      if (a.is_primary && !b.is_primary) return -1;
-      if (!a.is_primary && b.is_primary) return 1;
-      return (a.sort_order || 0) - (b.sort_order || 0);
-    });
-  }, [images]);
+    if (images && images.length > 0) {
+      return [...images].sort((a, b) => {
+        if (a.is_primary && !b.is_primary) return -1;
+        if (!a.is_primary && b.is_primary) return 1;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+    }
+    if (imageUrl) {
+      return [{ image_url: imageUrl, is_primary: true }];
+    }
+    return [];
+  }, [images, imageUrl]);
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % sorted.length), [sorted.length]);
   const prev = useCallback(
@@ -97,7 +102,7 @@ function CatalogImageCarousel({ images, name, priority = false }) {
             >
               <ChevronRight size={16} />
             </button>
-            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-[2]">
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-[2]">
               {sorted.map((_, i) => (
                 <button
                   key={i}
@@ -107,14 +112,18 @@ function CatalogImageCarousel({ images, name, priority = false }) {
                     e.stopPropagation();
                     setCurrent(i);
                   }}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: i === current ? 14 : 6,
-                    height: 6,
-                    backgroundColor: i === current ? '#475569' : 'rgba(100,116,139,0.5)',
-                  }}
+                  className="p-2 flex items-center justify-center rounded-full transition-all focus:outline-none"
                   aria-label={`تصویر ${i + 1}`}
-                />
+                >
+                  <span
+                    className="block rounded-full transition-all"
+                    style={{
+                      width: i === current ? 14 : 6,
+                      height: 6,
+                      backgroundColor: i === current ? '#475569' : 'rgba(100,116,139,0.5)',
+                    }}
+                  />
+                </button>
               ))}
             </div>
     </div>
@@ -168,6 +177,7 @@ function CollectionCard({ coll, activeTag, duplicate = false }) {
       to={isActive ? '/' : `/?tag=${encodeURIComponent(coll.slug || coll.name)}`}
       tabIndex={duplicate ? -1 : undefined}
       aria-hidden={duplicate || undefined}
+      inert={duplicate ? '' : undefined}
       className={`group catalog-product-card flex flex-col overflow-hidden transition-all shrink-0 w-40 sm:w-44 ${
         duplicate ? 'collection-card-dup' : ''
       } ${isActive ? 'ring-2 ring-accent border-accent' : ''}`}
@@ -204,10 +214,13 @@ function CollectionCard({ coll, activeTag, duplicate = false }) {
   );
 }
 
+const INITIAL_BATCH = 24;
+const BATCH_SIZE = 24;
+
 export default function Catalog() {
   useSEO({
     title: 'خدمات پرینت سه بعدی و کاتالوگ محصولات',
-    description: 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سه‌بعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف',
+    description: 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف',
     jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
   });
 
@@ -224,6 +237,8 @@ export default function Catalog() {
   });
   const [activeTag, setActiveTag] = useState(() => searchParams.get('tag') || null);
   const [sortBy, setSortBy] = useState('name');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
+  const loadMoreRef = useRef(null);
 
   // Products section wrapper — scroll target when a collection/category is selected
   const productsSectionRef = useRef(null);
@@ -233,6 +248,11 @@ export default function Catalog() {
     setActiveTag(null);
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
+
+  // Reset visibleCount when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_BATCH);
+  }, [search, activeCategory, activeTag, sortBy]);
 
   // Scroll the page so the products start at the top whenever a filter becomes active
   useEffect(() => {
@@ -557,32 +577,24 @@ export default function Catalog() {
 
       const bannerTheme = bannerInfo ? themeFor(bannerInfo.themeKey) : null;
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="skeleton-pulse h-40 rounded-[1.25rem]" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="catalog-product-card overflow-hidden">
-              <div className="skeleton-pulse h-48" />
-              <div className="p-4 space-y-2">
-                <div className="skeleton-pulse h-4 w-3/4 rounded" />
-                <div className="skeleton-pulse h-3 w-1/2 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Infinite scroll observer for progressive product rendering
+  useEffect(() => {
+    if (loading) return;
+    const target = loadMoreRef.current;
+    if (!target) return;
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-sm" style={{ color: '#ef4444' }}>{error}</div>
-      </div>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filtered.length));
+        }
+      },
+      { rootMargin: '400px' }
     );
-  }
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loading, filtered.length]);
 
   return (
     <div className="space-y-7 sm:space-y-9 animate-fade-in">
@@ -607,18 +619,18 @@ export default function Catalog() {
                   className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  خدمات پرینت سه‌بعدی و کاتالوگ محصولات
+                  خدمات پرینت سهبعدی و کاتالوگ محصولات
                 </h1>
                 <p className="text-xs sm:text-sm opacity-90 mt-1 max-w-lg" style={{ color: 'var(--text-secondary)' }}>
-                  سفارش آنلاین قطعات سفارشی با عکس یا STL + شخصی‌سازی کامل رنگ و ابعاد محصولات کاتالوگ
+                  سفارش آنلاین قطعات سفارشی با عکس یا STL + شخصیسازی کامل رنگ و ابعاد محصولات کاتالوگ
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
-                    {products.length} محصول
+                    {loading ? 'پرینت آنلاین سهبعدی' : `${products.length} محصول`}
                   </span>
-                  {categories.length > 0 && (
+                  {!loading && categories.length > 0 && (
                     <span className="catalog-stat-pill catalog-stat-pill-on-photo">
-                      {categories.length} دسته‌بندی
+                      {categories.length} دستهبندی
                     </span>
                   )}
                 </div>
@@ -658,16 +670,22 @@ export default function Catalog() {
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="select-field w-full sm:w-auto min-w-[160px]"
-            aria-label="مرتب‌سازی محصولات"
+            aria-label="مرتبسازی محصولات"
           >
-            <option value="name">مرتب‌سازی: نام</option>
+            <option value="name">مرتبسازی: نام</option>
             <option value="price_asc">قیمت ↑</option>
             <option value="price_desc">قیمت ↓</option>
             <option value="weight">وزن</option>
           </select>
         </div>
 
-        {categories.length > 0 && (
+        {loading ? (
+          <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-8 w-20 rounded-full skeleton-pulse shrink-0" />
+            ))}
+          </div>
+        ) : categories.length > 0 && (
           <div
             className="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 catalog-filter-row"
             style={{ WebkitOverflowScrolling: 'touch' }}
@@ -705,9 +723,9 @@ export default function Catalog() {
 
         {collections.length > 0 && (
           <div className="flex flex-col gap-3">
-            <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#ffffff' }}>
-              <span>📦 کالکشن‌ها / مجموعه‌ها</span>
-            </div>
+            <h2 className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#ffffff' }}>
+              <span>📦 کالکشنها / مجموعهها</span>
+            </h2>
             {/* One row: slow auto-scroll loop, pauses on hover/interaction, and the
                 user can always scroll it manually (wheel / drag / scrollbar / touch). */}
             <div
@@ -728,7 +746,7 @@ export default function Catalog() {
 
         {!bannerInfo && (
           <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-            {filtered.length} نتیجه
+            {loading ? 'در حال بارگذاری...' : `${filtered.length} نتیجه`}
           </div>
         )}
       </div>
@@ -739,6 +757,7 @@ export default function Catalog() {
         ref={productsSectionRef}
         className={`catalog-products-anchor${bannerInfo && bannerTheme ? ' collection-panel-wrap' : ''}`}
       >
+        <h2 className="sr-only">محصولات کاتالوگ</h2>
         {bannerInfo && bannerTheme && (
           <div
             className="collection-panel-tab"
@@ -756,7 +775,26 @@ export default function Catalog() {
               : undefined
           }
         >
-      {filtered.length === 0 ? (
+      {error ? (
+        <div className="catalog-product-card p-12 sm:p-16 text-center">
+          <div className="text-sm font-semibold" style={{ color: '#ef4444' }}>{error}</div>
+        </div>
+      ) : loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <article key={i} className="catalog-product-card flex flex-col relative overflow-hidden">
+              <div className="w-full aspect-square skeleton-pulse" style={{ background: 'var(--bg-tertiary)', borderRadius: '1.25rem' }} />
+              <div className="p-4 flex-1 flex flex-col gap-2.5">
+                <div className="h-5 w-3/4 skeleton-pulse rounded" />
+                <div className="h-3 w-1/2 skeleton-pulse rounded" />
+                <div className="mt-auto pt-3 border-t flex justify-between items-center" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="h-5 w-20 skeleton-pulse rounded" />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="catalog-product-card p-12 sm:p-16 text-center">
           <div
             className="mx-auto mb-4 w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -768,7 +806,7 @@ export default function Catalog() {
             محصولی یافت نشد
           </p>
           <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            فیلترها یا عبارت جستجو را بررسی کنید. شاید دسته‌بندی یا نام دیگری مد نظرتان باشد.
+            فیلترها یا عبارت جستجو را بررسی کنید. شاید دستهبندی یا نام دیگری مد نظرتان باشد.
           </p>
           <Link
             to="/contact"
@@ -780,7 +818,7 @@ export default function Catalog() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-          {filtered.map((product, idx) => {
+          {filtered.slice(0, visibleCount).map((product, idx) => {
             const price = product.final_price || product.suggested_price;
             const isNew = isWithinDays(product.created_at, 14);
             const shareUrl = telegramShareUrl(product);
@@ -944,6 +982,24 @@ export default function Catalog() {
               </article>
             );
           })}
+        </div>
+      )}
+
+      {/* Infinite scroll sentinel & fallback Load More */}
+      {!loading && visibleCount < filtered.length && (
+        <div ref={loadMoreRef} className="py-8 flex justify-center items-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((c) => Math.min(c + BATCH_SIZE, filtered.length))}
+            className="px-5 py-2.5 rounded-xl text-xs font-semibold transition-all border shadow-sm hover:scale-[1.02]"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            نمایش محصولات بیشتر ({filtered.length - visibleCount} مورد دیگر)
+          </button>
         </div>
       )}
         </div>

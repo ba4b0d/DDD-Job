@@ -2,9 +2,17 @@
 3DJAT 3D Printing Product Pricing API
 FastAPI application with CORS, SQLite, and seed data.
 """
-import os, logging
+import os, logging, mimetypes
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+
+# Ensure proper MIME types for static uploads
+mimetypes.add_type("image/webp", ".webp")
+mimetypes.add_type("image/jpeg", ".jpg")
+mimetypes.add_type("image/jpeg", ".jpeg")
+mimetypes.add_type("image/png", ".png")
+mimetypes.add_type("model/stl", ".stl")
+mimetypes.add_type("model/3mf", ".3mf")
 
 load_dotenv()  # Load .env file if present
 
@@ -336,8 +344,16 @@ app.include_router(customers_router)
 app.include_router(audit_router)
 app.include_router(catalog_router)  # No auth — public catalog
 
-# ── Static files for uploads ────────────────────────────────────────
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+# ── Static files for uploads with immutable caching ─────────────────
+class CachedStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
+
+app.mount("/uploads", CachedStaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 
 @app.get("/")
