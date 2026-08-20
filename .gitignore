@@ -15,6 +15,8 @@ debug*.py
 .env.local
 .env.production
 !.env.example
+*credentials*.json
+gsc_credentials.json
 
 # Database
 data/*.db
