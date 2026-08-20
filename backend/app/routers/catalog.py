@@ -164,8 +164,11 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
     static_pages = [
         ("/", "1.0", "weekly"),
         ("/catalog", "0.9", "weekly"),
+        ("/custom-order", "0.9", "weekly"),
+        ("/how-to-order", "0.8", "monthly"),
         ("/contact", "0.7", "monthly"),
-        ("/how-to-order", "0.7", "monthly"),
+        ("/privacy", "0.5", "monthly"),
+        ("/terms", "0.5", "monthly"),
     ]
 
     urls = []
