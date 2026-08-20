@@ -532,13 +532,13 @@ export default function PublicProductDetail() {
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-80 transition-opacity"
-          style={{ color: '#ffffff' }}
+          style={{ color: 'var(--text-primary)' }}
         >
           <ArrowRight size={16} />
           بازگشت به کاتالوگ
         </Link>
-        <span style={{ color: 'rgba(255,255,255,0.55)' }}>/</span>
-        <Link to="/" className="text-sm font-medium hover:underline" style={{ color: '#ffffff' }}>
+        <span style={{ color: 'var(--text-muted)' }}>/</span>
+        <Link to="/" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-primary)' }}>
           کاتالوگ
         </Link>
       </div>
@@ -650,7 +650,7 @@ export default function PublicProductDetail() {
             const coll = product.collections[0];
             const collName = coll.name;
             const collSlug = coll.slug;
-            const targetLink = `/?tag=${encodeURIComponent(collSlug || collName)}`;
+            const targetLink = `/collection/${encodeURIComponent(collSlug || collName)}`;
 
             return (
               <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
@@ -691,7 +691,7 @@ export default function PublicProductDetail() {
 
       {/* Related Products section for SEO Internal Linking & User Discovery */}
       {relatedProducts.length > 0 && (
-        <section className="mt-12 sm:mt-16 pt-8 border-t" style={{ borderColor: 'var(--border-color)' }}>
+        <section className="card p-5 sm:p-6 mt-10 sm:mt-14 border rounded-2xl" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-base sm:text-lg font-bold" style={{ color: 'var(--text-primary)' }}>

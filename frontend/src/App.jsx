@@ -70,6 +70,8 @@ function AppRoutes() {
         {/* Public */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/collection/:tag" element={<CatalogLayout><Catalog /></CatalogLayout>} />
+                <Route path="/collections/:tag" element={<CatalogLayout><Catalog /></CatalogLayout>} />
                 <Route path="/catalog/:slug" element={<CatalogLayout><PublicProductDetail /></CatalogLayout>} />
                 <Route path="/contact" element={<CatalogLayout><Contact /></CatalogLayout>} />
                 <Route path="/how-to-order" element={<CatalogLayout><HowToOrder /></CatalogLayout>} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
@@ -174,7 +174,7 @@ function CollectionCard({ coll, activeTag, duplicate = false }) {
   const isActive = !duplicate && (activeTag === coll.slug || activeTag === coll.name);
   return (
     <Link
-      to={isActive ? '/' : `/?tag=${encodeURIComponent(coll.slug || coll.name)}`}
+      to={isActive ? '/' : `/collection/${encodeURIComponent(coll.slug || coll.name)}`}
       tabIndex={duplicate ? -1 : undefined}
       aria-hidden={duplicate || undefined}
       inert={duplicate ? '' : undefined}
@@ -218,6 +218,7 @@ const INITIAL_BATCH = 24;
 const BATCH_SIZE = 24;
 
 export default function Catalog() {
+  const { tag: routeTag } = useParams();
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -229,7 +230,7 @@ export default function Catalog() {
     const cat = searchParams.get('category');
     return cat ? Number(cat) : null;
   });
-  const [activeTag, setActiveTag] = useState(() => searchParams.get('tag') || null);
+  const [activeTag, setActiveTag] = useState(() => routeTag || searchParams.get('tag') || null);
   const [sortBy, setSortBy] = useState('name');
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
   const loadMoreRef = useRef(null);
@@ -264,10 +265,10 @@ export default function Catalog() {
     let num = null;
     if (cat === 'uncategorized') num = 'uncategorized';
     else if (cat) num = Number(cat);
-    const tag = searchParams.get('tag');
+    const tag = routeTag || searchParams.get('tag');
     setActiveCategory((prev) => (prev === num ? prev : num));
     setActiveTag((prev) => (prev === tag ? prev : tag));
-  }, [searchParams]);
+  }, [searchParams, routeTag]);
 
   // Toggle a category filter: clears any active tag and keeps the URL in sync,
   // so category + collection filters never silently stack into an empty result.
@@ -584,7 +585,7 @@ export default function Catalog() {
   useSEO({
     title: seoTitle,
     description: seoDesc,
-    url: '/',
+    url: routeTag ? `/collection/${encodeURIComponent(routeTag)}` : '/',
     jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
   });
 
@@ -834,7 +835,7 @@ export default function Catalog() {
             const isNew = isWithinDays(product.created_at, 14);
             const shareUrl = telegramShareUrl(product);
             const isBundle = product.isCollectionBundle;
-            const cardLink = isBundle ? `/?tag=${encodeURIComponent(product.collectionTag)}` : `/catalog/${product.slug}`;
+            const cardLink = isBundle ? `/collection/${encodeURIComponent(product.collectionTag)}` : `/catalog/${product.slug}`;
 
             return (
               <article
