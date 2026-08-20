@@ -106,6 +106,22 @@ export function buildBreadcrumbJsonLd(items) {
   }
 }
 
+export function buildFaqJsonLd(faqItems) {
+  if (!faqItems || faqItems.length === 0) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  }
+}
+
 /**
  * Product schema for rich results (price, availability, image).
  * currency: IRR = Iranian Rial; UI shows Toman but schema uses IRR numeric.

@@ -327,7 +327,7 @@ export default function PublicProductDetail() {
     product?.collections?.[0]?.name ||
     product?.categories?.[0]?.name ||
     product?.category ||
-    'پرینت سهبعدی';
+    'پرینت سه بعدی';
 
   // High-CTR SEO Title Formula: e.g. "خرید فیگور دناتلو لاکپشتهای نینجا ۳ بعدی + انتخاب رنگ"
   const seoTitle = productName
@@ -344,7 +344,7 @@ export default function PublicProductDetail() {
   const seoDescription =
     (product?.notes && String(product.notes).trim()) ||
     (productName
-      ? `خرید آنلاین ${productName} با چاپ سهبعدی PLA. ${dimsText}${priceSnippet}با قابلیت شخصیسازی رنگ و ارسال سریع در اسپاگتی پرینت.`
+      ? `خرید آنلاین ${productName} با چاپ سه بعدی PLA. ${dimsText}${priceSnippet}با قابلیت شخصیسازی رنگ و ارسال سریع در اسپاگتی پرینت.`
       : undefined);
 
   const jsonLd = useMemo(() => {

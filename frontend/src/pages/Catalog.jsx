@@ -3,7 +3,164 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Search, Package, Clock, Weight, Layers, ChevronLeft, ChevronRight, Ruler, Send } from 'lucide-react';
 import { getCatalog, getCatalogCategories, getCatalogCollections } from '../lib/api';
 import { formatPrice, formatMinutes } from '../lib/utils';
-import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd } from '../lib/seo';
+import { useSEO, buildWebSiteJsonLd, buildOrganizationJsonLd, buildFaqJsonLd } from '../lib/seo';
+
+const FAQ_ITEMS = [
+  {
+    question: 'پرینت سه بعدی با چه متریالی انجام میشود و چقدر مقاوم است؟',
+    answer: 'محصولات اسپاگتی پرینت با فیلامنت درجه یک PLA (پلیلاکتیک اسید) تولید میشوند که بر پایه نیشکر و نشاسته ذرت بوده و کاملاً بدون بو، زیستسازگار و دارای استحکام مکانیکی بسیار بالا برای استفادههای دکوراتیو، فیگور و قطعات کاربردی است.',
+  },
+  {
+    question: 'چگونه میتوانم فایل سه بعدی اختصاصی یا عکس قطعه شکسته را برای چاپ ارسال کنم؟',
+    answer: 'کافیست وارد صفحه «سفارش طرح دلخواه» شوید یا در تلگرام و پیامرسانها فایل مدل خود با فرمتهای STL، 3MF، OBJ یا عکس از زوایای مختلف قطعه را ارسال نمایید تا در کوتاهترین زمان برآورد وزن، زمان و قیمت انجام شود.',
+  },
+  {
+    question: 'زمان آمادهسازی و ارسال سفارشات چقدر است؟',
+    answer: 'بسته به ابعاد قطعه و تعداد سفارش، محصولات کاتالوگ ظرف ۲۴ تا ۴۸ ساعت چاپ و آماده ارسال پستی به سراسر ایران میشوند. کلیه بستهها با محافظ ضدضربه ارسال میگردند.',
+  },
+  {
+    question: 'آیا امکان تغییر رنگ یا حک اسم دلخواه روی محصولات وجود دارد؟',
+    answer: 'بله؛ تنوع گستردهای از رنگهای جذاب فیلامنت موجود است و در زمان ثبت سفارش میتوانید رنگ مورد نظرتان را انتخاب کنید یا درخواست درج اسم و نوشته دلخواه را ثبت نمایید.',
+  },
+];
+
+function FaqSection() {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  const toggle = (idx) => {
+    setOpenIndex((prev) => (prev === idx ? null : idx));
+  };
+
+  return (
+    <section className="card p-6 sm:p-8 rounded-3xl border space-y-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+      <div className="flex items-center justify-between pb-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+        <div>
+          <h3 className="text-base sm:text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+            سؤالات متداول (FAQ)
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            پاسخ به سؤالات پرتکرار درباره چاپ سه بعدی و ثبت سفارش
+          </p>
+        </div>
+        <span className="text-2xl select-none">❓</span>
+      </div>
+
+      <div className="space-y-3">
+        {FAQ_ITEMS.map((item, i) => {
+          const isOpen = openIndex === i;
+          return (
+            <div
+              key={i}
+              className="border rounded-2xl p-4 cursor-pointer transition-colors"
+              style={{
+                borderColor: isOpen ? 'var(--accent)' : 'var(--border-color)',
+                backgroundColor: isOpen ? 'var(--bg-secondary)' : 'transparent',
+              }}
+              onClick={() => toggle(i)}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="text-xs sm:text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                  {item.question}
+                </h4>
+                <span
+                  className="text-xs transition-transform duration-200 shrink-0"
+                  style={{
+                    color: 'var(--text-muted)',
+                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                >
+                  ▼
+                </span>
+              </div>
+              {isOpen && (
+                <div className="mt-3 text-xs leading-relaxed border-t pt-3" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}>
+                  {item.answer}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function OrderProcessSection() {
+  return (
+    <section className="card p-6 sm:p-8 rounded-3xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+      <div className="text-center max-w-lg mx-auto mb-8">
+        <span className="text-xs font-bold px-3 py-1 rounded-full inline-block mb-2" style={{ backgroundColor: 'rgba(255, 154, 61, 0.15)', color: 'var(--brand-orange-deep)' }}>
+          روند آسان و سریع
+        </span>
+        <h3 className="text-base sm:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          مراحل سفارش چاپ سه بعدی در اسپاگتی پرینت
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+        <div className="flex flex-col items-center text-center p-4 rounded-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+          <div className="w-12 h-12 rounded-2xl font-black text-lg flex items-center justify-center mb-3 shadow-md text-white" style={{ backgroundColor: 'var(--accent)' }}>
+            ۱
+          </div>
+          <h4 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            انتخاب یا ارسال طرح
+          </h4>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            انتخاب از کاتالوگ یا ارسال فایل STL / عکس در صفحه سفارش طرح دلخواه.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center text-center p-4 rounded-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+          <div className="w-12 h-12 rounded-2xl font-black text-lg flex items-center justify-center mb-3 shadow-md text-white" style={{ backgroundColor: 'var(--brand-orange)' }}>
+            ۲
+          </div>
+          <h4 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            برآورد زمان و هزینه
+          </h4>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            بررسی مدل، محاسبه دقیق زمان و وزن فیلامنت و انتخاب رنگ دلخواه.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center text-center p-4 rounded-2xl border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+          <div className="w-12 h-12 rounded-2xl font-black text-lg flex items-center justify-center mb-3 shadow-md text-white" style={{ backgroundColor: '#16a34a' }}>
+            ۳
+          </div>
+          <h4 className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+            چاپ دقیق و ارسال ایمن
+          </h4>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            پرینت با دقت میکرونی، کنترل کیفیت نهایی و بستهبندی ضدضربه پستی.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BottomCtaSection() {
+  return (
+    <div
+      className="rounded-3xl p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl"
+      style={{ background: 'linear-gradient(135deg, #1e2540 0%, #9a3412 100%)' }}
+    >
+      <div className="space-y-1.5 text-center sm:text-right">
+        <h4 className="text-base sm:text-lg font-bold">
+          طرح خاصی در ذهن دارید که در کاتالوگ نیست؟
+        </h4>
+        <p className="text-xs opacity-90">
+          فایل STL یا عکس مدل دلخواه را بفرستید تا با بالاترین کیفیت برایتان چاپ کنیم.
+        </p>
+      </div>
+      <Link
+        to="/custom-order"
+        className="px-6 py-3 rounded-2xl text-white font-bold text-xs shadow-lg transition-all shrink-0 hover:opacity-90"
+        style={{ backgroundColor: 'var(--brand-orange)' }}
+      >
+        استعلام قیمت و سفارش طرح دلخواه ←
+      </Link>
+    </div>
+  );
+}
 
 function CatalogImageCarousel({ images, imageUrl, name, priority = false }) {
   const [current, setCurrent] = useState(0);
@@ -579,34 +736,23 @@ export default function Catalog() {
   const seoDesc =
     bannerInfo?.desc ||
     (bannerInfo
-      ? `مشاهده و خرید آنلاین انواع محصولات ${bannerInfo.title} با تکنولوژی پرینت سهبعدی و قیمت شفاف در اسپاگتی پرینت.`
-      : 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف');
+      ? `مشاهده و خرید آنلاین انواع محصولات ${bannerInfo.title} با تکنولوژی پرینت سه بعدی و قیمت شفاف در اسپاگتی پرینت.`
+      : 'اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سه بعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف');
+
+  const jsonLd = useMemo(() => {
+    return [
+      buildWebSiteJsonLd(),
+      buildOrganizationJsonLd(),
+      buildFaqJsonLd(FAQ_ITEMS),
+    ].filter(Boolean);
+  }, []);
 
   useSEO({
     title: seoTitle,
     description: seoDesc,
     url: routeTag ? `/collection/${encodeURIComponent(routeTag)}` : '/',
-    jsonLd: [buildWebSiteJsonLd(), buildOrganizationJsonLd()],
+    jsonLd,
   });
-
-  // Infinite scroll observer for progressive product rendering
-  useEffect(() => {
-    if (loading) return;
-    const target = loadMoreRef.current;
-    if (!target) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, filtered.length));
-        }
-      },
-      { rootMargin: '400px' }
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [loading, filtered.length]);
 
   return (
     <div className="space-y-7 sm:space-y-9 animate-fade-in">
@@ -631,14 +777,14 @@ export default function Catalog() {
                   className="catalog-hero-title text-2xl sm:text-3xl lg:text-4xl font-bold mb-2.5 tracking-tight leading-[1.15]"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  خدمات پرینت سهبعدی و کاتالوگ محصولات
+                  خدمات پرینت سه بعدی و کاتالوگ محصولات
                 </h1>
                 <p className="text-xs sm:text-sm opacity-90 mt-1 max-w-lg" style={{ color: 'var(--text-secondary)' }}>
                   سفارش آنلاین قطعات سفارشی با عکس یا STL + شخصیسازی کامل رنگ و ابعاد محصولات کاتالوگ
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="catalog-stat-pill catalog-stat-pill-on-photo">
-                    {loading ? 'پرینت آنلاین سهبعدی' : `${products.length} محصول`}
+                    {loading ? 'پرینت آنلاین سه بعدی' : `${products.length} محصول`}
                   </span>
                   {!loading && categories.length > 0 && (
                     <span className="catalog-stat-pill catalog-stat-pill-on-photo">
@@ -658,6 +804,41 @@ export default function Catalog() {
             <span className="catalog-hero-cta-arrow">←</span>
           </div>
         </Link>
+      </div>
+
+      {/* Trust Badges Strip (Hero Benefits) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="card p-3 sm:p-3.5 flex items-center gap-3 rounded-2xl border transition-all hover:border-accent" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0" style={{ backgroundColor: 'rgba(255, 154, 61, 0.15)', color: 'var(--brand-orange-deep)' }}>✨</div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>متریال درجه یک PLA</h3>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>زیستسازگار و بدون بو</p>
+          </div>
+        </div>
+
+        <div className="card p-3 sm:p-3.5 flex items-center gap-3 rounded-2xl border transition-all hover:border-accent" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0" style={{ backgroundColor: 'rgba(99, 102, 241, 0.12)', color: 'var(--accent)' }}>🎨</div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>شخصیسازی نامحدود</h3>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>انتخاب رنگ، ابعاد و متن</p>
+          </div>
+        </div>
+
+        <div className="card p-3 sm:p-3.5 flex items-center gap-3 rounded-2xl border transition-all hover:border-accent" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }}>⚡</div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>قیمت شفاف و فوری</h3>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>برآورد بر اساس وزن قطعه</p>
+          </div>
+        </div>
+
+        <div className="card p-3 sm:p-3.5 flex items-center gap-3 rounded-2xl border transition-all hover:border-accent" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shrink-0" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#d97706' }}>📦</div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>بستهبندی ضدضربه</h3>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>ارسال ایمن به سراسر کشور</p>
+          </div>
+        </div>
       </div>
 
       {/* Sticky-ish toolbar */}
@@ -997,25 +1178,39 @@ export default function Catalog() {
         </div>
       )}
 
-      {/* Infinite scroll sentinel & fallback Load More */}
+      {/* Option A: Controlled Click-to-Load More */}
       {!loading && visibleCount < filtered.length && (
-        <div ref={loadMoreRef} className="py-8 flex justify-center items-center">
+        <div className="py-8 flex flex-col items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => setVisibleCount((c) => Math.min(c + BATCH_SIZE, filtered.length))}
-            className="px-5 py-2.5 rounded-xl text-xs font-semibold transition-all border shadow-sm hover:scale-[1.02]"
+            className="px-6 py-3 rounded-2xl text-xs font-bold transition-all border shadow-sm hover:scale-[1.02] flex items-center gap-2"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
             }}
           >
-            نمایش محصولات بیشتر ({filtered.length - visibleCount} مورد دیگر)
+            <span>نمایش ۲۴ محصول بیشتر</span>
+            <span style={{ color: 'var(--text-muted)' }}>({filtered.length - visibleCount} محصول باقیمانده)</span>
+            <span>↓</span>
           </button>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            برای مشاهده راهنما و سؤالات متداول، ادامه صفحه را ببینید
+          </span>
         </div>
       )}
         </div>
       </div>
+
+      {/* Ordering Guide, FAQ, and CTA Sections (Main Homepage) */}
+      {!activeTag && !activeCategory && !search && (
+        <div className="space-y-8 mt-10 sm:mt-14">
+          <OrderProcessSection />
+          <FaqSection />
+          <BottomCtaSection />
+        </div>
+      )}
     </div>
   );
 }
