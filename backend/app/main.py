@@ -299,7 +299,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="3DJAT Pricing API",
+    title="Spaghetti Print API",
     description="3D printing product cost calculation and pricing",
     version="1.0.0",
     lifespan=lifespan,
@@ -367,7 +367,7 @@ app.mount("/uploads", CachedStaticFiles(directory=UPLOAD_DIR), name="uploads")
 @app.get("/")
 def root():
     return {
-        "name": "3DJAT Pricing API",
+        "name": "Spaghetti Print API",
         "version": "1.0.0",
         "docs": "/docs",
     }

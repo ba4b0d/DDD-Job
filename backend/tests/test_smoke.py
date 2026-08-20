@@ -19,7 +19,7 @@ def test_root_returns_service_info(client):
     assert resp.status_code == 200
     data = resp.json()
     assert "name" in data
-    assert data["name"] == "3DJAT Pricing API"
+    assert data["name"] == "Spaghetti Print API"
     assert "version" in data
     assert "docs" in data
 
@@ -38,7 +38,7 @@ def test_openapi_schema_available(client):
     assert resp.status_code == 200
     data = resp.json()
     # FastAPI's generated schema — verify the title matches what main.py sets.
-    assert data["info"]["title"] == "3DJAT Pricing API"
+    assert data["info"]["title"] == "Spaghetti Print API"
     assert data["info"]["version"] == "1.0.0"
     # The auth router and products router should both be registered.
     paths = data["paths"]

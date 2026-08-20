@@ -67,7 +67,7 @@ def upload_to_gdrive_service_account(creds_dict: dict, file_path: str, filename:
     if folder_id and folder_id.strip():
         metadata["parents"] = [folder_id.strip()]
 
-    boundary = f"3djat_gdrive_{uuid.uuid4().hex}"
+    boundary = f"spaghetti_gdrive_{uuid.uuid4().hex}"
     meta_json = json.dumps(metadata)
 
     with open(file_path, "rb") as f_data:
@@ -108,7 +108,7 @@ def export_database_backup(user=Depends(require_admin)):
         raise HTTPException(status_code=404, detail="فایل دیتابیس یافت نشد")
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    filename = f"3djat_backup_{timestamp}.db"
+    filename = f"spaghetti_backup_{timestamp}.db"
 
     temp_dir = tempfile.gettempdir()
     temp_file_path = os.path.join(temp_dir, filename)
@@ -257,7 +257,7 @@ def push_backup_to_gdrive(
     folder_id = folder_setting.string_value if folder_setting else None
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    filename = f"3djat_backup_{timestamp}.db"
+    filename = f"spaghetti_backup_{timestamp}.db"
     temp_dir = tempfile.gettempdir()
     temp_file_path = os.path.join(temp_dir, filename)
 

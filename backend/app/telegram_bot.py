@@ -229,7 +229,7 @@ def _handle_backup(chat_id: str, token: str):
     _send_msg(token, chat_id, "⏳ در حال ساخت پشتیبان WAL-safe...")
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     temp_dir = tempfile.gettempdir()
-    backup_file = os.path.join(temp_dir, f"3djat_backup_{timestamp}.db")
+    backup_file = os.path.join(temp_dir, f"spaghetti_backup_{timestamp}.db")
 
     try:
         src = sqlite3.connect(DB_PATH)

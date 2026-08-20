@@ -39,7 +39,7 @@ export default function Settings() {
       const link = document.createElement('a');
       link.href = url;
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      link.setAttribute('download', `3djat_backup_${timestamp}.db`);
+      link.setAttribute('download', `spaghetti_backup_${timestamp}.db`);
       document.body.appendChild(link);
       link.click();
       link.remove();

@@ -23,7 +23,7 @@ BACKUP_DIR="${BACKUP_DIR:-$DEFAULT_BACKUP_DIR}"
 mkdir -p "$BACKUP_DIR"
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="${BACKUP_DIR}/3djat_${TIMESTAMP}.db"
+BACKUP_FILE="${BACKUP_DIR}/spaghetti_${TIMESTAMP}.db"
 
 echo "Creating WAL-safe backup from ${DB_PATH} to ${BACKUP_FILE}..."
 
@@ -46,6 +46,6 @@ print(f'Backup complete: {backup_path}')
 "
 
 # Keep last 14 daily backups, delete older ones
-find "$BACKUP_DIR" -name "3djat_*.db" -type f -mtime +14 -delete 2>/dev/null || true
+find "$BACKUP_DIR" -name "spaghetti_*.db" -type f -mtime +14 -delete 2>/dev/null || true
 
 echo "Backup finished successfully."

@@ -52,7 +52,7 @@ def upload_backup_to_gdrive(folder_id=None, custom_db_path=None):
 
     print(f"Creating WAL-safe snapshot of {target_db}...")
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    backup_filename = f"3djat_backup_{timestamp}.db"
+    backup_filename = f"spaghetti_backup_{timestamp}.db"
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_file_path = os.path.join(temp_dir, backup_filename)
@@ -74,7 +74,7 @@ def upload_backup_to_gdrive(folder_id=None, custom_db_path=None):
         if folder_id and folder_id.strip():
             metadata['parents'] = [folder_id.strip()]
 
-        boundary = f"3djat_gdrive_{uuid.uuid4().hex}"
+        boundary = f"spaghetti_gdrive_{uuid.uuid4().hex}"
         meta_json = json.dumps(metadata)
 
         with open(temp_file_path, 'rb') as f:

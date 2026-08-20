@@ -11,6 +11,7 @@ applyDynamicBranding();
 
 // Drop stale dual-theme preference (app is single soft-dusk only)
 try {
+  localStorage.removeItem('spaghetti-theme');
   localStorage.removeItem('3djat-theme');
 } catch {
   /* ignore */
