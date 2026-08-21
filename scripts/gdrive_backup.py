@@ -18,25 +18,61 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TOKEN_FILE = os.path.join(BASE_DIR, 'backend', 'gdrive_token.json')
-SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'backend', 'gsc_credentials.json')
-DB_PATH = os.path.join(BASE_DIR, 'backend', 'data', '3djat.db')
-UPLOADS_DIR = os.path.join(BASE_DIR, 'backend', 'uploads')
-
 DEFAULT_FOLDER_ID = '15q1LaC5ffH-DhAK8dlgCCyzM9rRxIkqA'
 
 
+def find_file(candidates):
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return candidates[0]
+
+
+def get_token_file():
+    return find_file([
+        os.path.join(BASE_DIR, 'backend', 'gdrive_token.json'),
+        '/app/gdrive_token.json',
+        'backend/gdrive_token.json',
+    ])
+
+
+def get_service_account_file():
+    return find_file([
+        os.path.join(BASE_DIR, 'backend', 'gsc_credentials.json'),
+        '/app/gsc_credentials.json',
+        'backend/gsc_credentials.json',
+    ])
+
+
+def get_db_path():
+    return find_file([
+        '/app/data/3djat.db',
+        os.path.join(BASE_DIR, 'backend', 'data', '3djat.db'),
+        os.path.join(BASE_DIR, 'data', '3djat.db'),
+    ])
+
+
+def get_uploads_dir():
+    return find_file([
+        '/app/uploads',
+        os.path.join(BASE_DIR, 'backend', 'uploads'),
+        os.path.join(BASE_DIR, 'uploads'),
+    ])
+
+
 def get_access_token():
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, scopes=['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'])
+    token_file = get_token_file()
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, scopes=['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'])
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            with open(TOKEN_FILE, 'w', encoding='utf-8') as token:
+            with open(token_file, 'w', encoding='utf-8') as token:
                 token.write(creds.to_json())
         return creds.token
 
-    if os.path.exists(SERVICE_ACCOUNT_FILE):
-        with open(SERVICE_ACCOUNT_FILE, 'r', encoding='utf-8') as f:
+    sa_file = get_service_account_file()
+    if os.path.exists(sa_file):
+        with open(sa_file, 'r', encoding='utf-8') as f:
             creds_dict = json.load(f)
         client_email = creds_dict.get('client_email')
         private_key = creds_dict.get('private_key')
@@ -56,7 +92,7 @@ def get_access_token():
             raise ValueError(f"Authentication with Google failed: {resp.text}")
         return resp.json().get('access_token')
 
-    raise FileNotFoundError(f"No Google Drive credentials found. Please run scripts/gdrive_oauth_setup.py first.")
+    raise FileNotFoundError(f"No Google Drive credentials found at {token_file}")
 
 
 def prune_old_backups(access_token, folder_id, keep_days=14):
@@ -83,7 +119,8 @@ def prune_old_backups(access_token, folder_id, keep_days=14):
 
 def upload_backup_to_gdrive(folder_id=None, custom_db_path=None, include_uploads=False):
     folder_id = folder_id or DEFAULT_FOLDER_ID
-    target_db = custom_db_path or DB_PATH
+    target_db = custom_db_path or get_db_path()
+    uploads_dir = get_uploads_dir()
     if not os.path.exists(target_db):
         raise FileNotFoundError(f"Database file not found at {target_db}")
 
@@ -93,7 +130,7 @@ def upload_backup_to_gdrive(folder_id=None, custom_db_path=None, include_uploads
     with tempfile.TemporaryDirectory() as temp_dir:
         access_token = get_access_token()
 
-        if include_uploads and os.path.exists(UPLOADS_DIR):
+        if include_uploads and os.path.exists(uploads_dir):
             backup_filename = f"spaghetti_full_backup_{timestamp}.zip"
             temp_file_path = os.path.join(temp_dir, backup_filename)
             db_snap_path = os.path.join(temp_dir, f"spaghetti_backup_{timestamp}.db")
@@ -110,10 +147,10 @@ def upload_backup_to_gdrive(folder_id=None, custom_db_path=None, include_uploads
             print(f"Packaging database and media uploads into {backup_filename}...")
             with zipfile.ZipFile(temp_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 zipf.write(db_snap_path, arcname=f"database/spaghetti_backup_{timestamp}.db")
-                for root, _, files in os.walk(UPLOADS_DIR):
+                for root, _, files in os.walk(uploads_dir):
                     for file in files:
                         full_path = os.path.join(root, file)
-                        rel_path = os.path.relpath(full_path, UPLOADS_DIR)
+                        rel_path = os.path.relpath(full_path, uploads_dir)
                         zipf.write(full_path, arcname=f"uploads/{rel_path}")
         else:
             backup_filename = f"spaghetti_backup_{timestamp}.db"

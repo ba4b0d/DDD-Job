@@ -10,6 +10,7 @@ services:
     volumes:
       - db_data:/app/data
       - uploads_data:/app/uploads
+      - ./scripts:/app/scripts:ro
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
