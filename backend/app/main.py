@@ -362,6 +362,8 @@ class CachedStaticFiles(StaticFiles):
 
 
 app.mount("/uploads", CachedStaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("/api/v1/uploads", CachedStaticFiles(directory=UPLOAD_DIR), name="api_v1_uploads")
+app.mount("/api/uploads", CachedStaticFiles(directory=UPLOAD_DIR), name="api_uploads")
 
 
 @app.get("/")

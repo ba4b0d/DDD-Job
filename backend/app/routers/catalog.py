@@ -289,6 +289,18 @@ def get_robots_txt(request: Request):
     return Response(content=body, media_type="text/plain")
 
 
+def _normalize_image_url(base: str, img: str) -> str:
+    """Ensure image URL is absolute and routes through /api/v1/uploads/ for universal reverse-proxy compatibility."""
+    if not img:
+        return f"{base}/catalog-hero.jpg"
+    if img.startswith("http://") or img.startswith("https://"):
+        return img
+    clean = img if img.startswith("/") else f"/{img}"
+    if clean.startswith("/uploads/"):
+        clean = f"/api/v1{clean}"
+    return f"{base}{clean}"
+
+
 @router.get("/meta-preview", response_class=Response)
 def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_db)):
     """Server-side OpenGraph & Twitter meta tags for Telegram, WhatsApp, Twitter, Discord, etc."""
@@ -382,8 +394,7 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
                 img = primary.image_url if primary else None
             if not img:
                 img = product.image_url
-            if img:
-                image_url = img if img.startswith("http") else f"{base}{img if img.startswith('/') else '/' + img}"
+            image_url = _normalize_image_url(base, img)
 
     # 2. Blog post: /blog/{slug}
     elif uri.startswith("/blog/"):
@@ -403,8 +414,7 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
             title = f"{post.title} — وبلاگ اسپاگتی پرینت"
             canonical_url = f"{base}/blog/{post.slug}"
             description = post.summary or description
-            if post.cover_image:
-                image_url = post.cover_image if post.cover_image.startswith("http") else f"{base}{post.cover_image if post.cover_image.startswith('/') else '/' + post.cover_image}"
+            image_url = _normalize_image_url(base, post.cover_image)
 
     # 3. Collection page: /collection/{slug}
     elif uri.startswith("/collection/"):
@@ -423,8 +433,7 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
             title = f"کالکشن {coll.name} — خرید و سفارش آنلاین | اسپاگتی پرینت"
             canonical_url = f"{base}/collection/{coll.slug}"
             description = coll.description or f"مشاهده و خرید آنلاین محصولات کالکشن {coll.name} با تکنولوژی پرینت سهبعدی در اسپاگتی پرینت"
-            if coll.image_url:
-                image_url = coll.image_url if coll.image_url.startswith("http") else f"{base}{coll.image_url if coll.image_url.startswith('/') else '/' + coll.image_url}"
+            image_url = _normalize_image_url(base, coll.image_url)
 
     # 4. Custom order page: /custom-order
     elif uri.startswith("/custom-order"):
