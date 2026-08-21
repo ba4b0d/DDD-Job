@@ -13,6 +13,13 @@ from app.cache import get_settings_dict
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
 
+def _to_farsi_num(val) -> str:
+    """Convert ASCII digits to Persian digits."""
+    if val is None:
+        return ""
+    return str(val).translate(str.maketrans("0123456789,", "۰۱۲۳۴۵۶۷۸۹٬"))
+
+
 def _public_base_url(request: Request) -> str:
     """Build site origin from reverse-proxy headers (works with any domain on Pi5).
 
@@ -20,7 +27,6 @@ def _public_base_url(request: Request) -> str:
     Inner nginx then sets X-Forwarded-Proto=$scheme → http, so sitemap would
     emit http://… unless we correct for non-local public hosts.
     """
-    # Prefer first value if a chain of proxies sent a comma list
     raw_proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https")
     proto = raw_proto.split(",")[0].strip().lower() or "https"
 
@@ -33,12 +39,15 @@ def _public_base_url(request: Request) -> str:
     host = raw_host.split(",")[0].strip()
     bare = host.split(":")[0].lower()
 
+    # Fallback to public domain if behind internal docker container network or empty
+    if not host or bare in ("backend", "frontend", "web", "app") or bare.startswith("172."):
+        return "https://spaghettiprints.ir"
+
     local = (
         bare in ("localhost", "127.0.0.1", "0.0.0.0", "::1")
         or bare.endswith(".local")
         or bare.startswith("192.168.")
         or bare.startswith("10.")
-        or bare.startswith("172.")
     )
     # Public domain behind TLS terminator → always https in sitemap/absolute URLs
     if not local and proto == "http":
@@ -284,29 +293,48 @@ def get_robots_txt(request: Request):
 def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_db)):
     """Server-side OpenGraph & Twitter meta tags for Telegram, WhatsApp, Twitter, Discord, etc."""
     import html as html_lib
+    from urllib.parse import unquote
+    from sqlalchemy import func
+
     base = _public_base_url(request)
     uri = uri.strip()
+    clean_uri = uri.split("?")[0].split("#")[0].strip("/")
 
     title = "اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی"
-    description = "خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف"
-    image_url = f"{base}/icons/icon-512.png"
+    description = "خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت نمونه اولیه، قطعات کاربردی و کاتالوگ محصولات با قیمت شفاف"
+    image_url = f"{base}/catalog-hero.jpg"
     canonical_url = f"{base}{uri}" if uri else base
     og_type = "website"
+    price_amount = None
 
-    # 1. Product page: /catalog/{slug}
-    if uri.startswith("/catalog/"):
-        slug_or_id = uri.split("/catalog/")[-1].strip().split("?")[0].strip("/")
+    # 1. Product page: /catalog/{slug_or_id}
+    if uri.startswith("/catalog/") and len(clean_uri.split("/")) >= 2:
+        slug_or_id = clean_uri.split("catalog/")[-1].strip()
+        slug_or_id = unquote(slug_or_id)
+
         product = (
             db.query(Product)
-            .options(selectinload(Product.images))
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.categories),
+                selectinload(Product.collections),
+            )
             .filter(Product.is_active == True)
-            .filter((Product.slug == slug_or_id) | (Product.product_id == slug_or_id))
+            .filter(
+                (Product.slug == slug_or_id)
+                | (func.lower(Product.slug) == slug_or_id.lower())
+                | (func.lower(Product.product_id) == slug_or_id.lower())
+            )
             .first()
         )
         if not product and slug_or_id.isdigit():
             product = (
                 db.query(Product)
-                .options(selectinload(Product.images))
+                .options(
+                    selectinload(Product.images),
+                    selectinload(Product.categories),
+                    selectinload(Product.collections),
+                )
                 .filter(Product.is_active == True, Product.id == int(slug_or_id))
                 .first()
             )
@@ -316,40 +344,63 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
             title = f"خرید {product.name} — اسپاگتی پرینت"
             canonical_url = f"{base}/catalog/{product.slug or product.id}"
 
-            price_val = product.final_price or product.suggested_price
-            price_str = f"{int(price_val):,} تومان" if price_val else ""
+            price_val = product.final_price
+            if not price_val:
+                try:
+                    mat = product.material
+                    mach = product.machine
+                    settings = get_settings_dict(db)
+                    calc = calculate_product_costs_from_dicts(product, mat, mach, settings)
+                    price_val = calc.get("suggested_price")
+                except Exception:
+                    price_val = None
+            if price_val:
+                price_amount = int(price_val)
+                price_str = f"قیمت: {_to_farsi_num(f'{int(price_val):,}')} تومان"
+            else:
+                price_str = ""
 
             dims = [product.dimension_x, product.dimension_y, product.dimension_z]
-            dims_clean = [f"{d/10:.1f}" for d in dims if d]
-            dims_str = f"ابعاد: {' × '.join(dims_clean)} سانتیمتر" if len(dims_clean) == 3 else ""
+            dims_clean = [f"{d/10:.1f}".rstrip("0").rstrip(".") for d in dims if d is not None]
+            dims_str = f"ابعاد: {_to_farsi_num(' × '.join(dims_clean))} سانتیمتر" if len(dims_clean) == 3 else ""
 
             parts = []
             if price_str:
-                parts.append(f"قیمت: {price_str}")
+                parts.append(price_str)
             if dims_str:
                 parts.append(dims_str)
             if product.notes:
-                parts.append(product.notes)
+                parts.append(product.notes.strip())
             else:
                 parts.append("پرینت سهبعدی با کیفیت بالا از جنس فیلامنت PLA با قابلیت انتخاب رنگ در اسپاگتی پرینت.")
 
             description = " | ".join(parts) if parts else description
 
-            img = product.image_url
-            if not img and product.images:
+            img = None
+            if product.images:
                 primary = next((i for i in product.images if i.is_primary), product.images[0])
-                img = primary.image_url
+                img = primary.image_url if primary else None
+            if not img:
+                img = product.image_url
             if img:
                 image_url = img if img.startswith("http") else f"{base}{img if img.startswith('/') else '/' + img}"
 
     # 2. Blog post: /blog/{slug}
     elif uri.startswith("/blog/"):
         from app.models import BlogPost
-        blog_slug = uri.split("/blog/")[-1].strip().split("?")[0].strip("/")
-        post = db.query(BlogPost).filter(BlogPost.slug == blog_slug, BlogPost.is_published == True).first()
+        blog_slug = clean_uri.split("blog/")[-1].strip()
+        blog_slug = unquote(blog_slug)
+        post = (
+            db.query(BlogPost)
+            .filter(
+                (BlogPost.slug == blog_slug) | (func.lower(BlogPost.slug) == blog_slug.lower()),
+                BlogPost.is_published == True,
+            )
+            .first()
+        )
         if post:
             og_type = "article"
-            title = f"{post.title} — اسپاگتی پرینت"
+            title = f"{post.title} — وبلاگ اسپاگتی پرینت"
             canonical_url = f"{base}/blog/{post.slug}"
             description = post.summary or description
             if post.cover_image:
@@ -358,8 +409,16 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
     # 3. Collection page: /collection/{slug}
     elif uri.startswith("/collection/"):
         from app.models import Collection
-        coll_slug = uri.split("/collection/")[-1].strip().split("?")[0].strip("/")
-        coll = db.query(Collection).filter(Collection.slug == coll_slug, Collection.is_active == True).first()
+        coll_slug = clean_uri.split("collection/")[-1].strip()
+        coll_slug = unquote(coll_slug)
+        coll = (
+            db.query(Collection)
+            .filter(
+                (Collection.slug == coll_slug) | (func.lower(Collection.slug) == coll_slug.lower()),
+                Collection.is_active == True,
+            )
+            .first()
+        )
         if coll:
             title = f"کالکشن {coll.name} — خرید و سفارش آنلاین | اسپاگتی پرینت"
             canonical_url = f"{base}/collection/{coll.slug}"
@@ -367,43 +426,92 @@ def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_
             if coll.image_url:
                 image_url = coll.image_url if coll.image_url.startswith("http") else f"{base}{coll.image_url if coll.image_url.startswith('/') else '/' + coll.image_url}"
 
+    # 4. Custom order page: /custom-order
+    elif uri.startswith("/custom-order"):
+        title = "سفارش آنلاین پرینت سهبعدی اختصاصی | اسپاگتی پرینت"
+        canonical_url = f"{base}/custom-order"
+        description = "محاسبه آنلاین هزینه پرینت، آپلود مدل (STL/3MF/OBJ) و سفارش ساخت قطعات اختصاصی با کیفیت بالا در اسپاگتی پرینت"
+
+    # 5. How to order page: /how-to-order
+    elif uri.startswith("/how-to-order"):
+        title = "راهنمای ثبت سفارش و خرید | اسپاگتی پرینت"
+        canonical_url = f"{base}/how-to-order"
+        description = "راهنمای گامبهگام انتخاب محصول، محاسبه قیمت و ثبت سفارش آنلاین پرینت سهبعدی در اسپاگتی پرینت"
+
+    # 6. Contact page: /contact
+    elif uri.startswith("/contact"):
+        title = "تماس با ما و مشاوره | اسپاگتی پرینت"
+        canonical_url = f"{base}/contact"
+        description = "ارتباط با تیم اسپاگتی پرینت جهت مشاوره فنی، سفارش تیراژ و اختصاصی و پیگیری سفارشها"
+
+    # 7. Catalog root: /catalog
+    elif uri.startswith("/catalog"):
+        title = "کاتالوگ محصولات پرینت سهبعدی | اسپاگتی پرینت"
+        canonical_url = f"{base}/catalog"
+        description = "مشاهده، بررسی و خرید انواع محصولات، فیگورها، جاکلیدی و اکسسوریهای پرینت سهبعدی با قیمت شفاف"
+
+    # 8. Privacy / Terms
+    elif uri.startswith("/privacy") or uri.startswith("/terms"):
+        title = "قوانین و حریم خصوصی | اسپاگتی پرینت"
+        canonical_url = f"{base}/privacy"
+        description = "قوانین و مقررات خرید و حریم خصوصی کاربران در فروشگاه اینترنتی اسپاگتی پرینت"
+
     esc_title = html_lib.escape(title)
     esc_desc = html_lib.escape(description)
     esc_img = html_lib.escape(image_url)
     esc_url = html_lib.escape(canonical_url)
 
+    img_mime = "image/webp"
+    if esc_img.lower().endswith(".jpg") or esc_img.lower().endswith(".jpeg"):
+        img_mime = "image/jpeg"
+    elif esc_img.lower().endswith(".png"):
+        img_mime = "image/png"
+
+    extra_meta = ""
+    if og_type == "product" and price_amount:
+        extra_meta = f"""
+  <meta property="product:price:amount" content="{price_amount}" />
+  <meta property="product:price:currency" content="IRR" />
+  <meta property="product:availability" content="in stock" />"""
+
     html_content = f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{esc_title}</title>
   <meta name="description" content="{esc_desc}" />
   <link rel="canonical" href="{esc_url}" />
 
-  <!-- Open Graph / Telegram / WhatsApp / Facebook -->
+  <!-- Open Graph / Telegram / WhatsApp / Facebook / LinkedIn -->
   <meta property="og:type" content="{og_type}" />
-  <meta property="og:site_name" content="اسپاگتی پرینت" />
+  <meta property="og:site_name" content="اسپاگتی پرینت | Spaghetti Print" />
   <meta property="og:title" content="{esc_title}" />
   <meta property="og:description" content="{esc_desc}" />
   <meta property="og:image" content="{esc_img}" />
   <meta property="og:image:secure_url" content="{esc_img}" />
+  <meta property="og:image:type" content="{img_mime}" />
   <meta property="og:image:alt" content="{esc_title}" />
   <meta property="og:url" content="{esc_url}" />
+  <meta property="og:locale" content="fa_IR" />{extra_meta}
 
-  <!-- Twitter Card -->
+  <!-- Twitter Card / Telegram Large Media Preview -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@spaghetti_prints" />
   <meta name="twitter:title" content="{esc_title}" />
   <meta name="twitter:description" content="{esc_desc}" />
   <meta name="twitter:image" content="{esc_img}" />
+  <meta name="twitter:image:alt" content="{esc_title}" />
 
-  <!-- Fallback client redirect if opened in browser -->
+  <!-- Fallback client redirect if opened directly in browser -->
   <meta http-equiv="refresh" content="0; url={esc_url}" />
 </head>
-<body style="font-family: system-ui, sans-serif; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center;">
-  <div>
-    <h2>{esc_title}</h2>
-    <p style="color: #94a3b8; max-width: 500px; margin: 10px auto;">{esc_desc}</p>
-    <a href="{esc_url}" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #ff9a3d; color: #fff; text-decoration: none; border-radius: 12px; font-weight: bold;">مشاهده در اسپاگتی پرینت</a>
+<body style="font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; text-align: center; direction: rtl;">
+  <div style="max-width: 520px; background: #1e293b; border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);">
+    <img src="{esc_img}" alt="{esc_title}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 14px; background: #0f172a; margin-bottom: 16px;" />
+    <h2 style="font-size: 1.25rem; margin: 0 0 10px; color: #f8fafc;">{esc_title}</h2>
+    <p style="color: #94a3b8; font-size: 0.92rem; line-height: 1.6; margin: 0 0 20px;">{esc_desc}</p>
+    <a href="{esc_url}" style="display: inline-block; padding: 12px 28px; background: #ff9a3d; color: #1e293b; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 0.95rem;">مشاهده در اسپاگتی پرینت</a>
   </div>
   <script>window.location.replace("{esc_url}");</script>
 </body>
