@@ -48,4 +48,10 @@ print(f'Backup complete: {backup_path}')
 # Keep last 14 daily backups, delete older ones
 find "$BACKUP_DIR" -name "spaghetti_*.db" -type f -mtime +14 -delete 2>/dev/null || true
 
+# Push to Google Drive (if docker backend is running)
+if command -v docker >/dev/null 2>&1 && [ -f "docker-compose.yml" ]; then
+    echo "Pushing backup to Google Drive..."
+    docker compose exec -T backend python /app/scripts/gdrive_backup.py || echo "Warning: Google Drive upload skipped or failed"
+fi
+
 echo "Backup finished successfully."
