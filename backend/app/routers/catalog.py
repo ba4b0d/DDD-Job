@@ -280,6 +280,137 @@ def get_robots_txt(request: Request):
     return Response(content=body, media_type="text/plain")
 
 
+@router.get("/meta-preview", response_class=Response)
+def get_meta_preview(request: Request, uri: str = "", db: Session = Depends(get_db)):
+    """Server-side OpenGraph & Twitter meta tags for Telegram, WhatsApp, Twitter, Discord, etc."""
+    import html as html_lib
+    base = _public_base_url(request)
+    uri = uri.strip()
+
+    title = "اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سهبعدی سفارشی"
+    description = "خدمات آنلاین پرینت و چاپ سهبعدی سفارشی، ساخت قطعات و نمونه اولیه، کاتالوگ محصولات با قیمت شفاف"
+    image_url = f"{base}/icons/icon-512.png"
+    canonical_url = f"{base}{uri}" if uri else base
+    og_type = "website"
+
+    # 1. Product page: /catalog/{slug}
+    if uri.startswith("/catalog/"):
+        slug_or_id = uri.split("/catalog/")[-1].strip().split("?")[0].strip("/")
+        product = (
+            db.query(Product)
+            .options(selectinload(Product.images))
+            .filter(Product.is_active == True)
+            .filter((Product.slug == slug_or_id) | (Product.product_id == slug_or_id))
+            .first()
+        )
+        if not product and slug_or_id.isdigit():
+            product = (
+                db.query(Product)
+                .options(selectinload(Product.images))
+                .filter(Product.is_active == True, Product.id == int(slug_or_id))
+                .first()
+            )
+
+        if product:
+            og_type = "product"
+            title = f"خرید {product.name} — اسپاگتی پرینت"
+            canonical_url = f"{base}/catalog/{product.slug or product.id}"
+
+            price_val = product.final_price or product.suggested_price
+            price_str = f"{int(price_val):,} تومان" if price_val else ""
+
+            dims = [product.dimension_x, product.dimension_y, product.dimension_z]
+            dims_clean = [f"{d/10:.1f}" for d in dims if d]
+            dims_str = f"ابعاد: {' × '.join(dims_clean)} سانتیمتر" if len(dims_clean) == 3 else ""
+
+            parts = []
+            if price_str:
+                parts.append(f"قیمت: {price_str}")
+            if dims_str:
+                parts.append(dims_str)
+            if product.notes:
+                parts.append(product.notes)
+            else:
+                parts.append("پرینت سهبعدی با کیفیت بالا از جنس فیلامنت PLA با قابلیت انتخاب رنگ در اسپاگتی پرینت.")
+
+            description = " | ".join(parts) if parts else description
+
+            img = product.image_url
+            if not img and product.images:
+                primary = next((i for i in product.images if i.is_primary), product.images[0])
+                img = primary.image_url
+            if img:
+                image_url = img if img.startswith("http") else f"{base}{img if img.startswith('/') else '/' + img}"
+
+    # 2. Blog post: /blog/{slug}
+    elif uri.startswith("/blog/"):
+        from app.models import BlogPost
+        blog_slug = uri.split("/blog/")[-1].strip().split("?")[0].strip("/")
+        post = db.query(BlogPost).filter(BlogPost.slug == blog_slug, BlogPost.is_published == True).first()
+        if post:
+            og_type = "article"
+            title = f"{post.title} — اسپاگتی پرینت"
+            canonical_url = f"{base}/blog/{post.slug}"
+            description = post.summary or description
+            if post.cover_image:
+                image_url = post.cover_image if post.cover_image.startswith("http") else f"{base}{post.cover_image if post.cover_image.startswith('/') else '/' + post.cover_image}"
+
+    # 3. Collection page: /collection/{slug}
+    elif uri.startswith("/collection/"):
+        from app.models import Collection
+        coll_slug = uri.split("/collection/")[-1].strip().split("?")[0].strip("/")
+        coll = db.query(Collection).filter(Collection.slug == coll_slug, Collection.is_active == True).first()
+        if coll:
+            title = f"کالکشن {coll.name} — خرید و سفارش آنلاین | اسپاگتی پرینت"
+            canonical_url = f"{base}/collection/{coll.slug}"
+            description = coll.description or f"مشاهده و خرید آنلاین محصولات کالکشن {coll.name} با تکنولوژی پرینت سهبعدی در اسپاگتی پرینت"
+            if coll.image_url:
+                image_url = coll.image_url if coll.image_url.startswith("http") else f"{base}{coll.image_url if coll.image_url.startswith('/') else '/' + coll.image_url}"
+
+    esc_title = html_lib.escape(title)
+    esc_desc = html_lib.escape(description)
+    esc_img = html_lib.escape(image_url)
+    esc_url = html_lib.escape(canonical_url)
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>{esc_title}</title>
+  <meta name="description" content="{esc_desc}" />
+  <link rel="canonical" href="{esc_url}" />
+
+  <!-- Open Graph / Telegram / WhatsApp / Facebook -->
+  <meta property="og:type" content="{og_type}" />
+  <meta property="og:site_name" content="اسپاگتی پرینت" />
+  <meta property="og:title" content="{esc_title}" />
+  <meta property="og:description" content="{esc_desc}" />
+  <meta property="og:image" content="{esc_img}" />
+  <meta property="og:image:secure_url" content="{esc_img}" />
+  <meta property="og:image:alt" content="{esc_title}" />
+  <meta property="og:url" content="{esc_url}" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{esc_title}" />
+  <meta name="twitter:description" content="{esc_desc}" />
+  <meta name="twitter:image" content="{esc_img}" />
+
+  <!-- Fallback client redirect if opened in browser -->
+  <meta http-equiv="refresh" content="0; url={esc_url}" />
+</head>
+<body style="font-family: system-ui, sans-serif; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center;">
+  <div>
+    <h2>{esc_title}</h2>
+    <p style="color: #94a3b8; max-width: 500px; margin: 10px auto;">{esc_desc}</p>
+    <a href="{esc_url}" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #ff9a3d; color: #fff; text-decoration: none; border-radius: 12px; font-weight: bold;">مشاهده در اسپاگتی پرینت</a>
+  </div>
+  <script>window.location.replace("{esc_url}");</script>
+</body>
+</html>"""
+    return Response(content=html_content, media_type="text/html; charset=utf-8")
+
+
 
 def _increment_view(db: Session, product_id: int):
     """Increment the view counter for a product (for most-viewed dashboard)."""
