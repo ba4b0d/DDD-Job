@@ -64,8 +64,10 @@ def test_catalog_public_returns_active_products(client, auth_headers):
     assert isinstance(data, list)
     assert len(data) > 0
     first = data[0]
-    for key in ("id", "name", "suggested_price"):
+    for key in ("id", "name", "final_price"):
         assert key in first, f"Catalog item missing key: {key}"
+    assert "suggested_price" not in first
+    assert "extras_cost" not in first
 
 
 def test_catalog_categories_public(client):
