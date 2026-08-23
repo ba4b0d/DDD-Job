@@ -59,8 +59,8 @@ def _public_base_url(request: Request) -> str:
 from app.repositories.products import batch_load_machines_and_materials as _batch_load_related
 
 
-def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict, settings: dict) -> dict:
-    """Public catalog product — no cost breakdowns, no margins."""
+def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict) -> dict:
+    """Public catalog product — no cost breakdowns, no margins, no internal suggested price."""
     mat = materials_dict.get(product.material_id) if product.material_id else None
     mach = machines_dict.get(product.machine_id) if product.machine_id else None
 
@@ -84,7 +84,6 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
         "dimension_z": product.dimension_z,
         "print_time_hours": product.print_time_hours,
         "post_pro_hours": product.post_pro_hours,
-        "extras_cost": product.extras_cost,
         "final_price": product.final_price,
         "image_url": product.image_url,
         "notes": getattr(product, "notes", None) or "",
@@ -96,7 +95,6 @@ def _catalog_product(product: Product, machines_dict: dict, materials_dict: dict
             {"id": img.id, "image_url": img.image_url, "sort_order": img.sort_order, "is_primary": img.is_primary}
             for img in (product.images or [])
         ],
-        "suggested_price": calculate_product_costs_from_dicts(product, mat, mach, settings).get("suggested_price", 0),
     }
 
 
@@ -110,8 +108,7 @@ def get_catalog(request: Request, db: Session = Depends(get_db)):
     """Public endpoint — return active products for the customer catalog."""
     products = db.query(Product).options(selectinload(Product.images), selectinload(Product.categories), selectinload(Product.collections)).filter(Product.is_active == True).all()
     machines_dict, materials_dict = _batch_load_related(db)
-    settings = get_settings_dict(db)
-    return [_catalog_product(p, machines_dict, materials_dict, settings) for p in products]
+    return [_catalog_product(p, machines_dict, materials_dict) for p in products]
 
 
 @router.get("/catalog/collections")
@@ -555,8 +552,7 @@ def get_catalog_product_by_slug(request: Request, slug: str, db: Session = Depen
         raise HTTPException(status_code=404, detail="Product not found")
     _increment_view(db, product.id)
     machines_dict, materials_dict = _batch_load_related(db)
-    settings = get_settings_dict(db)
-    return _catalog_product(product, machines_dict, materials_dict, settings)
+    return _catalog_product(product, machines_dict, materials_dict)
 
 
 @router.get("/catalog/{product_id}")
@@ -573,5 +569,4 @@ def get_catalog_product(request: Request, product_id: int, db: Session = Depends
         raise HTTPException(status_code=404, detail="Product not found")
     _increment_view(db, product.id)
     machines_dict, materials_dict = _batch_load_related(db)
-    settings = get_settings_dict(db)
-    return _catalog_product(product, machines_dict, materials_dict, settings)
+    return _catalog_product(product, machines_dict, materials_dict)

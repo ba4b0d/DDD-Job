@@ -679,16 +679,10 @@ export default function Catalog() {
     }
     switch (sortBy) {
       case 'price_asc':
-        list.sort(
-          (a, b) =>
-            (a.suggested_price || a.final_price || 0) - (b.suggested_price || b.final_price || 0)
-        );
+        list.sort((a, b) => (a.final_price || 0) - (b.final_price || 0));
         break;
       case 'price_desc':
-        list.sort(
-          (a, b) =>
-            (b.suggested_price || b.final_price || 0) - (a.suggested_price || a.final_price || 0)
-        );
+        list.sort((a, b) => (b.final_price || 0) - (a.final_price || 0));
         break;
       case 'weight':
         list.sort((a, b) => (a.weight_g || 0) - (b.weight_g || 0));
@@ -1012,7 +1006,7 @@ export default function Catalog() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filtered.slice(0, visibleCount).map((product, idx) => {
-            const price = product.final_price || product.suggested_price;
+            const price = product.final_price;
             const isNew = isWithinDays(product.created_at, 14);
             const shareUrl = telegramShareUrl(product);
             const isBundle = product.isCollectionBundle;
