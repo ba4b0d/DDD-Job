@@ -1,3 +1,4 @@
+import { cloneElement, isValidElement, Children } from 'react';
 import { ERROR_STYLE } from '../lib/constants';
 
 const inputGroupStyle = {
@@ -12,6 +13,8 @@ const labelStyle = {
   color: 'var(--text-secondary)',
 };
 
+const getElementId = (name, providedId) => providedId || name;
+
 export default function FormField({
   label,
   name,
@@ -24,19 +27,51 @@ export default function FormField({
   required,
   placeholder,
   children,
+  id,
   ...inputProps
 }) {
+  const hasError = Boolean(touched?.[name] && errors?.[name]);
+  const fieldId = getElementId(name, id || inputProps.id);
+  const errorId = `${fieldId}-error`;
+  const describedBy = [inputProps['aria-describedby'], hasError ? errorId : null]
+    .filter(Boolean)
+    .join(' ') || undefined;
+
   const getBorderColor = () => {
-    if (touched?.[name] && errors?.[name]) return '#ef4444';
+    if (hasError) return '#ef4444';
     return 'var(--border)';
   };
 
-  const inputStyle = { borderColor: getBorderColor() };
+  const accessibilityProps = {
+    id: fieldId,
+    'aria-required': required ? 'true' : undefined,
+    'aria-invalid': hasError ? 'true' : undefined,
+    'aria-describedby': describedBy,
+  };
+
+  const inputStyle = { borderColor: getBorderColor(), ...inputProps.style };
+
+  const enhancedChildren = children
+    ? Children.map(children, (child) => {
+        if (!isValidElement(child)) return child;
+        if (['input', 'select', 'textarea'].includes(child.type)) {
+          return cloneElement(child, {
+            id: child.props.id || fieldId,
+            'aria-required': child.props['aria-required'] || accessibilityProps['aria-required'],
+            'aria-invalid': child.props['aria-invalid'] || accessibilityProps['aria-invalid'],
+            'aria-describedby': [child.props['aria-describedby'], hasError ? errorId : null]
+              .filter(Boolean)
+              .join(' ') || undefined,
+          });
+        }
+        return child;
+      })
+    : null;
 
   return (
     <div style={inputGroupStyle}>
-      <label style={labelStyle}>{label}{required ? ' *' : ''}</label>
-      {children || (
+      <label htmlFor={fieldId} style={labelStyle}>{label}{required ? ' *' : ''}</label>
+      {enhancedChildren || (
         <input
           type={type}
           name={name}
@@ -45,11 +80,12 @@ export default function FormField({
           onBlur={onBlur}
           className="input-field"
           placeholder={placeholder}
-          style={inputStyle}
           {...inputProps}
+          {...accessibilityProps}
+          style={inputStyle}
         />
       )}
-      {touched?.[name] && errors?.[name] && <span style={ERROR_STYLE}>{errors[name]}</span>}
+      {hasError && <span id={errorId} style={ERROR_STYLE}>{errors[name]}</span>}
     </div>
   );
 }

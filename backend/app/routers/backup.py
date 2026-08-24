@@ -10,11 +10,13 @@ import jwt
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
+from starlette.background import BackgroundTask
 from sqlalchemy.orm import Session
 
 from app.database import get_db, DB_PATH
 from app.models import Settings
 from app.routers.auth import require_admin
+from app.services.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/v1/admin/backup", tags=["backup"])
 
@@ -127,10 +129,45 @@ def export_database_backup(user=Depends(require_admin)):
         path=temp_file_path,
         filename=filename,
         media_type="application/octet-stream",
+        background=BackgroundTask(os.remove, temp_file_path),
     )
 
 
 MAX_BACKUP_SIZE = 100 * 1024 * 1024  # 100MB max limit
+MAX_CREDENTIALS_SIZE = 64 * 1024
+REQUIRED_BACKUP_SCHEMA = {
+    "settings": {"id", "key", "value"},
+    "users": {"id", "username", "password_hash", "role"},
+    "products": {"id", "name", "is_active"},
+    "materials": {"id", "name", "price_per_kg"},
+    "machines": {"id", "name", "power_watts"},
+}
+
+
+def _validate_backup_schema(path: str) -> None:
+    """Reject valid SQLite files that are not compatible app backups."""
+    try:
+        with sqlite3.connect(path) as conn:
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            for table, required_columns in REQUIRED_BACKUP_SCHEMA.items():
+                if table not in tables:
+                    raise ValueError(table)
+                columns = {
+                    row[1]
+                    for row in conn.execute(f'PRAGMA table_info("{table}")')
+                }
+                if not required_columns.issubset(columns):
+                    raise ValueError(table)
+    except (sqlite3.DatabaseError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="ساختار فایل پشتیبان با برنامه سازگار نیست",
+        ) from exc
 
 
 @router.post("/import")
@@ -143,9 +180,11 @@ async def import_database_backup(
     if not filename.lower().endswith(".db"):
         raise HTTPException(status_code=400, detail="فایل پشتیبان باید دارای پسوند .db باشد")
 
-    content = await file.read()
-    if len(content) > MAX_BACKUP_SIZE:
-        raise HTTPException(status_code=400, detail="حجم فایل پشتیبان نباید بیشتر از ۱۰۰ مگابایت باشد")
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_BACKUP_SIZE,
+        detail="حجم فایل پشتیبان نباید بیشتر از ۱۰۰ مگابایت باشد",
+    )
 
     if len(content) < 100 or not content.startswith(b"SQLite format 3\x00"):
         raise HTTPException(status_code=400, detail="فایل آپلود شده یک دیتابیس معتبر SQLite نیست")
@@ -162,7 +201,10 @@ async def import_database_backup(
         check_res = src.execute("PRAGMA quick_check").fetchone()
         if not check_res or check_res[0] != "ok":
             src.close()
-            raise ValueError("فایل دیتابیس آپلود شده دچار آسیب‌دیدگی ساختاری است")
+            raise ValueError("فایل دیتابیس آپلود شده دچار آسیبدیدگی ساختاری است")
+        src.close()
+        _validate_backup_schema(temp_upload_path)
+        src = sqlite3.connect(temp_upload_path)
 
         # Perform WAL-safe restore into active database
         dst = sqlite3.connect(DB_PATH)
@@ -170,6 +212,10 @@ async def import_database_backup(
             src.backup(dst)
         dst.close()
         src.close()
+    except HTTPException:
+        if os.path.exists(temp_upload_path):
+            os.remove(temp_upload_path)
+        raise
     except Exception as e:
         if os.path.exists(temp_upload_path):
             os.remove(temp_upload_path)
@@ -208,7 +254,11 @@ async def upload_gdrive_credentials(
     user=Depends(require_admin),
 ):
     """Upload Google Service Account JSON file and save to settings."""
-    content = await file.read()
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_CREDENTIALS_SIZE,
+        detail="حجم فایل اعتبارنامه بیش از حد مجاز است",
+    )
     try:
         data = json.loads(content.decode("utf-8"))
     except Exception:

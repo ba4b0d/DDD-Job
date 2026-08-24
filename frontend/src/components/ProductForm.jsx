@@ -129,6 +129,11 @@ export default function ProductForm({ initialData, onSubmit, onCancel, submitLab
       return;
     }
 
+    if (action.removePending) {
+      setPendingFiles(prev => prev.filter(file => file !== action.removePending));
+      return;
+    }
+
     if (!productId) return;
 
     if (action.remove) {

@@ -11,7 +11,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models import Collection, Product, ProductCollection
 from app.schemas import CollectionCreate, CollectionUpdate, CollectionResponse
-from app.routers.auth import require_any_role
+from app.routers.auth import require_staff_role
 from app.routers.stats import invalidate_stats
 
 router = APIRouter(prefix="/api/v1/collections", tags=["collections"])
@@ -41,20 +41,20 @@ def _collection_dict(c: Collection, db: Session) -> dict:
     }
 
 
-@router.get("", dependencies=[Depends(require_any_role)])
+@router.get("", dependencies=[Depends(require_staff_role)])
 def list_collections(db: Session = Depends(get_db)):
     collections = db.query(Collection).filter(Collection.is_active == True).order_by(Collection.sort_order, Collection.name).all()
     return [_collection_dict(c, db) for c in collections]
 
 
-@router.get("/all", dependencies=[Depends(require_any_role)])
+@router.get("/all", dependencies=[Depends(require_staff_role)])
 def list_all_collections(db: Session = Depends(get_db)):
     collections = db.query(Collection).order_by(Collection.sort_order, Collection.name).all()
     return [_collection_dict(c, db) for c in collections]
 
 
 @router.post("")
-def create_collection(body: CollectionCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def create_collection(body: CollectionCreate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     name = body.name
     if db.query(Collection).filter(Collection.name == name).first():
         raise HTTPException(status_code=400, detail="این کالکشن قبلاً وجود دارد")
@@ -87,14 +87,6 @@ def create_collection(body: CollectionCreate, user=Depends(require_any_role), db
     return _collection_dict(coll, db)
 
 
-@router.get("/{coll_id}")
-def get_collection(coll_id: int, db: Session = Depends(get_db)):
-    coll = db.query(Collection).filter(Collection.id == coll_id).first()
-    if not coll:
-        raise HTTPException(status_code=404, detail="کالکشن یافت نشد")
-    return _collection_dict(coll, db)
-
-
 @router.get("/by-slug/{slug}")
 def get_collection_by_slug(slug: str, db: Session = Depends(get_db)):
     coll = db.query(Collection).filter(Collection.slug == slug, Collection.is_active == True).first()
@@ -103,8 +95,16 @@ def get_collection_by_slug(slug: str, db: Session = Depends(get_db)):
     return _collection_dict(coll, db)
 
 
+@router.get("/{coll_id}")
+def get_collection(coll_id: int, db: Session = Depends(get_db)):
+    coll = db.query(Collection).filter(Collection.id == coll_id).first()
+    if not coll:
+        raise HTTPException(status_code=404, detail="کالکشن یافت نشد")
+    return _collection_dict(coll, db)
+
+
 @router.put("/{coll_id}")
-def update_collection(coll_id: int, body: CollectionUpdate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def update_collection(coll_id: int, body: CollectionUpdate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     coll = db.query(Collection).filter(Collection.id == coll_id).first()
     if not coll:
         raise HTTPException(status_code=404, detail="کالکشن یافت نشد")
@@ -145,7 +145,7 @@ def update_collection(coll_id: int, body: CollectionUpdate, user=Depends(require
 
 
 @router.delete("/{coll_id}")
-def delete_collection(coll_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def delete_collection(coll_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     coll = db.query(Collection).filter(Collection.id == coll_id).first()
     if not coll:
         raise HTTPException(status_code=404, detail="کالکشن یافت نشد")

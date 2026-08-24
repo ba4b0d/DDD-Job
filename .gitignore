@@ -17,6 +17,10 @@ debug*.py
 !.env.example
 *credentials*.json
 gsc_credentials.json
+*client_secret*.json
+client_secret.json
+*token*.json
+gdrive_token.json
 
 # Database
 data/*.db

@@ -24,7 +24,7 @@ from sqlalchemy import func, and_
 from app.database import get_db
 from app.models import Order, OrderItem, ORDER_STATUSES, Product, Material, Machine
 from app.schemas import OrderCreate, OrderUpdate
-from app.routers.auth import require_any_role, limiter
+from app.routers.auth import require_staff_role, limiter
 from app.routers.stats import invalidate_stats
 from app.cache import get_settings_dict
 from app.calculator import calculate_product_costs_from_dicts
@@ -119,7 +119,7 @@ def _month_bounds(year: int, month: int) -> tuple[date, date]:
 # ── Statuses (read-only) ───────────────────────────────────────────────
 
 @router.get("/statuses")
-def list_statuses(user=Depends(require_any_role)):
+def list_statuses(user=Depends(require_staff_role)):
     """Fixed status catalog for the board UI."""
     return [
         {"value": s, "label": STATUS_LABELS_FA.get(s, s)}
@@ -136,7 +136,7 @@ def list_orders(
     search: str | None = Query(default=None, description="Search by customer name or contact"),
     from_date: str | None = Query(default=None, description="Gregorian ISO date (YYYY-MM-DD)"),
     to_date: str | None = Query(default=None, description="Gregorian ISO date (YYYY-MM-DD)"),
-    user=Depends(require_any_role),
+    user=Depends(require_staff_role),
     db: Session = Depends(get_db),
 ):
     q = db.query(Order)
@@ -165,16 +165,6 @@ def list_orders(
             raise HTTPException(status_code=400, detail="تاریخ پایان نامعتبر است")
     rows = q.order_by(Order.created_at.desc(), Order.id.desc()).all()
     return [_serialize(r) for r in rows]
-
-
-# ── Get single ─────────────────────────────────────────────────────────
-
-@router.get("/{order_id}")
-def get_order(order_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="سفارش یافت نشد")
-    return _serialize(order)
 
 
 def _sync_order_items(db: Session, order: Order, items_data: list) -> list[OrderItem]:
@@ -223,7 +213,7 @@ def _sync_order_items(db: Session, order: Order, items_data: list) -> list[Order
 
 @router.post("")
 @limiter.limit("20/minute")
-def create_order(request: Request, body: OrderCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def create_order(request: Request, body: OrderCreate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     # If items provided, use them; otherwise fall back to legacy single-product fields
     has_items = len(body.items) > 0
 
@@ -316,7 +306,7 @@ def create_order(request: Request, body: OrderCreate, user=Depends(require_any_r
 def update_order(request: Request,
     order_id: int,
     body: OrderUpdate,
-    user=Depends(require_any_role),
+    user=Depends(require_staff_role),
     db: Session = Depends(get_db),
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
@@ -392,7 +382,7 @@ def update_order(request: Request,
 
 @router.delete("/{order_id}")
 @limiter.limit("20/minute")
-def soft_delete_order(request: Request, order_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def soft_delete_order(request: Request, order_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="سفارش یافت نشد")
@@ -404,12 +394,27 @@ def soft_delete_order(request: Request, order_id: int, user=Depends(require_any_
     return {"message": "سفارش بایگانی شد", "id": order_id}
 
 
+@router.post("/{order_id}/restore")
+@limiter.limit("20/minute")
+def restore_order(request: Request, order_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="سفارش یافت نشد")
+    order.is_active = True
+    order.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(order)
+    invalidate_stats()
+    log_user(user, db, "restore", "order", order_id, f"بازیابی سفارش #{order_id}")
+    return _serialize(order)
+
+
 # ── Monthly summary ────────────────────────────────────────────────────
 
 @router.get("/summary/monthly")
 def monthly_summary(
     month: str = Query(..., description="YYYY-MM format"),
-    user=Depends(require_any_role),
+    user=Depends(require_staff_role),
     db: Session = Depends(get_db),
 ):
     """Return monthly totals: revenue, collected, outstanding, profit, counts by status."""
@@ -477,7 +482,7 @@ def export_orders_csv(
     from_date: str | None = Query(default=None),
     to_date: str | None = Query(default=None),
     status: str | None = Query(default=None),
-    user=Depends(require_any_role),
+    user=Depends(require_staff_role),
     db: Session = Depends(get_db),
 ):
     """Export orders as CSV with Persian headers."""
@@ -541,3 +546,13 @@ def export_orders_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=orders.csv"},
     )
+
+
+# ── Get single ─────────────────────────────────────────────────────────
+
+@router.get("/{order_id}")
+def get_order(order_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="سفارش یافت نشد")
+    return _serialize(order)

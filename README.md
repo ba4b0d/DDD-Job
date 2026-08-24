@@ -135,7 +135,9 @@ Copy `.env.example` to `.env` and configure:
 | System Settings | `http://localhost:5173/settings` | ✅ (admin) |
 | Interactive API Docs | `http://localhost:8000/docs` | ❌ |
 
-**Default Admin Credentials**: `admin` / `admin123`
+On first startup, set `INITIAL_ADMIN_PASSWORD` to choose the bootstrap
+administrator password. If it is unset, the backend generates and prints a
+one-time random password. The administrator must change it on first login.
 
 ---
 

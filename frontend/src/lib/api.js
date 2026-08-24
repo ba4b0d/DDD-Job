@@ -44,7 +44,7 @@ export const permanentDeleteMaterial = (id) => api.delete(`/materials/${id}/perm
 export const setDefaultMaterial = (id) => api.post(`/materials/${id}/set-default`);
 
 // ===== Machines =====
-export const getMachines = (params) => api.get('/machines', { params });
+export const getMachines = (params, config) => api.get('/machines', { params, ...config });
 export const getMachinesAll = (config) => api.get('/machines/all', config);
 export const createMachine = (data) => api.post('/machines', data);
 export const updateMachine = (id, data) => api.put(`/machines/${id}`, data);
@@ -90,18 +90,18 @@ export const importProducts = (file) => {
 };
 
 // ===== Calculator =====
-export const calculate = (data) => api.post('/calculate', data);
+export const calculate = (data, config) => api.post('/calculate', data, config);
 
 // ===== Public Catalog & Blog (no auth) =====
 const publicApi = axios.create({ baseURL: '/api/v1', withCredentials: false });
-export const getPublicBrand = () => publicApi.get('/brand');
-export const getCatalog = () => publicApi.get('/catalog');
-export const getCatalogCategories = () => publicApi.get('/catalog/categories');
-export const getCatalogCollections = () => publicApi.get('/catalog/collections');
-export const getCatalogProduct = (productId) => publicApi.get(`/catalog/${productId}`);
-export const getCatalogProductBySlug = (slug) => publicApi.get(`/catalog/by-slug/${slug}`);
-export const getBlogPosts = () => publicApi.get('/blog');
-export const getBlogPostBySlug = (slug) => publicApi.get(`/blog/${slug}`);
+export const getPublicBrand = (config) => publicApi.get('/brand', config);
+export const getCatalog = (config) => publicApi.get('/catalog', config);
+export const getCatalogCategories = (config) => publicApi.get('/catalog/categories', config);
+export const getCatalogCollections = (config) => publicApi.get('/catalog/collections', config);
+export const getCatalogProduct = (productId, config) => publicApi.get(`/catalog/${productId}`, config);
+export const getCatalogProductBySlug = (slug, config) => publicApi.get(`/catalog/by-slug/${slug}`, config);
+export const getBlogPosts = (config) => publicApi.get('/blog', config);
+export const getBlogPostBySlug = (slug, config) => publicApi.get(`/blog/${slug}`, config);
 
 // ===== Admin Blog CMS =====
 export const getAdminBlogPosts = () => api.get('/admin/posts');
@@ -120,7 +120,7 @@ export const uploadBlogCover = (file) => {
 export const getStats = (config) => api.get('/stats', config);
 
 // ===== Contact =====
-export const getContact = () => api.get('/contact');
+export const getContact = (config) => publicApi.get('/contact', config);
 
 // ===== Auth =====
 export const login = (username, password) => api.post('/auth/login', { username, password });
@@ -178,11 +178,12 @@ export const getOrder = (id, config) => api.get(`/orders/${id}`, config);
 export const createOrder = (data) => api.post('/orders', data);
 export const updateOrder = (id, data) => api.put(`/orders/${id}`, data);
 export const deleteOrder = (id) => api.delete(`/orders/${id}`);
+export const restoreOrder = (id) => api.post(`/orders/${id}/restore`);
 export const getOrderSummary = (month, config) => api.get('/orders/summary/monthly', { params: { month }, ...config });
 export const exportOrdersCsv = (params, config) => api.get('/orders/export/csv', { params, responseType: 'blob', ...config });
 
 // ===== Custom Order Requests (public submit + admin inbox) =====
-export const submitCustomOrder = (data) => api.post('/custom-orders', data);
+export const submitCustomOrder = (data, config) => publicApi.post('/custom-orders', data, config);
 export const getRequests = (status) => api.get('/admin/requests', { params: { status } });
 export const updateRequest = (id, data) => api.put(`/admin/requests/${id}`, data);
 export const deleteRequest = (id) => api.delete(`/admin/requests/${id}`);

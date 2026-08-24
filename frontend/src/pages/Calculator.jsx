@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Calculator as CalcIcon, Save, RotateCcw } from 'lucide-react'
 import { getMaterials, getMachines, calculate } from '../lib/api'
 import CostBreakdown from '../components/CostBreakdown'
@@ -18,6 +18,7 @@ export default function Calculator() {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [submitError, setSubmitError] = useState(null)
+  const activeCalcRequestRef = useRef(0)
 
   const [form, setForm] = useState({
     material_id: '',
@@ -32,7 +33,7 @@ export default function Calculator() {
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.all([getMaterials({ signal: controller.signal }), getMachines({ signal: controller.signal })])
+    Promise.all([getMaterials(undefined, { signal: controller.signal }), getMachines(undefined, { signal: controller.signal })])
       .then(([mRes, mcRes]) => {
         setMaterials(mRes.data)
         setMachines(mcRes.data)
@@ -52,9 +53,15 @@ export default function Calculator() {
 
   useEffect(() => {
     if (!form.material_id || !form.machine_id || !form.print_time_minutes) {
+      activeCalcRequestRef.current += 1
       setResult(null)
       return
     }
+
+    const controller = new AbortController()
+    const requestId = activeCalcRequestRef.current + 1
+    activeCalcRequestRef.current = requestId
+
     const timeout = setTimeout(async () => {
       try {
         const res = await calculate({
@@ -66,11 +73,20 @@ export default function Calculator() {
           print_time_hours: (parseFloat(form.print_time_minutes) || 0) / 60,
           post_pro_hours: parseFloat(form.post_pro_hours) || 0,
           extras_cost: parseFloat(form.extras_cost) || 0,
-        })
-        setResult(res.data)
-      } catch (e) { console.error(e) }
+        }, { signal: controller.signal })
+        if (activeCalcRequestRef.current === requestId && !controller.signal.aborted) {
+          setResult(res.data)
+        }
+      } catch (e) {
+        if (e?.name !== 'CanceledError' && e?.code !== 'ERR_CANCELED' && !controller.signal.aborted) {
+          console.error(e)
+        }
+      }
     }, DEBOUNCE_DELAY_CALC)
-    return () => clearTimeout(timeout)
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [form])
 
   function handleChange(name, value) {

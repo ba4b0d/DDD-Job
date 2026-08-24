@@ -1,8 +1,9 @@
 """
 Authentication & user management with role-based access.
-Roles: admin (full access), employee (products + categories only).
+Roles: admin (full access), employee (staff/business access), writer (blog access).
 """
 import os
+import secrets
 import time
 
 import bcrypt
@@ -10,11 +11,11 @@ import jwt
 from pydantic import BaseModel, Field, field_validator
 from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from app.database import get_db, SessionLocal
+from app.database import get_db
 from app.models import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -29,6 +30,15 @@ TOKEN_EXPIRY_HOURS = 24  # 24-hour access tokens
 REFRESH_WINDOW_HOURS = 1  # allow refresh within 1 hour of expiry
 
 AUTH_COOKIE_NAME = "access_token"
+
+VALID_ROLES = ("admin", "employee", "writer")
+STAFF_ROLES = ("admin", "employee")
+BLOG_ROLES = ("admin", "writer")
+PASSWORD_CHANGE_ALLOWED_PATHS = {
+    "/api/v1/auth/verify",
+    "/api/v1/auth/logout",
+    "/api/v1/auth/change-my-password",
+}
 
 security = HTTPBearer(auto_error=False)
 
@@ -66,14 +76,14 @@ class LoginRequest(BaseModel):
 
 class CreateUserRequest(BaseModel):
     username: str
-    password: str
+    password: str = Field(..., min_length=6, max_length=128)
     display_name: str = ""
     role: str = "employee"
 
     @field_validator("role")
     @classmethod
     def valid_role(cls, v):
-        if v not in ("admin", "employee"):
+        if v not in VALID_ROLES:
             raise ValueError("نقش نامعتبر است")
         return v
 
@@ -81,13 +91,13 @@ class CreateUserRequest(BaseModel):
 class UpdateUserRequest(BaseModel):
     display_name: str | None = None
     role: str | None = None
-    password: str | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=128)
     is_active: bool | None = None
 
     @field_validator("role")
     @classmethod
     def valid_role(cls, v):
-        if v is not None and v not in ("admin", "employee"):
+        if v is not None and v not in VALID_ROLES:
             raise ValueError("نقش نامعتبر است")
         return v
 
@@ -116,17 +126,78 @@ def verify_token(token: str) -> dict:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-async def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    # Prefer cookie, fallback to Authorization header (for API compatibility)
+def _extract_token_from_request(request: Request, credentials: HTTPAuthorizationCredentials = None) -> str:
     token = request.cookies.get(AUTH_COOKIE_NAME)
     if not token and credentials:
         token = credentials.credentials
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    return verify_token(token)
+    return token
+
+
+def _current_user_dict(user: User) -> dict:
+    return {
+        "sub": str(user.id),
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "role": user.role,
+        "must_change_password": bool(user.must_change_password),
+    }
+
+
+def _resolve_user_from_payload(
+    payload: dict,
+    db: Session,
+    request: Request | None = None,
+    *,
+    enforce_password_change: bool = True,
+) -> dict:
+    subject = payload.get("sub")
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+
+    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()  # noqa: E712
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+    if user.role not in VALID_ROLES:
+        raise HTTPException(status_code=403, detail="نقش نامعتبر است")
+    if (
+        enforce_password_change
+        and user.must_change_password
+        and request is not None
+        and request.url.path not in PASSWORD_CHANGE_ALLOWED_PATHS
+    ):
+        raise HTTPException(status_code=403, detail="تغییر رمز عبور الزامی است")
+    return _current_user_dict(user)
+
+
+def resolve_token_user(
+    token: str,
+    db: Session,
+    request: Request | None = None,
+    *,
+    enforce_password_change: bool = True,
+) -> dict:
+    payload = verify_token(token)
+    return _resolve_user_from_payload(
+        payload,
+        db,
+        request,
+        enforce_password_change=enforce_password_change,
+    )
+
+
+async def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
+    # Prefer cookie, fallback to Authorization header (for API compatibility)
+    token = _extract_token_from_request(request, credentials)
+    return resolve_token_user(token, db, request, enforce_password_change=True)
 
 
 def require_admin(user=Depends(get_current_user)):
@@ -135,16 +206,21 @@ def require_admin(user=Depends(get_current_user)):
     return user
 
 
-def require_any_role(user=Depends(get_current_user)):
-    """Admin, employee, or writer — any logged-in user."""
-    if user.get("role") not in ("admin", "employee", "writer"):
-        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+def require_staff_role(user=Depends(get_current_user)):
+    """Admin or employee — staff/business management only."""
+    if user.get("role") not in STAFF_ROLES:
+        raise HTTPException(status_code=403, detail="فقط مدیران و کارکنان دسترسی دارند")
+    return user
+
+
+# Backward-compatible alias for older imports. New code should use require_staff_role.
+def require_any_role(user=Depends(require_staff_role)):
     return user
 
 
 def require_blog_role(user=Depends(get_current_user)):
     """Admin or writer — blog management only."""
-    if user.get("role") not in ("admin", "writer"):
+    if user.get("role") not in BLOG_ROLES:
         raise HTTPException(status_code=403, detail="فقط مدیران و نویسندگان دسترسی دارند")
     return user
 
@@ -152,21 +228,28 @@ def require_blog_role(user=Depends(get_current_user)):
 def _ensure_default_admin(db: Session):
     """Create default admin if no users exist."""
     if db.query(User).count() == 0:
+        initial_password = os.getenv("INITIAL_ADMIN_PASSWORD")
+        generated_password = not initial_password
+        if generated_password:
+            initial_password = secrets.token_urlsafe(18)
         admin = User(
             username="admin",
-            password_hash=_hash("admin"),
+            password_hash=_hash(initial_password),
             display_name="مدیر سیستم",
             role="admin",
             must_change_password=True,
         )
         db.add(admin)
         db.commit()
-        
+
         print("\n" + "=" * 60)
         print("🔐 DEFAULT ADMIN ACCOUNT CREATED")
         print("=" * 60)
         print("   Username: admin")
-        print("   Password: admin")
+        if generated_password:
+            print(f"   One-time password: {initial_password}")
+        else:
+            print("   Password loaded from INITIAL_ADMIN_PASSWORD")
         print("=" * 60)
         print("⚠️  You MUST change password on first login!")
         print("=" * 60 + "\n")
@@ -176,9 +259,11 @@ def _ensure_default_admin(db: Session):
 @router.post("/login")
 @limiter.limit("5/minute")
 def login(request: Request, body: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == body.username, User.is_active == True).first()
+    user = db.query(User).filter(User.username == body.username, User.is_active == True).first()  # noqa: E712
     if not user or not _verify(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="نام کاربری یا رمز عبور اشتباه است")
+    if user.role not in VALID_ROLES:
+        raise HTTPException(status_code=403, detail="نقش نامعتبر است")
 
     token = create_token(user.id, user.username, user.role)
     _set_auth_cookie(response, token)
@@ -196,37 +281,35 @@ def logout(response: Response):
     return {"message": "خروج انجام شد"}
 
 
-def _extract_token_from_request(request: Request, credentials: HTTPAuthorizationCredentials = None) -> str:
-    token = request.cookies.get(AUTH_COOKIE_NAME)
-    if not token and credentials:
-        token = credentials.credentials
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return token
-
-
 @router.get("/verify")
-def verify(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+def verify(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
     token = _extract_token_from_request(request, credentials)
-    payload = verify_token(token)
-    
-    # Check if user must change password
-    user = db.query(User).filter(User.id == int(payload["sub"])).first()
-    must_change = user.must_change_password if user else False
-    
+    user = resolve_token_user(token, db, request, enforce_password_change=False)
+
     return {
-        "username": payload.get("username"),
-        "role": payload.get("role"),
+        "username": user["username"],
+        "role": user["role"],
         "valid": True,
-        "must_change_password": must_change,
+        "must_change_password": user["must_change_password"],
     }
+
 
 @router.post("/refresh")
 @limiter.limit("10/minute")
-def refresh_token(request: Request, response: Response, credentials: HTTPAuthorizationCredentials = Depends(security)):
+def refresh_token(
+    request: Request,
+    response: Response,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+):
     """Issue a new token if the current one is valid and within REFRESH_WINDOW_HOURS of expiry."""
     token = _extract_token_from_request(request, credentials)
     payload = verify_token(token)
+    user = _resolve_user_from_payload(payload, db, request, enforce_password_change=True)
 
     exp = payload.get("exp", 0)
     now = int(time.time())
@@ -238,12 +321,16 @@ def refresh_token(request: Request, response: Response, credentials: HTTPAuthori
         raise HTTPException(status_code=400, detail=f"Token cannot be refreshed yet ({hours_left:.1f}h remaining, must be within {REFRESH_WINDOW_HOURS}h of expiry)")
 
     new_token = create_token(
-        int(payload["sub"]),
-        payload["username"],
-        payload["role"],
+        user["id"],
+        user["username"],
+        user["role"],
     )
     _set_auth_cookie(response, new_token)
-    return {"username": payload["username"], "role": payload["role"]}
+    return {
+        "username": user["username"],
+        "role": user["role"],
+        "must_change_password": user["must_change_password"],
+    }
 
 
 # ── User CRUD (admin only) ────────────────────────────────────────
@@ -257,6 +344,7 @@ def list_users(user=Depends(require_admin), db: Session = Depends(get_db)):
             "display_name": u.display_name,
             "role": u.role,
             "is_active": u.is_active,
+            "must_change_password": u.must_change_password,
             "created_at": u.created_at.isoformat() if u.created_at else None,
         }
         for u in users
@@ -276,6 +364,7 @@ def create_user(body: CreateUserRequest, user=Depends(require_admin), db: Sessio
         password_hash=_hash(body.password),
         display_name=body.display_name,
         role=body.role,
+        must_change_password=True,
     )
     db.add(new_user)
     db.commit()
@@ -297,9 +386,10 @@ def update_user(user_id: int, body: UpdateUserRequest, user=Depends(require_admi
         target.is_active = body.is_active
     if body.password:
         target.password_hash = _hash(body.password)
+        target.must_change_password = True
 
     db.commit()
-    return {"message": "کاربر به‌روزرسانی شد"}
+    return {"message": "کاربر بهروزرسانی شد"}
 
 
 @router.delete("/users/{user_id}")
@@ -322,7 +412,7 @@ def change_password(user_id: int, body: ChangePasswordRequest, user=Depends(requ
         raise HTTPException(status_code=404, detail="کاربر یافت نشد")
 
     target.password_hash = _hash(body.password)
-    target.must_change_password = False
+    target.must_change_password = True
     db.commit()
     return {"message": "رمز عبور تغییر کرد"}
 
@@ -334,7 +424,7 @@ def change_my_password(request: Request, body: ChangePasswordRequest, user=Depen
     target = db.query(User).filter(User.id == int(user["sub"])).first()
     if not target:
         raise HTTPException(status_code=404, detail="کاربر یافت نشد")
-    
+
     target.password_hash = _hash(body.password)
     target.must_change_password = False
     db.commit()

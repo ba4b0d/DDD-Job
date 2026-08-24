@@ -43,9 +43,10 @@ export default function MultiImageUpload({ images = [], onChange }) {
   const removeNew = useCallback((index) => {
     setNewFiles(prev => {
       URL.revokeObjectURL(prev[index].preview);
+      onChange({ removePending: prev[index].file });
       return prev.filter((_, i) => i !== index);
     });
-  }, []);
+  }, [onChange]);
 
   const setPrimary = useCallback((imageId) => {
     onChange({ setPrimary: imageId });

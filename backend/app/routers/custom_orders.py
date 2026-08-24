@@ -3,15 +3,16 @@ Custom order requests — lead capture from the public /custom-order form.
 Public: submit (POST). Admin/employee: list, update status, delete.
 """
 import os
-import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
 from app.database import get_db
 from app.models import CustomOrderRequest
-from app.routers.auth import require_any_role, limiter
+from app.routers.auth import require_staff_role, limiter
 from app.audit import log_user
+from app.services.image import validate_image_bytes, process_and_save_image
+from app.services.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/v1", tags=["custom-orders"])
 
@@ -65,25 +66,30 @@ def create_custom_order(request: Request, body: CustomOrderCreate, db: Session =
 
 
 @router.post("/requests/{req_id}/image")
-async def upload_request_image(req_id: int, file: UploadFile = File(...), user=Depends(require_any_role), db: Session = Depends(get_db)):
+async def upload_request_image(req_id: int, file: UploadFile = File(...), user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Upload an image/photo for a custom order request (admin-only)."""
     req = db.query(CustomOrderRequest).filter(CustomOrderRequest.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="درخواست یافت نشد")
-    content = await file.read()
-    if len(content) > MAX_IMAGE_SIZE:
-        raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۵ مگابایت باشد")
-    filename = f"{uuid.uuid4().hex}.jpg"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(content)
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_IMAGE_SIZE,
+        detail="حجم فایل نباید بیشتر از ۵ مگابایت باشد",
+    )
+    extension = validate_image_bytes(content, file.content_type or "")
+    if not extension:
+        raise HTTPException(
+            status_code=400,
+            detail="فایل نامعتبر است. فقط JPEG، PNG، WebP و GIF مجاز است",
+        )
+    filename = process_and_save_image(content, extension, UPLOAD_DIR)
     req.image_url = f"/uploads/requests/{filename}"
     db.commit()
     return {"image_url": req.image_url}
 
 
 @router.get("/admin/requests")
-def list_requests(status: str | None = None, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def list_requests(status: str | None = None, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     q = db.query(CustomOrderRequest)
     if status:
         q = q.filter(CustomOrderRequest.status == status)
@@ -92,7 +98,7 @@ def list_requests(status: str | None = None, user=Depends(require_any_role), db:
 
 
 @router.put("/admin/requests/{req_id}")
-def update_request(req_id: int, body: dict, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def update_request(req_id: int, body: dict, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     req = db.query(CustomOrderRequest).filter(CustomOrderRequest.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="درخواست یافت نشد")
@@ -106,7 +112,7 @@ def update_request(req_id: int, body: dict, user=Depends(require_any_role), db: 
 
 
 @router.delete("/admin/requests/{req_id}")
-def delete_request(req_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def delete_request(req_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     req = db.query(CustomOrderRequest).filter(CustomOrderRequest.id == req_id).first()
     if not req:
         raise HTTPException(status_code=404, detail="درخواست یافت نشد")

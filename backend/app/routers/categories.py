@@ -9,7 +9,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.models import Category, Product
 from app.schemas import CategoryCreate, CategoryUpdate
-from app.routers.auth import require_any_role
+from app.routers.auth import require_staff_role
 from app.routers.stats import invalidate_stats
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
@@ -39,7 +39,7 @@ def _build_tree(cats_flat, parent_id=None):
     return tree
 
 
-@router.get("", dependencies=[Depends(require_any_role)])
+@router.get("", dependencies=[Depends(require_staff_role)])
 def list_categories(db: Session = Depends(get_db)):
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
 
@@ -57,7 +57,7 @@ def list_categories(db: Session = Depends(get_db)):
     return _build_tree(flat)
 
 
-@router.get("/all", dependencies=[Depends(require_any_role)])
+@router.get("/all", dependencies=[Depends(require_staff_role)])
 def list_all_categories_flat(db: Session = Depends(get_db)):
     """Return flat list (for admin dropdowns)."""
     cats = db.query(Category).filter(Category.is_active == True).order_by(Category.sort_order, Category.name).all()
@@ -74,7 +74,7 @@ def list_all_categories_flat(db: Session = Depends(get_db)):
 
 
 @router.post("")
-def create_category(body: CategoryCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def create_category(body: CategoryCreate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     name = body.name
     if db.query(Category).filter(Category.name == name).first():
         raise HTTPException(status_code=400, detail="این دسته‌بندی قبلاً وجود دارد")
@@ -93,7 +93,7 @@ def create_category(body: CategoryCreate, user=Depends(require_any_role), db: Se
 
 
 @router.put("/{cat_id}")
-def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     cat = db.query(Category).filter(Category.id == cat_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="دسته‌بندی یافت نشد")
@@ -127,7 +127,7 @@ def update_category(cat_id: int, body: CategoryUpdate, user=Depends(require_any_
 
 
 @router.delete("/{cat_id}")
-def delete_category(cat_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def delete_category(cat_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     cat = db.query(Category).filter(Category.id == cat_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="دسته‌بندی یافت نشد")

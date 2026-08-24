@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spaghetti-v1';
+const CACHE_NAME = 'spaghetti-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -25,7 +25,29 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static
+const networkFirst = async (request) => {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
+  } catch {
+    return (await cache.match(request)) || (await cache.match('/index.html'));
+  }
+};
+
+const cacheFirst = async (request) => {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  }
+  return response;
+};
+
+// Fetch: fresh HTML/navigation, immutable hashed assets from cache.
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
@@ -34,18 +56,14 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const fetched = fetch(e.request).then((response) => {
-        // Only cache same-origin successful responses
-        if (response.ok && url.origin === self.location.origin) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
+  if (e.request.mode === 'navigate' || e.request.destination === 'document') {
+    e.respondWith(networkFirst(e.request));
+    return;
+  }
 
-      return cached || fetched;
-    })
-  );
+  const immutableAsset = url.origin === self.location.origin
+    && url.pathname.startsWith('/assets/')
+    && /\.[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|png|jpe?g|webp|svg)$/.test(url.pathname);
+
+  if (immutableAsset) e.respondWith(cacheFirst(e.request));
 });

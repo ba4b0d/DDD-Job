@@ -1,10 +1,24 @@
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
 import { useSEO } from '../lib/seo';
 import { getBlogPosts, getCatalogCategories, getPublicBrand } from '../lib/api';
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const getFocusableElements = (container) =>
+  Array.from(container?.querySelectorAll(FOCUSABLE_SELECTOR) || []).filter(
+    (element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true'
+  );
 
 const navLinkClass = ({ isActive }) =>
   `catalog-nav-link${isActive ? ' catalog-nav-link--active' : ''}`;
@@ -26,6 +40,9 @@ export default function CatalogLayout({ children }) {
   const [megaHoveredCat, setMegaHoveredCat] = useState(null);
   const [mobileExpandedCat, setMobileExpandedCat] = useState(null);
   const megaRef = useRef(null);
+  const drawerRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const megaTimer = useRef(null);
   const navigate = useNavigate();
 
@@ -43,21 +60,57 @@ export default function CatalogLayout({ children }) {
       .catch(() => {});
   }, []);
 
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  const toggleMenu = () => {
+    if (!menuOpen) {
+      previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : menuButtonRef.current;
+    }
+    setMenuOpen((open) => !open);
+  };
+
   useEffect(() => {
-    if (!menuOpen) return undefined;
+    if (!menuOpen) {
+      if (previousFocusRef.current?.isConnected) {
+        previousFocusRef.current.focus();
+      }
+      return undefined;
+    }
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
-      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key === 'Escape') {
+        closeMenu();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+      const focusableElements = getFocusableElements(drawerRef.current);
+      if (focusableElements.length === 0) return;
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!drawerRef.current?.contains(document.activeElement)) {
+        e.preventDefault();
+        firstElement.focus();
+      } else if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
+    requestAnimationFrame(() => {
+      getFocusableElements(drawerRef.current)[0]?.focus();
+    });
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
     };
-  }, [menuOpen]);
-
-  const closeMenu = () => setMenuOpen(false);
+  }, [menuOpen, closeMenu]);
 
   // Hover handlers with delay to prevent flicker
   const megaEnter = () => {
@@ -74,6 +127,20 @@ export default function CatalogLayout({ children }) {
   };
   const megaLeave = () => {
     megaTimer.current = setTimeout(() => setMegaOpen(false), 150);
+  };
+
+  const toggleMegaMenu = () => {
+    clearTimeout(megaTimer.current);
+    setMegaOpen((open) => !open);
+  };
+
+  const handleMegaKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleMegaMenu();
+    } else if (event.key === 'Escape') {
+      setMegaOpen(false);
+    }
   };
 
   // Filter categories by search
@@ -120,14 +187,17 @@ export default function CatalogLayout({ children }) {
                 type="button"
                 className={`catalog-nav-link flex items-center gap-1 ${megaOpen ? 'catalog-nav-link--active' : ''}`}
                 aria-expanded={megaOpen}
-                aria-haspopup="true"
+                aria-haspopup="menu"
+                aria-controls="catalog-mega-menu"
+                onClick={toggleMegaMenu}
+                onKeyDown={handleMegaKeyDown}
               >
                 دسته‌بندی‌ها
                 <ChevronDown size={14} className={`transition-transform duration-200 ${megaOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {megaOpen && (
-                <div className="mega-menu-panel">
+                <div id="catalog-mega-menu" className="mega-menu-panel" role="menu" aria-label="دستهبندی محصولات">
                   <div className="mega-menu-inner">
                     {/* Search bar */}
                     <div className="mega-menu-search">
@@ -249,12 +319,13 @@ export default function CatalogLayout({ children }) {
 
           <div className="catalog-topbar-actions">
             <button
+              ref={menuButtonRef}
               type="button"
               className="catalog-menu-btn"
               aria-label={menuOpen ? 'بستن منو' : 'باز کردن منو'}
               aria-expanded={menuOpen}
               aria-controls="catalog-mobile-drawer"
-              onClick={() => setMenuOpen((v) => !v)}
+              onClick={toggleMenu}
             >
               {menuOpen ? <X size={22} strokeWidth={2.25} /> : <Menu size={22} strokeWidth={2.25} />}
             </button>
@@ -269,10 +340,13 @@ export default function CatalogLayout({ children }) {
         onClick={closeMenu}
       />
       <aside
+        ref={drawerRef}
         id="catalog-mobile-drawer"
         className={`catalog-drawer${menuOpen ? ' is-open' : ''}`}
         aria-hidden={!menuOpen}
         inert={!menuOpen ? '' : undefined}
+        role="dialog"
+        aria-modal={menuOpen ? 'true' : undefined}
         aria-label="منوی موبایل"
       >
         <div className="catalog-drawer-head">
@@ -285,7 +359,7 @@ export default function CatalogLayout({ children }) {
               <p className="catalog-drawer-sub truncate">منوی کاتالوگ</p>
             </div>
           </div>
-          <button type="button" className="catalog-drawer-close" aria-label="بستن" onClick={closeMenu}>
+          <button type="button" className="catalog-drawer-close" aria-label="بستن منوی موبایل" onClick={closeMenu}>
             <X size={20} />
           </button>
         </div>
@@ -368,7 +442,7 @@ export default function CatalogLayout({ children }) {
         </nav>
       </aside>
 
-      <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10" inert={menuOpen ? '' : undefined}>
         {children}
       </main>
 

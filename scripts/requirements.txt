@@ -1,0 +1,14 @@
+# Optional Python dependencies for helper scripts in this directory.
+# Install with: python -m pip install -r scripts/requirements.txt
+
+# API/upload helper scripts
+requests>=2.31.0
+PyJWT>=2.8.0
+
+# Google Drive / Search Console scripts
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-api-python-client>=2.0.0
+
+# Pi5 SSH/SFTP helper scripts
+paramiko>=3.4.0

@@ -1,7 +1,21 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Z_INDEX_MODAL_PORTAL } from '../lib/constants';
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const getFocusableElements = (container) =>
+  Array.from(container?.querySelectorAll(FOCUSABLE_SELECTOR) || []).filter(
+    (element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true'
+  );
 
 export default function Modal({ isOpen, onClose, title, children, size = 'lg' }) {
   const sizes = {
@@ -10,6 +24,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
     lg: '640px',
     xl: '860px',
   };
+  const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
   const handleEscape = useCallback(
     (e) => {
       if (e.key === 'Escape') onClose();
@@ -17,14 +34,45 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
     [onClose]
   );
 
+  const handleKeyDown = useCallback((e) => {
+    if (e.key !== 'Tab') return;
+
+    const focusableElements = getFocusableElements(dialogRef.current);
+    if (focusableElements.length === 0) {
+      e.preventDefault();
+      dialogRef.current?.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement.focus();
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
+      previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+
+      requestAnimationFrame(() => {
+        const focusableElements = getFocusableElements(dialogRef.current);
+        (focusableElements[0] || dialogRef.current)?.focus();
+      });
     }
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
+      if (previousFocusRef.current?.isConnected) {
+        previousFocusRef.current.focus();
+      }
     };
   }, [isOpen, handleEscape]);
 
@@ -52,13 +100,17 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
           animation: 'fadeIn 0.3s ease forwards',
         }}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Modal content */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
         style={{
           position: 'relative',
           width: '100%',
@@ -71,6 +123,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
           borderRadius: '0.75rem',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           animation: 'fadeInScale 0.2s ease forwards',
+          overscrollBehavior: 'contain',
         }}
       >
         {/* Header */}
@@ -88,7 +141,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
             {title}
           </h3>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="بستن پنجره"
             style={{
               padding: '6px',
               borderRadius: '8px',
@@ -99,9 +154,11 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              minWidth: 32,
+              minHeight: 32,
             }}
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 

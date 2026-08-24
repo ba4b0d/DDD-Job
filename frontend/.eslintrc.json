@@ -1,5 +1,11 @@
 {
   "root": true,
+  "ignorePatterns": [
+    "dist/",
+    "node_modules/",
+    "coverage/",
+    ".vite/"
+  ],
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
@@ -24,7 +30,8 @@
   },
   "rules": {
     "react/prop-types": "off",
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-undef": "warn"
   }
 }

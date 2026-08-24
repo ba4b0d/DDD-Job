@@ -17,10 +17,11 @@ from app.schemas import (
 from app.calculator import calculate_product_costs, calculate_product_costs_from_dicts
 from app.cache import get_settings_dict
 from app.routers.stats import invalidate_stats
-from app.routers.auth import require_admin, require_any_role
+from app.routers.auth import require_admin, require_staff_role
 from app.audit import log_user
 from pydantic import BaseModel
 from app.services.image import validate_image_bytes as _validate_image_bytes, process_and_save_image as _process_and_save_image
+from app.services.uploads import read_upload_limited
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -323,7 +324,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/products", response_model=ProductResponse, status_code=201)
-def create_product(product: ProductCreate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def create_product(product: ProductCreate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     try:
         data = product.model_dump()
         # Pop category_ids & collection_ids before passing to SQLAlchemy model
@@ -388,7 +389,7 @@ def _slugify(name: str, product_id: str = "") -> str:
 
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
-def update_product(product_id: int, product: ProductUpdate, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def update_product(product_id: int, product: ProductUpdate, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     update_data = product.model_dump(exclude_unset=True)
     category_ids = update_data.pop("category_ids", None)
@@ -430,7 +431,7 @@ class BulkProductAction(BaseModel):
 
 
 @router.delete("/products/{product_id}")
-def delete_product(product_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def delete_product(product_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     repo = ProductRepository(db)
     if not repo.delete(product_id):
         raise HTTPException(status_code=404, detail="Product not found")
@@ -439,7 +440,7 @@ def delete_product(product_id: int, user=Depends(require_any_role), db: Session 
 
 
 @router.post("/products/bulk")
-def bulk_product_action(body: BulkProductAction, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def bulk_product_action(body: BulkProductAction, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Apply a single operation across many products at once."""
     if not body.ids:
         raise HTTPException(status_code=400, detail="هیچ محصولی انتخاب نشده است")
@@ -509,7 +510,7 @@ MAX_IMAGES = 6
 async def upload_product_images(
     product_id: int,
     files: list[UploadFile] = File(...),
-    user=Depends(require_any_role),
+    user=Depends(require_staff_role),
     db: Session = Depends(get_db),
 ):
     """Upload one or more images for a product (max 5 total)."""
@@ -528,9 +529,11 @@ async def upload_product_images(
     uploaded = []
 
     for file in files[:remaining]:
-        content = await file.read()
-        if len(content) > MAX_UPLOAD_SIZE:
-            raise HTTPException(status_code=400, detail="حجم فایل نباید بیشتر از ۱۰ مگابایت باشد")
+        content = await read_upload_limited(
+            file,
+            max_bytes=MAX_UPLOAD_SIZE,
+            detail="حجم فایل نباید بیشتر از ۱۰ مگابایت باشد",
+        )
 
         ext = _validate_image_bytes(content, file.content_type or "")
         if not ext:
@@ -577,7 +580,7 @@ async def upload_product_images(
 
 
 @router.delete("/products/{product_id}/images/{image_id}")
-def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Delete a specific image from a product."""
     img = db.query(ProductImage).filter(
         ProductImage.id == image_id, ProductImage.product_id == product_id
@@ -624,7 +627,7 @@ def delete_product_image_by_id(product_id: int, image_id: int, user=Depends(requ
 
 
 @router.put("/products/{product_id}/images/{image_id}/primary")
-def set_primary_image(product_id: int, image_id: int, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def set_primary_image(product_id: int, image_id: int, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Set an image as the primary (catalog display) image."""
     img = db.query(ProductImage).filter(
         ProductImage.id == image_id, ProductImage.product_id == product_id
@@ -659,7 +662,7 @@ def set_primary_image(product_id: int, image_id: int, user=Depends(require_any_r
 
 
 @router.put("/products/{product_id}/images/reorder")
-def reorder_images(product_id: int, body: ImageReorderRequest, user=Depends(require_any_role), db: Session = Depends(get_db)):
+def reorder_images(product_id: int, body: ImageReorderRequest, user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Reorder images. Body: { "order": [image_id, image_id, ...] }"""
     order = body.order
     if not order:

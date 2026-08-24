@@ -1,0 +1,5 @@
+# Development/test dependencies for scripts.
+# Install with: python -m pip install -r scripts/requirements-dev.txt
+
+-r requirements.txt
+ruff>=0.8.0

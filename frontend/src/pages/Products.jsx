@@ -8,9 +8,11 @@ import PriceDisplay from '../components/PriceDisplay';
 import Modal from '../components/Modal';
 import ProductForm from '../components/ProductForm';
 import { formatMinutes } from '../lib/utils';
+import { useAuth } from '../lib/auth';
 
 export default function Products() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [products, setProducts] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [machines, setMachines] = useState([]);
@@ -143,6 +145,8 @@ export default function Products() {
       final_price: data.final_price || null,
       notes: data.notes || '',
       package_info: data.package_info || '',
+      tags: data.tags || '',
+      collection_ids: data.collection_ids || [],
     };
     const res = await createProduct(payload);
     // DON'T close modal here — ProductForm handles image upload after this returns
@@ -248,7 +252,8 @@ export default function Products() {
     if (selectedIds.length === 0) return;
     const payload = { ids: selectedIds };
     if (bulkForm.set_active !== '') payload.set_active = bulkForm.set_active === 'active';
-    if (bulkForm.set_collection_id) payload.set_collection_id = parseInt(bulkForm.set_collection_id);
+    if (bulkForm.set_collection_id === 'clear') payload.clear_collections = true;
+    else if (bulkForm.set_collection_id) payload.set_collection_id = parseInt(bulkForm.set_collection_id);
     if (bulkForm.clear_collections) payload.clear_collections = true;
     if (bulkForm.set_tags) payload.set_tags = bulkForm.set_tags;
     if (bulkForm.set_notes) payload.set_notes = bulkForm.set_notes;
@@ -292,21 +297,25 @@ export default function Products() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={handleExport} className="btn-secondary" title="خروجی اکسل">
-            <Download size={16} />
-            <span className="hidden sm:inline">خروجی</span>
-          </button>
-          <button type="button" onClick={handleImportClick} className="btn-secondary" title="ورودی اکسل/csv">
-            <Upload size={16} />
-            <span className="hidden sm:inline">ورودی</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.csv"
-            onChange={handleImportFile}
-            className="hidden"
-          />
+          {isAdmin && (
+            <>
+              <button type="button" onClick={handleExport} className="btn-secondary" title="خروجی اکسل">
+                <Download size={16} />
+                <span className="hidden sm:inline">خروجی</span>
+              </button>
+              <button type="button" onClick={handleImportClick} className="btn-secondary" title="ورودی اکسل/csv">
+                <Upload size={16} />
+                <span className="hidden sm:inline">ورودی</span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.csv"
+                onChange={handleImportFile}
+                className="hidden"
+              />
+            </>
+          )}
           <button type="button" onClick={() => setShowAddModal(true)} className="btn-primary">
             <Plus size={16} />
             محصول جدید
@@ -462,15 +471,17 @@ export default function Products() {
                         >
                           {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
                         </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handlePermanentDelete(e, product)}
-                          className="p-2 rounded-lg"
-                          style={{ backgroundColor: 'rgba(220,38,38,0.12)', color: '#f87171' }}
-                          title="حذف دائمی"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={(e) => handlePermanentDelete(e, product)}
+                            className="p-2 rounded-lg"
+                            style={{ backgroundColor: 'rgba(220,38,38,0.12)', color: '#f87171' }}
+                            title="حذف دائمی"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => navigate(`/products/${product.id}`)}

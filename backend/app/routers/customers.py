@@ -7,13 +7,13 @@ from sqlalchemy import func, or_
 
 from app.database import get_db
 from app.models import Order
-from app.routers.auth import require_any_role
+from app.routers.auth import require_staff_role
 
 router = APIRouter(prefix="/api/v1/customers", tags=["customers"])
 
 
 @router.get("")
-def list_customers(user=Depends(require_any_role), db: Session = Depends(get_db)):
+def list_customers(user=Depends(require_staff_role), db: Session = Depends(get_db)):
     """Group orders by normalized contact to build a customer list."""
     orders = (
         db.query(Order)

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardList, Plus, Archive, Edit2, Download, Trash2, LayoutGrid, List } from 'lucide-react';
-import { getOrders, createOrder, updateOrder, deleteOrder, getOrderStatuses, exportOrdersCsv, getProductsAll } from '../lib/api';
+import { ClipboardList, Plus, Archive, Edit2, Download, Trash2, LayoutGrid, List, RotateCcw } from 'lucide-react';
+import { getOrders, createOrder, updateOrder, deleteOrder, restoreOrder, getOrderStatuses, exportOrdersCsv, getProductsAll } from '../lib/api';
 import { formatPrice } from '../lib/utils';
 import {
   formatShamsiDate,
@@ -148,6 +148,7 @@ export default function Orders() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState('table'); // table | board
+  const [showArchived, setShowArchived] = useState(false);
 
   const todayIso = todayGregorianIso();
 
@@ -161,6 +162,7 @@ export default function Orders() {
       const params = {};
       if (filter) params.status = filter;
       if (search.trim()) params.search = search.trim();
+      if (showArchived) params.include_inactive = true;
       const [oRes, sRes] = await Promise.all([
         getOrders(params, { signal }),
         getOrderStatuses({ signal }),
@@ -175,7 +177,7 @@ export default function Orders() {
     } finally {
       setLoading(false);
     }
-  }, [filter, search]);
+  }, [filter, search, showArchived]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -341,6 +343,16 @@ export default function Orders() {
     }
   };
 
+  const handleRestore = async (order) => {
+    if (!confirm(`بازیابی «${order.customer_name}»؟`)) return;
+    try {
+      await restoreOrder(order.id);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'خطا در بازیابی سفارش');
+    }
+  };
+
   const handleExportCsv = async () => {
     try {
       const res = await exportOrdersCsv();
@@ -433,6 +445,14 @@ export default function Orders() {
               <LayoutGrid size={16} />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowArchived((v) => !v)}
+            className="btn-secondary text-xs"
+            aria-pressed={showArchived}
+          >
+            <Archive size={14} /> {showArchived ? 'مخفی کردن بایگانی' : 'نمایش بایگانی'}
+          </button>
           <button type="button" onClick={handleExportCsv} className="btn-secondary text-xs">
             <Download size={14} /> CSV
           </button>
@@ -588,11 +608,19 @@ export default function Orders() {
                   return (
                     <tr
                       key={o.id}
-                      style={{ borderBottom: '1px solid var(--border-color)' }}
+                      style={{
+                        borderBottom: '1px solid var(--border-color)',
+                        opacity: o.is_active === false ? 0.65 : 1,
+                      }}
                       className="hover:bg-[color-mix(in_srgb,var(--bg-tertiary)_50%,transparent)]"
                     >
                       <td className="px-3 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
                         {o.customer_name}
+                        {o.is_active === false && (
+                          <span className="text-[10px] mr-2 px-1.5 py-0.5 rounded-full" style={{ color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.12)' }}>
+                            بایگانی
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-3" style={{ color: 'var(--text-secondary)' }}>
                         {o.contact || '—'}
@@ -662,24 +690,39 @@ export default function Orders() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(o)}
-                            className="p-2 rounded-lg"
-                            style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tertiary)' }}
-                            title="ویرایش"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleArchive(o)}
-                            className="p-2 rounded-lg"
-                            style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
-                            title="بایگانی"
-                          >
-                            <Archive size={14} />
-                          </button>
+                          {o.is_active === false ? (
+                            <button
+                              type="button"
+                              onClick={() => handleRestore(o)}
+                              className="p-2 rounded-lg"
+                              style={{ color: '#16a34a', backgroundColor: 'rgba(34,197,94,0.12)' }}
+                              title={`بازیابی سفارش ${o.customer_name}`}
+                              aria-label={`بازیابی سفارش ${o.customer_name}`}
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openEdit(o)}
+                                className="p-2 rounded-lg"
+                                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tertiary)' }}
+                                title="ویرایش"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleArchive(o)}
+                                className="p-2 rounded-lg"
+                                style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
+                                title="بایگانی"
+                              >
+                                <Archive size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

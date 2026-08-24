@@ -10,6 +10,7 @@ from app.schemas import BlogPostCreate, BlogPostUpdate, BlogPostResponse
 from app.routers.auth import require_blog_role, limiter
 
 from app.services.image import validate_image_bytes, process_and_save_image
+from app.services.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/v1", tags=["blog"])
 
@@ -178,9 +179,11 @@ async def upload_blog_cover(
             detail=f"فرمت فایل مجاز نیست. پسوندهای مجاز: {', '.join(allowed_ext)}",
         )
 
-    contents = await file.read()
-    if len(contents) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد")
+    contents = await read_upload_limited(
+        file,
+        max_bytes=10 * 1024 * 1024,
+        detail="حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد",
+    )
 
     real_ext = validate_image_bytes(contents)
     if not real_ext:
