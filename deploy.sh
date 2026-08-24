@@ -32,7 +32,7 @@ fi
 # 2. SSH + pull + rebuild
 echo "🔄 Deploying to Pi5..."
 ssh "$PI5" "cd $REMOTE_DIR_Q && \
-  test -z \"\$(git status --porcelain)\" && \
+  git diff --quiet && git diff --cached --quiet && \
   git fetch origin '$BRANCH' && \
   git checkout '$BRANCH' && \
   git reset --hard '$COMMIT' && \
