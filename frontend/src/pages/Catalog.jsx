@@ -755,7 +755,7 @@ export default function Catalog() {
         <section className="catalog-hero catalog-hero--main overflow-hidden rounded-[1.35rem]">
               <div className="catalog-hero-media">
                 <img
-                  src="/catalog-hero.webp"
+                  src="/catalog-hero.webp?v=2"
                   alt=""
                   className="catalog-hero-photo"
                   width={1024}
