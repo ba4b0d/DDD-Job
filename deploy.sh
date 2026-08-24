@@ -9,9 +9,9 @@ REMOTE_DIR="${REMOTE_DIR:-/home/ba4b0d/ddd-job}"
 
 cd "$(dirname "$0")"
 
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Refusing to deploy: the working tree is not clean." >&2
-  echo "Commit or stash changes, then deploy that explicit commit." >&2
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Refusing to deploy: tracked files are modified or staged." >&2
+  echo "Commit tracked changes first, then deploy that explicit commit." >&2
   exit 1
 fi
 

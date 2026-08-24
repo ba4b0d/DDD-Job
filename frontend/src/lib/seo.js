@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 const SITE_NAME = 'Spaghetti Print'
 const SITE_NAME_FA = 'اسپاگتی پرینت'
-const DEFAULT_IMAGE = '/catalog-hero.jpg'
+const DEFAULT_IMAGE = '/catalog-hero.webp'
 const JSONLD_ID = 'json-ld-structured-data'
 
 /**

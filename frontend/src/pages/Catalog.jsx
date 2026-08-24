@@ -755,7 +755,7 @@ export default function Catalog() {
         <section className="catalog-hero catalog-hero--main overflow-hidden rounded-[1.35rem]">
               <div className="catalog-hero-media">
                 <img
-                  src="/catalog-hero.jpg"
+                  src="/catalog-hero.webp"
                   alt=""
                   className="catalog-hero-photo"
                   width={1024}
@@ -773,7 +773,7 @@ export default function Catalog() {
                 >
                   خدمات پرینت سه بعدی و کاتالوگ محصولات
                 </h1>
-                <p className="text-xs sm:text-sm opacity-90 mt-1 max-w-lg" style={{ color: 'var(--text-secondary)' }}>
+                <p className="text-xs sm:text-sm opacity-90 mt-1 max-w-xl" style={{ color: 'var(--text-secondary)' }}>
                   سفارش آنلاین قطعات سفارشی با عکس یا STL + شخصیسازی کامل رنگ و ابعاد محصولات کاتالوگ
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
