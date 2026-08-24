@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'vazir': ['Vazirmatn', 'sans-serif']
+        'yekan': ['Yekan', 'sans-serif']
       }
     }
   },

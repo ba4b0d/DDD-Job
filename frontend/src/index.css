@@ -83,7 +83,7 @@
 
 html {
   direction: rtl;
-  font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  font-family: 'Yekan', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   scroll-behavior: smooth;
@@ -1945,7 +1945,7 @@ body {
 }
 .rmdp-wrapper,
 .rmdp-calendar {
-  font-family: 'Vazirmatn', system-ui, sans-serif !important;
+  font-family: 'Yekan', system-ui, sans-serif !important;
   z-index: 10050 !important;
 }
 .rmdp-day.rmdp-selected span:not(.highlight) {
