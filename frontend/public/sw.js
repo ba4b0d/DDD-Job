@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spaghetti-v3';
+const CACHE_NAME = 'spaghetti-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
