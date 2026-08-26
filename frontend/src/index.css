@@ -481,6 +481,7 @@ body {
   color: color-mix(in srgb, var(--brand-orange-light) 70%, #fff);
   font-size: 0.8rem;
   line-height: 1.2;
+  margin-top: 2px;
 }
 
 .catalog-topbar .catalog-logo-img {

@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "live-site",
+      "url": "https://spaghettiprints.ir/"
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe",
+      "runtimeArgs": ["backend/run_backend.py"],
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "port": 5173
+    }
+  ]
+}

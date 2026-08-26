@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import fastapi, sqlalchemy, uvicorn; print\\('Backend deps OK'\\)\")",
+      "Bash(python3 -c \"import fastapi, sqlalchemy, uvicorn; print\\('Backend deps OK'\\)\")",
+      "Bash(python -m venv backend/venv)",
+      "Bash(./backend/venv/Scripts/pip install *)",
+      "Bash(py --list)",
+      "Bash(py -3.12 --version)",
+      "Read(//c/c/**)",
+      "Bash(py -3.12 -m venv backend/venv)",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(backend/venv/Scripts/python -c \"from app.database import SessionLocal; from app.models import User; db = SessionLocal\\(\\); print\\([\\(u.username, u.role, u.is_active\\) for u in db.query\\(User\\).all\\(\\)]\\)\")",
+      "Bash(./backend/venv/Scripts/python.exe -c \"import sys; sys.path.insert\\(0, 'backend'\\); from app.database import SessionLocal; from app.models import User; db = SessionLocal\\(\\); print\\([\\(u.username, u.role, u.is_active\\) for u in db.query\\(User\\).all\\(\\)]\\)\")",
+      "Bash(\"C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe\" -c \"import sys; sys.path.insert\\(0, 'backend'\\); from app.database import SessionLocal; from app.models import User; db = SessionLocal\\(\\); print\\([\\(u.id, u.username, u.role, u.is_active\\) for u in db.query\\(User\\).all\\(\\)]\\)\")",
+      "Bash(PYTHONPATH=backend \"C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe\" -c \"from app.database import SessionLocal; from app.models import User; db = SessionLocal\\(\\); print\\([\\(u.id, u.username, u.role, u.is_active\\) for u in db.query\\(User\\).all\\(\\)]\\)\")",
+      "Bash(PYTHONPATH=backend \"C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe\" -c \"from app.database import SessionLocal; from app.models import User; db = SessionLocal\\(\\); print\\([\\(u.username, u.role, u.is_active\\) for u in db.query\\(User\\).all\\(\\)]\\)\")",
+      "Bash(PYTHONPATH=backend \"C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe\" -c \"from app.database import SessionLocal; from app.models import User; from app.routers.auth import _hash; db = SessionLocal\\(\\); user = db.query\\(User\\).filter\\(User.username == 'admin'\\).first\\(\\); user.password_hash = _hash\\('admin123'\\); db.commit\\(\\); print\\('Password updated to admin123'\\)\")",
+      "Bash(JWT_SECRET=Jh6sFYzxYrMUWUoiyqX00WNpbE7USMUrYEOarAwv5ZlbRpiN8oT3yAAh6nluYEXQ PYTHONPATH=backend \"C:/Users/barba/3djat-pricing/backend/venv/Scripts/python.exe\" -c \"from app.database import SessionLocal; from app.models import User; from app.routers.auth import _hash; db = SessionLocal\\(\\); user = db.query\\(User\\).filter\\(User.username == 'admin'\\).first\\(\\); user.password_hash = _hash\\('admin123'\\); db.commit\\(\\); print\\('Password updated to admin123'\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr *)"
+    ]
+  }
+}
