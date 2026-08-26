@@ -792,6 +792,25 @@ body {
   }
 }
 
+/* ── Nav overflow guard: at mid-range viewports, hide brand subtitle to
+      prevent the nav column from overlapping the brand title ──────── */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .catalog-topbar .catalog-brand-sub {
+    display: none;
+  }
+  .catalog-topbar .catalog-brand-title {
+    font-size: 1.05rem;
+  }
+  .catalog-nav-link {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.82rem;
+    min-height: 2.3rem;
+  }
+  .catalog-nav {
+    gap: 0.15rem;
+  }
+}
+
 .catalog-logo-mark {
   display: flex;
   align-items: center;
