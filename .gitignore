@@ -24,9 +24,13 @@ gdrive_token.json
 
 # Database
 data/*.db
+backend/data/*.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Backups
+backups/
 
 # Temporary / scratch directories
 tmp/
@@ -61,6 +65,16 @@ frontend/.vite/
 
 # Logs
 *.log
+
+# Artifacts / generated
+lh_*.json
+lighthouse_*.json
+desktop_psi.json
+mobile_psi.json
+run_live_api_seo_update.py
+update_seo_descriptions.py
+vazirmatn.css
+sketches/
 
 # Test artifacts
 backend/tests/*.db

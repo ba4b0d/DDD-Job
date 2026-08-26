@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { Z_INDEX_STICKY } from '../lib/constants';
 import BrandLogo from './BrandLogo';
-import { useSEO } from '../lib/seo';
 import { getBlogPosts, getCatalogCategories, getPublicBrand } from '../lib/api';
 
 const FOCUSABLE_SELECTOR = [
@@ -27,10 +26,9 @@ const drawerLinkClass = ({ isActive }) =>
   `catalog-drawer-link${isActive ? ' catalog-drawer-link--active' : ''}`;
 
 export default function CatalogLayout({ children }) {
-  useSEO({
-    title: 'اسپاگتی پرینت — چاپ سه\u200cبعدی',
-    description: 'چاپ سه\u200cبعدی سفارشی با بهترین کیفیت و قیمت — اسپاگتی پرینت',
-  });
+  // NOTE: this layout does NOT call useSEO — individual child pages set their
+  //       own SEO title/description/canonical. The inline <script> in index.html
+  //       provides a synchronous fallback canonical tag on every page load.
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [blogEnabled, setBlogEnabled] = useState(false);

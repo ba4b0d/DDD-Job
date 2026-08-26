@@ -169,7 +169,7 @@ def get_sitemap(request: Request, db: Session = Depends(get_db)):
 
     static_pages = [
         ("/", "1.0", "weekly"),
-        ("/catalog", "0.9", "weekly"),
+        # "/catalog" removed — not a real SPA route; catalog is at "/"
         ("/custom-order", "0.9", "weekly"),
         ("/how-to-order", "0.8", "monthly"),
         ("/contact", "0.7", "monthly"),

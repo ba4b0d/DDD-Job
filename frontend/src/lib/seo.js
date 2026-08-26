@@ -280,7 +280,9 @@ export function useSEO({ title, description, image, url, jsonLd } = {}) {
     return () => {
       // Clear page-specific JSON-LD on unmount so SPA nav doesn't leak schemas
       if (jsonLd !== undefined) setJsonLd(null)
-      clearCanonical()
+      // Canonical is NOT cleared — the inline script in index.html ensures a
+      // server-rendered <link> always exists on fresh page loads. Keeping the
+      // old canonical during SPA transitions avoids gaps that confuse Googlebot.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- compare jsonLd by value
   }, [title, description, image, url, JSON.stringify(jsonLd ?? null)])

@@ -46,6 +46,26 @@
     <!-- Default title before React hydrate — matches Catalog useSEO -->
     <title>اسپاگتی پرینت — خدمات آنلاین پرینت و چاپ سه‌بعدی سفارشی | Spaghetti Print</title>
 
+    <!--
+      Synchronous canonical tag — runs BEFORE React hydrates.
+      This is the KEY fix for GSC "Duplicate without user-selected canonical":
+      Googlebot's first-pass crawl ALWAYS sees a canonical, even if JS never runs.
+    -->
+    <script>
+    (function() {
+      'use strict';
+      var p = window.location.pathname.replace(/\/+$/, '') || '/';
+      var h = window.location.host;
+      var proto = 'https:';
+      // Build canonical URL
+      var canonical = proto + '//' + h + p;
+      var link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = canonical.toLowerCase();
+      document.head.appendChild(link);
+    })();
+    </script>
+
     <!-- Server-rendered JSON-LD (crawlable without JS) — overridden/merged per-page by useSEO after hydrate -->
     <script type="application/ld+json" id="json-ld-static">
     {
