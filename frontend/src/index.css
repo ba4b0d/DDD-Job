@@ -475,14 +475,12 @@ body {
   font-size: 1.2rem;
   line-height: 1.25;
   letter-spacing: -0.01em;
-  margin-top: -15px;  /* pushes title upward, away from categories btn */
 }
 
 .catalog-topbar .catalog-brand-sub {
   color: color-mix(in srgb, var(--brand-orange-light) 70%, #fff);
   font-size: 0.8rem;
   line-height: 1.2;
-  margin-top: 22px;  /* pushes subtitle below the shifted-up title */
 }
 
 .catalog-topbar .catalog-logo-img {
