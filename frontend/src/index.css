@@ -784,7 +784,7 @@ body {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
   .catalog-menu-btn,
   .catalog-drawer,
   .catalog-drawer-backdrop {
@@ -793,7 +793,7 @@ body {
 }
 
 /* ── At mid viewports the desktop nav is too wide: show hamburger ── */
-@media (max-width: 1023px) {
+@media (max-width: 1199px) {
   .catalog-nav--desktop {
     display: none !important;
   }
