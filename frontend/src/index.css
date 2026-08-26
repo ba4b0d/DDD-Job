@@ -502,9 +502,10 @@ body {
   max-width: 80rem;
   margin-inline: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 0.55rem 0.85rem;
+  column-gap: 0.85rem;
+  row-gap: 0.55rem;
   padding: 0.5rem 1rem;
   min-height: 5.5rem;
 }
@@ -515,7 +516,8 @@ body {
 }
 
 .catalog-topbar-inner > .catalog-nav {
-  justify-self: center;
+  justify-self: stretch;
+  justify-content: center;
   grid-column: 2;
 }
 
@@ -800,6 +802,18 @@ body {
   }
   .catalog-menu-btn {
     display: inline-flex;
+  }
+}
+
+/* ── Compact nav links on moderately wide screens ── */
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .catalog-nav-link {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    min-height: 2.2rem;
+  }
+  .catalog-nav {
+    gap: 0.1rem;
   }
 }
 
