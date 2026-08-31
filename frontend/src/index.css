@@ -700,6 +700,9 @@ body {
   border-color: color-mix(in srgb, var(--brand-orange) 30%, transparent);
 }
 .catalog-drawer-subcats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
   margin-top: 0.5rem;
   margin-bottom: 1rem;
   overflow: hidden;
